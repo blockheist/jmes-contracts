@@ -17,8 +17,9 @@ use cw2::set_contract_version;
 use cw721::Cw721QueryMsg::Tokens as QueryTokens;
 use cw721::TokensResponse as QueryTokensResponse;
 
+use identityservice::msg::GetIdentityByOwnerResponse;
 use identityservice::msg::QueryMsg::GetIdentityByOwner;
-use identityservice::state::{IdType::Dao, Identity};
+use identityservice::state::IdType::Dao;
 
 use cw_utils::parse_reply_instantiate_data;
 
@@ -266,12 +267,14 @@ pub fn execute_mint_artist(
     let artist_nft_address = config.artist_nft_address.clone().unwrap();
 
     // Ensure info.sender is a DAO
-    let maybe_identity: Option<Identity> = deps.querier.query_wasm_smart(
+    let maybe_identity_resp: GetIdentityByOwnerResponse = deps.querier.query_wasm_smart(
         config.identityservice_contract.clone(),
         &GetIdentityByOwner {
             owner: info.sender.clone().into(),
         },
     )?;
+
+    let maybe_identity = maybe_identity_resp.identity;
 
     if maybe_identity.is_none() {
         return Err(ContractError::Unauthorized {});

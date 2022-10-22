@@ -3,12 +3,14 @@ use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::state::{ProposalStatus, VoteOption};
+use crate::state::{ProposalStatus, ProposalType, VoteOption};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct InstantiateMsg {
+    pub owner: String,
     pub bjmes_token_addr: String,
+    pub artist_curator_addr: Option<String>,
     pub proposal_required_deposit: Uint128,
     // Required percentage for a proposal to pass, e.g. 51
     pub proposal_required_percentage: u64,
@@ -31,10 +33,13 @@ pub enum ExecuteMsg {
     },
     Conclude {
         id: u64,
+    },
+    SetContract {
+        distribution: String,
+        artist_curator: String,
+        identityservice: String,
     }, // ImprovementProposal {},
        // ConfigChangeProposal {},
-
-       // RequestFeature { feature: Feature },
        // RemoveFeature { feature: Feature },
 
        // RequestCoreSlot { core_slot: CoreSlot },
@@ -48,13 +53,39 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Cw20HookMsg {
-    TextProposal { title: String, description: String },
+    TextProposal {
+        title: String,
+        description: String,
+    },
+    RequestFeature {
+        title: String,
+        description: String,
+        feature: Feature,
+    },
+    Funding {
+        title: String,
+        description: String,
+        duration: u64,
+        amount: Uint128,
+    },
+}
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct AddGrantMsg {
+    pub add_grant: AddGrant,
+}
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct AddGrant {
+    pub dao: Addr,
+    pub duration: u64,
+    pub amount: Uint128,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Feature {
-    ArtistCurator {},
+    ArtistCurator { approved: u64, duration: u64 },
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
@@ -111,6 +142,7 @@ pub struct ProposalResponse {
     pub dao: Addr,
     pub title: String,
     pub description: String,
+    pub prop_type: ProposalType,
     pub coins_yes: Uint128,
     pub coins_no: Uint128,
     pub yes_voters: Vec<Addr>,
@@ -129,4 +161,19 @@ pub struct ProposalResponse {
 pub struct ProposalsResponse {
     pub proposal_count: u64,
     pub proposals: Vec<ProposalResponse>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct ConfigResponse {
+    pub bjmes_token_addr: Addr,
+    pub artist_curator_addr: Option<Addr>,
+    pub proposal_required_deposit: Uint128,
+    // Required percentage for a proposal to pass, e.g. 51
+    pub proposal_required_percentage: u64,
+    // Epoch when the 1st posting period starts, e.g. 1660000000
+    pub period_start_epoch: u64,
+    // Length in seconds of the posting period, e.g.  606864 for ~ 1 Week (year/52)
+    pub posting_period_length: u64,
+    // Length in seconds of the posting period, e.g.  606864 for ~ 1 Week (year/52)
+    pub voting_period_length: u64,
 }

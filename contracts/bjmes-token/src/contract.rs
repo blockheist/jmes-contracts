@@ -20,8 +20,8 @@ use crate::enumerable::{query_all_accounts, query_owner_allowances, query_spende
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{
-    MinterData, TokenInfo, ALLOWANCES, ALLOWANCES_SPENDER, BALANCES, LOGO, MARKETING_INFO,
-    TOKEN_INFO,
+    capture_total_supply_history, get_total_supply_at, MinterData, TokenInfo, ALLOWANCES,
+    ALLOWANCES_SPENDER, BALANCES, LOGO, MARKETING_INFO, TOKEN_INFO,
 };
 
 // version info for migration info
@@ -94,7 +94,7 @@ fn verify_logo(logo: &Logo) -> Result<(), ContractError> {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     mut deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -102,7 +102,11 @@ pub fn instantiate(
     // check valid token info
     msg.validate()?;
     // create initial accounts
-    let total_supply = create_accounts(&mut deps, &msg.initial_balances)?;
+    let total_supply = create_accounts(&mut deps, &env, &msg.initial_balances)?;
+
+    if !total_supply.is_zero() {
+        capture_total_supply_history(deps.storage, &env, total_supply)?;
+    }
 
     if let Some(limit) = msg.get_cap() {
         if total_supply > limit {
@@ -158,6 +162,7 @@ pub fn instantiate(
 
 pub fn create_accounts(
     deps: &mut DepsMut,
+    env: &Env,
     accounts: &[Cw20Coin],
 ) -> Result<Uint128, ContractError> {
     validate_accounts(accounts)?;
@@ -165,7 +170,7 @@ pub fn create_accounts(
     let mut total_supply = Uint128::zero();
     for row in accounts {
         let address = deps.api.addr_validate(&row.address)?;
-        BALANCES.save(deps.storage, &address, &row.amount)?;
+        BALANCES.save(deps.storage, &address, &row.amount, env.block.height)?;
         total_supply += row.amount;
     }
 
@@ -238,7 +243,7 @@ pub fn execute(
 
 pub fn execute_transfer(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     recipient: String,
     amount: Uint128,
@@ -252,6 +257,7 @@ pub fn execute_transfer(
     BALANCES.update(
         deps.storage,
         &info.sender,
+        env.block.height,
         |balance: Option<Uint128>| -> StdResult<_> {
             Ok(balance.unwrap_or_default().checked_sub(amount)?)
         },
@@ -259,6 +265,7 @@ pub fn execute_transfer(
     BALANCES.update(
         deps.storage,
         &rcpt_addr,
+        env.block.height,
         |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
     )?;
 
@@ -272,7 +279,7 @@ pub fn execute_transfer(
 
 pub fn execute_burn(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
@@ -284,12 +291,13 @@ pub fn execute_burn(
     BALANCES.update(
         deps.storage,
         &info.sender,
+        env.block.height,
         |balance: Option<Uint128>| -> StdResult<_> {
             Ok(balance.unwrap_or_default().checked_sub(amount)?)
         },
     )?;
     // reduce total_supply
-    TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
+    let token_info = TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
         info.total_supply = info.total_supply.checked_sub(amount)?;
         Ok(info)
     })?;
@@ -298,12 +306,15 @@ pub fn execute_burn(
         .add_attribute("action", "burn")
         .add_attribute("from", info.sender)
         .add_attribute("amount", amount);
+
+    capture_total_supply_history(deps.storage, &env, token_info.total_supply)?;
+
     Ok(res)
 }
 
 pub fn execute_mint(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     recipient: String,
     amount: Uint128,
@@ -325,6 +336,7 @@ pub fn execute_mint(
     // {
     //     return Err(ContractError::Unauthorized {});
     // }
+    // TODO enable minter check, only coins that are delegated can mint bjmes token
 
     // update supply and enforce cap
     config.total_supply += amount;
@@ -335,12 +347,15 @@ pub fn execute_mint(
     }
     TOKEN_INFO.save(deps.storage, &config)?;
 
+    capture_total_supply_history(deps.storage, &env, config.total_supply)?;
+
     // add amount to recipient balance
     let rcpt_addr = deps.api.addr_validate(&recipient)?;
     BALANCES.update(
         deps.storage,
         &rcpt_addr,
-        |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+        env.block.height,
+        |balance| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
     )?;
 
     let res = Response::new()
@@ -352,7 +367,7 @@ pub fn execute_mint(
 
 pub fn execute_send(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     contract: String,
     amount: Uint128,
@@ -368,6 +383,7 @@ pub fn execute_send(
     BALANCES.update(
         deps.storage,
         &info.sender,
+        env.block.height,
         |balance: Option<Uint128>| -> StdResult<_> {
             Ok(balance.unwrap_or_default().checked_sub(amount)?)
         },
@@ -375,6 +391,7 @@ pub fn execute_send(
     BALANCES.update(
         deps.storage,
         &rcpt_addr,
+        env.block.height,
         |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
     )?;
 
@@ -524,6 +541,10 @@ pub fn execute_upload_logo(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Balance { address } => to_binary(&query_balance(deps, address)?),
+        QueryMsg::BalanceAt { address, block } => {
+            to_binary(&query_balance_at(deps, address, block)?)
+        }
+        QueryMsg::TotalSupplyAt { block } => to_binary(&get_total_supply_at(deps.storage, block)?),
         QueryMsg::TokenInfo {} => to_binary(&query_token_info(deps)?),
         QueryMsg::Minter {} => to_binary(&query_minter(deps)?),
         QueryMsg::Allowance { owner, spender } => {
@@ -556,6 +577,14 @@ pub fn query_balance(deps: Deps, address: String) -> StdResult<BalanceResponse> 
     let address = deps.api.addr_validate(&address)?;
     let balance = BALANCES
         .may_load(deps.storage, &address)?
+        .unwrap_or_default();
+    Ok(BalanceResponse { balance })
+}
+
+pub fn query_balance_at(deps: Deps, address: String, block: u64) -> StdResult<BalanceResponse> {
+    let address = deps.api.addr_validate(&address)?;
+    let balance = BALANCES
+        .may_load_at_height(deps.storage, &address, block)?
         .unwrap_or_default();
     Ok(BalanceResponse { balance })
 }
@@ -1403,7 +1432,7 @@ mod tests {
 
             // Set allowance
             let allow1 = Uint128::new(7777);
-            let expires = Expiration::AtHeight(5432);
+            let expires = Expiration::AtHeight(123_456);
             let msg = CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: cw20_addr.to_string(),
                 msg: to_binary(&ExecuteMsg::IncreaseAllowance {

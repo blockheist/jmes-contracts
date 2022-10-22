@@ -2,8 +2,10 @@ use std::env;
 use std::ops::{Mul, Sub};
 
 use crate::error::ContractError;
-use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{grants, Config, Grant, GrantResponse, CONFIG};
+use crate::msg::{
+    ConfigResponse, ExecuteMsg, GrantResponse, GrantsResponse, InstantiateMsg, QueryMsg,
+};
+use crate::state::{grants, Config, Grant, CONFIG};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -44,7 +46,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetConfig {} => to_binary(&query_config(deps)?),
+        QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::Grant { grant_id } => to_binary(&query_grant(deps, env, grant_id)?),
         QueryMsg::Grants {
             dao,
@@ -91,7 +93,7 @@ fn query_grants(
     dao: Option<Addr>,
     start_after: Option<String>,
     limit: Option<u32>,
-) -> StdResult<Vec<Grant>> {
+) -> StdResult<GrantsResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start = start_after.map(|s| Bound::ExclusiveRaw(s.into()));
 
@@ -112,7 +114,9 @@ fn query_grants(
         .map(|item| item.map(|(_, grant)| grant))
         .collect();
 
-    Ok(grants?)
+    let res = GrantsResponse { grants: grants? };
+
+    Ok(res)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -143,10 +147,10 @@ pub fn execute_add_grant(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // TODO 2 enable checking if governance contract is sender
-    // if config.owner != info.sender {
-    //     return Err(ContractError::UnauthorizedTokenContract {});
-    // }
+    // Only the governance contract can add grants via a funding proposal
+    if config.owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
 
     let grant = Grant {
         grant_id: Grant::next_id(deps.storage)?,
@@ -176,10 +180,7 @@ pub fn execute_claim(
     _info: MessageInfo,
     grant_id: u64,
 ) -> Result<Response, ContractError> {
-    // TODO 2 enable checking if governance contract is sender
-    // if config.owner != info.sender {
-    //     return Err(ContractError::UnauthorizedTokenContract {});
-    // }
+    // Anyone can claim, they are doing us a favor by paying the tx fee
 
     let maybe_grant = grants().may_load(deps.storage, grant_id.to_string())?;
 
@@ -199,6 +200,7 @@ pub fn execute_claim(
 
     grants().save(deps.storage, grant.grant_id.to_string(), &grant)?;
 
+    // TODO returning a contract error throws undescript error 400
     if claimable_amount < MIN_CLAIMABLE_AMOUNT {
         return Err(ContractError::AmountTooSmall {});
     }
@@ -211,6 +213,7 @@ pub fn execute_claim(
                 amount: claimable_amount,
             }],
         })
+        .add_attribute("claimable_amount", claimable_amount)
         .add_attribute("amount_remaining", grant.amount_remaining))
 }
 
@@ -303,7 +306,7 @@ mod tests {
         };
         reply(deps.as_mut(), mock_env(), reply_msg).unwrap();
 
-        let query_msg = QueryMsg::GetConfig {};
+        let query_msg = QueryMsg::Config {};
         let res = query(deps.as_ref(), mock_env(), query_msg).unwrap();
         let config: Config = from_binary(&res).unwrap();
         assert_eq!(

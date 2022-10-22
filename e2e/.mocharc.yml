@@ -1,0 +1,8 @@
+exit: false
+timeout: 2000000
+loader:
+  - "ts-node/esm"
+require:
+  - "fixtures/fixtures.js"
+  - "ts-node/register"
+parallel: false

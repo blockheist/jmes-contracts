@@ -5,11 +5,13 @@ use cosmwasm_std::{
 use cw20::{AllowanceResponse, Cw20ReceiveMsg, Expiration};
 
 use crate::error::ContractError;
-use crate::state::{ALLOWANCES, ALLOWANCES_SPENDER, BALANCES, TOKEN_INFO};
+use crate::state::{
+    capture_total_supply_history, ALLOWANCES, ALLOWANCES_SPENDER, BALANCES, TOKEN_INFO,
+};
 
 pub fn execute_increase_allowance(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     spender: String,
     amount: Uint128,
@@ -20,9 +22,12 @@ pub fn execute_increase_allowance(
         return Err(ContractError::CannotSetOwnAccount {});
     }
 
-    let update_fn = |allow: Option<AllowanceResponse>| -> StdResult<_> {
+    let update_fn = |allow: Option<AllowanceResponse>| -> Result<_, _> {
         let mut val = allow.unwrap_or_default();
         if let Some(exp) = expires {
+            if exp.is_expired(&env.block) {
+                return Err(ContractError::InvalidExpiration {});
+            }
             val.expires = exp;
         }
         val.allowance += amount;
@@ -42,7 +47,7 @@ pub fn execute_increase_allowance(
 
 pub fn execute_decrease_allowance(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     spender: String,
     amount: Uint128,
@@ -68,6 +73,9 @@ pub fn execute_decrease_allowance(
             .checked_sub(amount)
             .map_err(StdError::overflow)?;
         if let Some(exp) = expires {
+            if exp.is_expired(&env.block) {
+                return Err(ContractError::InvalidExpiration {});
+            }
             allowance.expires = exp;
         }
         ALLOWANCES.save(deps.storage, key, &allowance)?;
@@ -132,6 +140,7 @@ pub fn execute_transfer_from(
     BALANCES.update(
         deps.storage,
         &owner_addr,
+        env.block.height,
         |balance: Option<Uint128>| -> StdResult<_> {
             Ok(balance.unwrap_or_default().checked_sub(amount)?)
         },
@@ -139,6 +148,7 @@ pub fn execute_transfer_from(
     BALANCES.update(
         deps.storage,
         &rcpt_addr,
+        env.block.height,
         |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
     )?;
 
@@ -169,15 +179,18 @@ pub fn execute_burn_from(
     BALANCES.update(
         deps.storage,
         &owner_addr,
+        env.block.height,
         |balance: Option<Uint128>| -> StdResult<_> {
             Ok(balance.unwrap_or_default().checked_sub(amount)?)
         },
     )?;
     // reduce total_supply
-    TOKEN_INFO.update(deps.storage, |mut meta| -> StdResult<_> {
+    let token_info = TOKEN_INFO.update(deps.storage, |mut meta| -> StdResult<_> {
         meta.total_supply = meta.total_supply.checked_sub(amount)?;
         Ok(meta)
     })?;
+
+    capture_total_supply_history(deps.storage, &env, token_info.total_supply)?;
 
     let res = Response::new().add_attributes(vec![
         attr("action", "burn_from"),
@@ -207,6 +220,7 @@ pub fn execute_send_from(
     BALANCES.update(
         deps.storage,
         &owner_addr,
+        env.block.height,
         |balance: Option<Uint128>| -> StdResult<_> {
             Ok(balance.unwrap_or_default().checked_sub(amount)?)
         },
@@ -214,6 +228,7 @@ pub fn execute_send_from(
     BALANCES.update(
         deps.storage,
         &rcpt_addr,
+        env.block.height,
         |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
     )?;
 
@@ -300,7 +315,7 @@ mod tests {
 
         // set allowance with height expiration
         let allow1 = Uint128::new(7777);
-        let expires = Expiration::AtHeight(5432);
+        let expires = Expiration::AtHeight(123_456);
         let msg = ExecuteMsg::IncreaseAllowance {
             spender: spender.clone(),
             amount: allow1,
@@ -393,7 +408,7 @@ mod tests {
 
         // set allowance with height expiration
         let allow1 = Uint128::new(7777);
-        let expires = Expiration::AtHeight(5432);
+        let expires = Expiration::AtHeight(123_456);
         let msg = ExecuteMsg::IncreaseAllowance {
             spender: spender.clone(),
             amount: allow1,
@@ -548,15 +563,17 @@ mod tests {
         let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
-        // let us increase limit, but set the expiration (default env height is 12_345)
+        // let us increase limit, but set the expiration to expire in the next block
         let info = mock_info(owner.as_ref(), &[]);
-        let env = mock_env();
+        let mut env = mock_env();
         let msg = ExecuteMsg::IncreaseAllowance {
             spender: spender.clone(),
             amount: Uint128::new(1000),
-            expires: Some(Expiration::AtHeight(env.block.height)),
+            expires: Some(Expiration::AtHeight(env.block.height + 1)),
         };
-        execute(deps.as_mut(), env, info, msg).unwrap();
+        execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+        env.block.height += 1;
 
         // we should now get the expiration error
         let msg = ExecuteMsg::TransferFrom {
@@ -565,7 +582,6 @@ mod tests {
             amount: Uint128::new(33443),
         };
         let info = mock_info(spender.as_ref(), &[]);
-        let env = mock_env();
         let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert_eq!(err, ContractError::Expired {});
     }
@@ -625,15 +641,18 @@ mod tests {
         let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
-        // let us increase limit, but set the expiration (default env height is 12_345)
+        // let us increase limit, but set the expiration to expire in the next block
         let info = mock_info(owner.as_ref(), &[]);
-        let env = mock_env();
+        let mut env = mock_env();
         let msg = ExecuteMsg::IncreaseAllowance {
             spender: spender.clone(),
             amount: Uint128::new(1000),
-            expires: Some(Expiration::AtHeight(env.block.height)),
+            expires: Some(Expiration::AtHeight(env.block.height + 1)),
         };
-        execute(deps.as_mut(), env, info, msg).unwrap();
+        execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+        // increase block height, so the limit is expired now
+        env.block.height += 1;
 
         // we should now get the expiration error
         let msg = ExecuteMsg::BurnFrom {
@@ -641,7 +660,6 @@ mod tests {
             amount: Uint128::new(33443),
         };
         let info = mock_info(spender.as_ref(), &[]);
-        let env = mock_env();
         let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert_eq!(err, ContractError::Expired {});
     }
@@ -726,15 +744,18 @@ mod tests {
         let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
-        // let us increase limit, but set the expiration to current block (expired)
+        // let us increase limit, but set the expiration to the next block
         let info = mock_info(owner.as_ref(), &[]);
-        let env = mock_env();
+        let mut env = mock_env();
         let msg = ExecuteMsg::IncreaseAllowance {
             spender: spender.clone(),
             amount: Uint128::new(1000),
-            expires: Some(Expiration::AtHeight(env.block.height)),
+            expires: Some(Expiration::AtHeight(env.block.height + 1)),
         };
-        execute(deps.as_mut(), env, info, msg).unwrap();
+        execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+        // increase block height, so the limit is expired now
+        env.block.height += 1;
 
         // we should now get the expiration error
         let msg = ExecuteMsg::SendFrom {
@@ -744,8 +765,124 @@ mod tests {
             msg: send_msg,
         };
         let info = mock_info(spender.as_ref(), &[]);
-        let env = mock_env();
         let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert_eq!(err, ContractError::Expired {});
+    }
+
+    #[test]
+    fn no_past_expiration() {
+        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+
+        let owner = String::from("addr0001");
+        let spender = String::from("addr0002");
+        let info = mock_info(owner.as_ref(), &[]);
+        let env = mock_env();
+        do_instantiate(deps.as_mut(), owner.clone(), Uint128::new(12340000));
+
+        // set allowance with height expiration at current block height
+        let expires = Expiration::AtHeight(env.block.height);
+        let msg = ExecuteMsg::IncreaseAllowance {
+            spender: spender.clone(),
+            amount: Uint128::new(7777),
+            expires: Some(expires),
+        };
+
+        // ensure it is rejected
+        assert_eq!(
+            Err(ContractError::InvalidExpiration {}),
+            execute(deps.as_mut(), env.clone(), info.clone(), msg)
+        );
+
+        // set allowance with time expiration in the past
+        let expires = Expiration::AtTime(env.block.time.minus_seconds(1));
+        let msg = ExecuteMsg::IncreaseAllowance {
+            spender: spender.clone(),
+            amount: Uint128::new(7777),
+            expires: Some(expires),
+        };
+
+        // ensure it is rejected
+        assert_eq!(
+            Err(ContractError::InvalidExpiration {}),
+            execute(deps.as_mut(), env.clone(), info.clone(), msg)
+        );
+
+        // set allowance with height expiration at next block height
+        let expires = Expiration::AtHeight(env.block.height + 1);
+        let allow = Uint128::new(7777);
+        let msg = ExecuteMsg::IncreaseAllowance {
+            spender: spender.clone(),
+            amount: allow,
+            expires: Some(expires),
+        };
+
+        execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+        // ensure it looks good
+        let allowance = query_allowance(deps.as_ref(), owner.clone(), spender.clone()).unwrap();
+        assert_eq!(
+            allowance,
+            AllowanceResponse {
+                allowance: allow,
+                expires
+            }
+        );
+
+        // set allowance with time expiration in the future
+        let expires = Expiration::AtTime(env.block.time.plus_seconds(10));
+        let allow = Uint128::new(7777);
+        let msg = ExecuteMsg::IncreaseAllowance {
+            spender: spender.clone(),
+            amount: allow,
+            expires: Some(expires),
+        };
+
+        execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+        // ensure it looks good
+        let allowance = query_allowance(deps.as_ref(), owner.clone(), spender.clone()).unwrap();
+        assert_eq!(
+            allowance,
+            AllowanceResponse {
+                allowance: allow + allow, // we increased twice
+                expires
+            }
+        );
+
+        // decrease with height expiration at current block height
+        let expires = Expiration::AtHeight(env.block.height);
+        let allow = Uint128::new(7777);
+        let msg = ExecuteMsg::IncreaseAllowance {
+            spender: spender.clone(),
+            amount: allow,
+            expires: Some(expires),
+        };
+
+        // ensure it is rejected
+        assert_eq!(
+            Err(ContractError::InvalidExpiration {}),
+            execute(deps.as_mut(), env.clone(), info.clone(), msg)
+        );
+
+        // decrease with height expiration at next block height
+        let expires = Expiration::AtHeight(env.block.height + 1);
+        let allow = Uint128::new(7777);
+        let msg = ExecuteMsg::DecreaseAllowance {
+            spender: spender.clone(),
+            amount: allow,
+            expires: Some(expires),
+        };
+
+        execute(deps.as_mut(), env, info, msg).unwrap();
+
+        // ensure it looks good
+        let allowance = query_allowance(deps.as_ref(), owner, spender).unwrap();
+        assert_eq!(
+            allowance,
+            AllowanceResponse {
+                allowance: allow,
+                expires
+            }
+        );
     }
 }

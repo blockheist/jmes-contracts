@@ -3,7 +3,10 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use identityservice::msg::{ExecuteMsg, IdentityResponse, InstantiateMsg, QueryMsg};
+use identityservice::msg::{
+    DaosResponse, ExecuteMsg, GetIdentityByNameResponse, GetIdentityByOwnerResponse,
+    InstantiateMsg, QueryMsg,
+};
 use identityservice::state::Identity;
 
 fn main() {
@@ -16,5 +19,7 @@ fn main() {
     export_schema(&schema_for!(ExecuteMsg), &out_dir);
     export_schema(&schema_for!(QueryMsg), &out_dir);
     export_schema(&schema_for!(Identity), &out_dir);
-    export_schema(&schema_for!(IdentityResponse), &out_dir);
+    export_schema(&schema_for!(GetIdentityByNameResponse), &out_dir);
+    export_schema(&schema_for!(GetIdentityByOwnerResponse), &out_dir);
+    export_schema(&schema_for!(DaosResponse), &out_dir);
 }

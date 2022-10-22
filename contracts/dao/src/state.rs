@@ -1,6 +1,4 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, BlockInfo, CosmosMsg, Decimal, Empty, StdResult, Storage, Uint128};
 
 use cw3::{Status, Vote};
@@ -11,7 +9,7 @@ use cw_utils::{Duration, Expiration, Threshold};
 // Note: `10u128.pow(9)` fails as "u128::pow` is not yet stable as a const fn"
 const PRECISION_FACTOR: u128 = 1_000_000_000;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct Config {
     pub threshold: Threshold,
     pub total_weight: u64,
@@ -19,7 +17,7 @@ pub struct Config {
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct Proposal {
     pub title: String,
     pub description: String,
@@ -127,7 +125,7 @@ impl Proposal {
 }
 
 // weight of votes for each option
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct Votes {
     pub yes: u64,
     pub no: u64,
@@ -171,7 +169,7 @@ fn votes_needed(weight: u64, percentage: Decimal) -> u64 {
 
 // we cast a ballot with our chosen vote and a given weight
 // stored under the key that voted
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct Ballot {
     pub weight: u64,
     pub vote: Vote,

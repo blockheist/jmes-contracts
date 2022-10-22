@@ -1,8 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::Addr;
-use cw_storage_plus::{Index, IndexList, IndexedMap, Item, UniqueIndex};
+use cosmwasm_std::{Addr, StdResult, Storage};
+use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, UniqueIndex};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
@@ -44,4 +44,13 @@ pub fn identities<'a>() -> IndexedMap<'a, String, Identity, IdentityIndexes<'a>>
         name: UniqueIndex::new(|d| d.name.clone().to_string(), "identity"),
     };
     IndexedMap::new("identity", indexes)
+}
+
+pub const DAO_COUNT: Item<u64> = Item::new("dao_count");
+pub const DAOS: Map<u64, Addr> = Map::new("daos");
+
+pub fn next_dao_id(store: &mut dyn Storage) -> StdResult<u64> {
+    let id: u64 = DAO_COUNT.may_load(store)?.unwrap_or_default() + 1;
+    DAO_COUNT.save(store, &id)?;
+    Ok(id)
 }

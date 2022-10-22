@@ -1,4 +1,5 @@
-use cosmwasm_std::{Addr, Decimal, Env, StdResult, Storage, Uint128};
+use crate::msg::Feature;
+use cosmwasm_std::{Addr, CosmosMsg, Decimal, Env, StdResult, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -10,8 +11,13 @@ pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
 pub const PROPOSALS: Map<u64, Proposal> = Map::new("proposals");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct Config {
+    pub owner: Option<Addr>,
     pub bjmes_token_addr: Addr,
+    pub distribution_addr: Option<Addr>,
+    pub artist_curator_addr: Option<Addr>,
+    pub identityservice_addr: Option<Addr>,
     pub proposal_required_deposit: Uint128,
     // Required percentage for a proposal to pass, e.g. 51
     pub proposal_required_percentage: u64,
@@ -23,11 +29,13 @@ pub struct Config {
     pub voting_period_length: u64,
 }
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(rename_all = "snake_case")]
 pub struct Proposal {
     pub id: u64,
     pub dao: Addr,
     pub title: String,
     pub description: String,
+    pub prop_type: ProposalType,
     pub coins_yes: Uint128,
     pub coins_no: Uint128,
     pub yes_voters: Vec<Addr>,
@@ -38,6 +46,7 @@ pub struct Proposal {
     pub voting_start: u64,
     pub voting_end: u64,
     pub concluded: bool,
+    pub msgs: Option<Vec<CosmosMsg>>,
 }
 
 impl Proposal {
@@ -86,6 +95,7 @@ impl Proposal {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum ProposalStatus {
     Posted,
     Voting,
@@ -94,8 +104,16 @@ pub enum ProposalStatus {
     SuccessConcluded,
     ExpiredConcluded,
 }
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ProposalType {
+    Text {},
+    FeatureRequest(Feature),
+    Funding {},
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum VoteOption {
     Yes,
     No,

@@ -1,21 +1,29 @@
 // #[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
+use cosmwasm_std::{entry_point, Order};
 use cosmwasm_std::{
     to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response, StdError,
     StdResult, SubMsg, WasmMsg,
 };
 use cw2::set_contract_version;
+use cw_storage_plus::Bound;
 use cw_utils::parse_reply_instantiate_data;
 use dao::msg::NameResponse;
 use dao::msg::QueryMsg as DaoQueryMsg;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, IdentityResponse, InstantiateMsg, QueryMsg};
-use crate::state::{identities, Config, IdType, Identity, CONFIG};
+use crate::msg::{
+    DaosResponse, ExecuteMsg, GetIdentityByNameResponse, GetIdentityByOwnerResponse,
+    InstantiateMsg, Ordering, QueryMsg,
+};
+use crate::state::{identities, next_dao_id, Config, IdType, Identity, CONFIG, DAOS};
 use jmes::msg::DaoInstantiateMsg;
 
 const MIN_NAME_LENGTH: u64 = 3;
 const MAX_NAME_LENGTH: u64 = 20;
+
+// settings for pagination
+const MAX_LIMIT: u32 = 30;
+const DEFAULT_LIMIT: u32 = 10;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "identityservice";
@@ -97,20 +105,13 @@ pub fn execute_register_user(
 pub fn execute_register_dao(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     dao_instantiate_msg: DaoInstantiateMsg,
 ) -> Result<Response, ContractError> {
     // Validate requested identity name
     validate_name(&dao_instantiate_msg.dao_name)?;
 
     let config: Config = CONFIG.load(deps.storage)?;
-
-    // Check if requesting address already has an identity registered
-    let maybe_address_exists = identities().may_load(deps.storage, info.sender.to_string());
-
-    if maybe_address_exists?.is_some() {
-        return Err(ContractError::AlreadyRegistered {});
-    }
 
     // Check if requested name is already taken
     let maybe_name_exists = identities()
@@ -169,12 +170,16 @@ fn instantiate_dao_reply(deps: DepsMut, msg: Reply) -> Result<Response, Contract
 
     // Store requested name as an identity struct
     let identity = Identity {
-        owner: dao_addr,
+        owner: dao_addr.clone(),
         name,
         id_type: IdType::Dao,
     };
 
     identities().save(deps.storage, identity.owner.to_string(), &identity)?;
+
+    // This is used to allow paginating through all daos
+    let dao_id = next_dao_id(deps.storage)?;
+    DAOS.save(deps.storage, dao_id, &dao_addr)?;
 
     Ok(Response::new().add_attribute("reply", format!("{:?}", reply)))
 }
@@ -184,18 +189,44 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetIdentityByOwner { owner } => to_binary(&query_identity_by_owner(deps, owner)?),
         QueryMsg::GetIdentityByName { name } => to_binary(&query_identity_by_name(deps, name)?),
+        QueryMsg::Daos {
+            start_after,
+            limit,
+            order,
+        } => to_binary(&daos(deps, start_after, limit, order)?),
     }
 }
 
-fn query_identity_by_owner(deps: Deps, owner: String) -> StdResult<IdentityResponse> {
+pub fn daos(
+    deps: Deps,
+    start_after: Option<u64>,
+    limit: Option<u32>,
+    order: Option<Ordering>,
+) -> StdResult<DaosResponse> {
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start = start_after.map(Bound::exclusive);
+
+    let order = match order {
+        Some(Ordering::Ascending) => Order::Ascending,
+        Some(Ordering::Descending) => Order::Descending,
+        _ => Order::Ascending,
+    };
+
+    let daos = DAOS
+        .range(deps.storage, start, None, order)
+        .take(limit)
+        .collect::<StdResult<_>>()?;
+    Ok(DaosResponse { daos })
+}
+fn query_identity_by_owner(deps: Deps, owner: String) -> StdResult<GetIdentityByOwnerResponse> {
     let maybe_identity = identities().may_load(deps.storage, owner)?;
 
-    Ok(IdentityResponse {
+    Ok(GetIdentityByOwnerResponse {
         identity: maybe_identity,
     })
 }
 
-fn query_identity_by_name(deps: Deps, name: String) -> StdResult<IdentityResponse> {
+fn query_identity_by_name(deps: Deps, name: String) -> StdResult<GetIdentityByNameResponse> {
     let maybe_identity_result = identities().idx.name.item(deps.storage, name);
 
     let maybe_identity = match maybe_identity_result? {
@@ -203,7 +234,7 @@ fn query_identity_by_name(deps: Deps, name: String) -> StdResult<IdentityRespons
         None => None,
     };
 
-    Ok(IdentityResponse {
+    Ok(GetIdentityByNameResponse {
         identity: maybe_identity,
     })
 }

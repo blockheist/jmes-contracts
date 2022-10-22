@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "baseUrl": ".",
+    "module": "esnext",
+    "paths": {
+      "lib/*": ["lib/*"],
+      "test/*": ["tests/*"]
+    },
+    "moduleResolution": "node",
+    "useDefineForClassFields": false,
+  },
+}

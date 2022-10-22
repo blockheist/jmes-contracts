@@ -50,13 +50,3 @@ pub fn grants<'a>() -> IndexedMap<'a, String, Grant, GrantIndexes<'a>> {
     IndexedMap::new("grants", indexes)
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct GrantResponse {
-    pub grant_id: u64,
-    pub dao: Addr,
-    pub amount_approved: Uint128,
-    pub amount_remaining: Uint128,
-    pub started: Timestamp,
-    pub expires: Timestamp,
-    pub claimable_amount: Uint128,
-}

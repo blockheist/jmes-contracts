@@ -41,6 +41,55 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "daos"
+      ],
+      "properties": {
+        "daos": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "order": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Ordering"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "start_after": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
     }
-  ]
+  ],
+  "definitions": {
+    "Ordering": {
+      "type": "string",
+      "enum": [
+        "ascending",
+        "descending"
+      ]
+    }
+  }
 }
