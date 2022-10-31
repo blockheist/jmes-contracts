@@ -20,6 +20,7 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
 library = []
+tests = ["library", "cw-multi-test"]
 
 # [package.metadata.scripts]
 # optimize = """docker run --rm -v "$(pwd)":/code \
@@ -30,6 +31,7 @@ library = []
 
 [dependencies]
 cosmwasm-std = "1.0.0"
+cw-multi-test = { version = "0.15.0", optional = true }
 cosmwasm-storage = "1.0.0"
 cw-storage-plus = "0.15.0"
 cw2 = "0.15.0"

@@ -25,7 +25,7 @@ use crate::state::{
 };
 
 // version info for migration info
-const CONTRACT_NAME: &str = "bondedjmes";
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const LOGO_SIZE_CAP: usize = 5 * 1024;
@@ -50,7 +50,7 @@ fn verify_xml_preamble(data: &[u8]) -> Result<(), ContractError> {
     }
 
     // Additionally attributes format could be validated as they are well defined, as well as
-    // comments presence inside of preable, but it is probably not worth it.
+    // comments presence inside of preamble, but it is probably not worth it.
 }
 
 /// Validates XML logo

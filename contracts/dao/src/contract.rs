@@ -22,7 +22,7 @@ use crate::state::{next_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PR
 use jmes::msg::DaoInstantiateMsg as InstantiateMsg;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "dao";
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -484,6 +484,7 @@ mod tests {
             voters,
             threshold,
             max_voting_period,
+            dao_name: todo!(),
         };
         instantiate(deps, mock_env(), info, instantiate_msg)
     }
@@ -521,6 +522,7 @@ mod tests {
                 quorum: Decimal::percent(1),
             },
             max_voting_period,
+            dao_name: todo!(),
         };
         let err = instantiate(
             deps.as_mut(),

@@ -16,7 +16,7 @@ use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "distribution";
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const DEFAULT_LIMIT: u32 = 10;

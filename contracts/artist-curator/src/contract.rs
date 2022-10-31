@@ -24,7 +24,7 @@ use identityservice::state::IdType::Dao;
 use cw_utils::parse_reply_instantiate_data;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "artist-curator";
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const INSTANTIATE_ARTIST_NFT_REPLY_ID: u64 = 1;

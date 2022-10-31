@@ -13,7 +13,7 @@ use identityservice::msg::QueryMsg::GetIdentityByOwner;
 use identityservice::state::IdType::Dao;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "governance";
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // Default pagination constants
@@ -95,8 +95,9 @@ mod exec {
 
     use crate::contract::query::period_info;
     use crate::msg::{AddGrant, AddGrantMsg, Feature, PeriodInfoResponse, ProposalPeriod};
+    use crate::state::ProposalStatus;
     use crate::state::{
-        Proposal, ProposalStatus, ProposalType,
+        Proposal, ProposalType,
         VoteOption::{self, *},
         PROPOSALS,
     };
@@ -107,6 +108,8 @@ mod exec {
         info: MessageInfo,
         cw20_msg: Cw20ReceiveMsg,
     ) -> Result<Response, ContractError> {
+        println!("\n\n info {:?}", info);
+        println!("\n\n cw20_msg {:?}", cw20_msg);
         let config = CONFIG.load(deps.storage)?;
         let period_info = period_info(deps.as_ref(), env.clone())?;
         let deposit_amount = cw20_msg.amount;
@@ -229,6 +232,8 @@ mod exec {
             msgs: None,
         };
 
+        proposal.validate()?;
+
         PROPOSALS.save(deps.storage, id, &proposal)?;
 
         Ok(Response::new())
@@ -279,6 +284,8 @@ mod exec {
         };
 
         println!("\n\nproposal {:?}", proposal);
+
+        proposal.validate()?;
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
 
@@ -335,6 +342,8 @@ mod exec {
 
         println!("\n\nproposal {:?}", proposal);
 
+        proposal.validate()?;
+
         PROPOSALS.save(deps.storage, id, &proposal)?;
 
         Ok(Response::new())
@@ -358,6 +367,15 @@ mod exec {
 
             let mut proposal = PROPOSALS.load(deps.storage, id)?;
 
+            println!("\n\n proposal {:?}", proposal);
+            if proposal.concluded {
+                return Err(ContractError::ProposalAlreadyConcluded {});
+            }
+
+            if proposal.voting_end < env.block.time.seconds() {
+                return Err(ContractError::ProposalVotingEnded {});
+            }
+
             if proposal.yes_voters.contains(&info.sender)
                 || proposal.no_voters.contains(&info.sender)
             {
@@ -368,7 +386,7 @@ mod exec {
                 config.bjmes_token_addr,
                 &BjmesQueryMsg::Balance {
                     address: info.sender.to_string(),
-                    // block: proposal.start_block,
+                    // block: proposal.start_block, // TODO enable block height balance lookup
                 },
             )?;
 
@@ -404,6 +422,10 @@ mod exec {
             return Err(ContractError::VotingPeriodNotEnded {});
         }
 
+        if proposal.concluded {
+            return Err(ContractError::ProposalAlreadyConcluded {});
+        }
+
         proposal.concluded = true;
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
@@ -420,12 +442,13 @@ mod exec {
             funds: vec![],
         }));
 
-        // Execute proposal msgs on success
-        // if proposal.status(env, config.proposal_required_percentage) == ProposalStatus::Success
-        //     && proposal.msgs.is_some()
-        // {
-        msgs.extend(proposal.msgs.unwrap());
-        // }
+        // Only execute proposal msgs on success
+        if proposal.status(env, config.proposal_required_percentage)
+            == ProposalStatus::SuccessConcluded
+            && proposal.msgs.is_some()
+        {
+            msgs.extend(proposal.msgs.unwrap());
+        }
 
         Ok(Response::new().add_messages(msgs))
     }
@@ -440,6 +463,7 @@ mod exec {
         identityservice: String,
     ) -> Result<Response, ContractError> {
         let mut config = CONFIG.load(deps.storage)?;
+        println!("\n\n config {:?}", config);
 
         if config.owner.is_none() || info.sender != config.owner.unwrap() {
             return Err(ContractError::Unauthorized {});

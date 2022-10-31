@@ -5,6 +5,8 @@ use msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 pub mod contract;
 pub mod error;
 pub mod msg;
+#[cfg(any(test, feature = "tests"))]
+pub mod multitest;
 pub mod state;
 
 #[cfg_attr(not(feature = "library"), entry_point)]

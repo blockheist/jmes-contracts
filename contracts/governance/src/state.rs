@@ -1,9 +1,17 @@
-use crate::msg::Feature;
+use crate::{error::ContractError, msg::Feature};
 use cosmwasm_std::{Addr, CosmosMsg, Decimal, Env, StdResult, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+/// Proposal validation attributes
+const MIN_TITLE_LENGTH: usize = 4;
+const MAX_TITLE_LENGTH: usize = 64;
+const MIN_DESC_LENGTH: usize = 4;
+const MAX_DESC_LENGTH: usize = 1024;
+
+/// Special characters that are allowed in proposal text
+const SAFE_TEXT_CHARS: &str = "!&?#()*+'-./\"";
 pub const CONFIG: Item<Config> = Item::new("config");
 
 pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
@@ -91,6 +99,48 @@ impl Proposal {
             };
         }
         status
+    }
+
+    pub fn validate(&self) -> Result<(), ContractError> {
+        // Title validation
+        if self.title.len() < MIN_TITLE_LENGTH {
+            return Err(ContractError::ProposalNotValid {
+                error: "Title too short!".into(),
+            });
+        }
+        if self.title.len() > MAX_TITLE_LENGTH {
+            return Err(ContractError::ProposalNotValid {
+                error: "Title too long!".into(),
+            });
+        }
+        if !self.title.chars().all(|c| {
+            c.is_ascii_alphanumeric() || c.is_ascii_whitespace() || SAFE_TEXT_CHARS.contains(c)
+        }) {
+            return Err(ContractError::ProposalNotValid {
+                error: "Title is not in alphanumeric format!".into(),
+            });
+        }
+
+        // Description validation
+        if self.description.len() < MIN_DESC_LENGTH {
+            return Err(ContractError::ProposalNotValid {
+                error: "Description too short!".into(),
+            });
+        }
+        if self.description.len() > MAX_DESC_LENGTH {
+            return Err(ContractError::ProposalNotValid {
+                error: "Description too long!".into(),
+            });
+        }
+        if !self.description.chars().all(|c| {
+            c.is_ascii_alphanumeric() || c.is_ascii_whitespace() || SAFE_TEXT_CHARS.contains(c)
+        }) {
+            return Err(ContractError::ProposalNotValid {
+                error: "Description is not in alphanumeric format".into(),
+            });
+        }
+
+        Ok(())
     }
 }
 

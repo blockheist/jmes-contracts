@@ -21,6 +21,12 @@ pub enum ContractError {
     NotVotingPeriod {},
     #[error("VotingPeriodNotEnded")]
     VotingPeriodNotEnded,
+    #[error("ProposalNotValid {error} ")]
+    ProposalNotValid { error: String },
+    #[error("ProposalAlreadyConcluded")]
+    ProposalAlreadyConcluded {},
+    #[error("ProposalVotingEnded")]
+    ProposalVotingEnded {},
 }
 
 impl From<OverflowError> for ContractError {

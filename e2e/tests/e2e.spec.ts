@@ -203,8 +203,8 @@ describe("End-to-End Tests", function () {
       // Dao Proposal Msg (Executes the bondedJMES (cw20) Send Msg)
       const msg: Dao.ExecuteMsg = {
         propose: {
-          title: "Funds withdrawal",
-          description: "Spend 1000 coins",
+          title: "Request Funding from Governance",
+          description: "Make us rich",
           msgs: [
             {
               wasm: wasmMsg
