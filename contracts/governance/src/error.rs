@@ -27,6 +27,8 @@ pub enum ContractError {
     ProposalAlreadyConcluded {},
     #[error("ProposalVotingEnded")]
     ProposalVotingEnded {},
+    #[error("InvalidProposalType")]
+    InvalidProposalType {},
 }
 
 impl From<OverflowError> for ContractError {

@@ -1,4 +1,7 @@
-use crate::{error::ContractError, msg::Feature};
+use crate::{
+    error::ContractError,
+    msg::{CoreSlot, Feature},
+};
 use cosmwasm_std::{Addr, CosmosMsg, Decimal, Env, StdResult, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -12,12 +15,29 @@ const MAX_DESC_LENGTH: usize = 1024;
 
 /// Special characters that are allowed in proposal text
 const SAFE_TEXT_CHARS: &str = "!&?#()*+'-./\"";
+
 pub const CONFIG: Item<Config> = Item::new("config");
+
+pub const CORE_SLOTS: Item<CoreSlots> = Item::new("core_slots");
 
 pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
 
 pub const PROPOSALS: Map<u64, Proposal> = Map::new("proposals");
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct SlotVoteResult {
+    pub dao: Addr,
+    pub yes_ratio: Decimal,
+    pub proposal_voting_end: u64,
+}
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct CoreSlots {
+    pub brand: Option<SlotVoteResult>,
+    pub creative: Option<SlotVoteResult>,
+    pub core_tech: Option<SlotVoteResult>,
+}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
@@ -160,6 +180,8 @@ pub enum ProposalType {
     Text {},
     FeatureRequest(Feature),
     Funding {},
+    Improvement {},
+    CoreSlot(CoreSlot),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, CosmosMsg, Uint128};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -38,15 +38,18 @@ pub enum ExecuteMsg {
         distribution: String,
         artist_curator: String,
         identityservice: String,
-    }, // ImprovementProposal {},
-       // ConfigChangeProposal {},
-       // RemoveFeature { feature: Feature },
+    },
+    SetCoreSlot {
+        proposal_id: u64,
 
-       // RequestCoreSlot { core_slot: CoreSlot },
+    },
+    // RemoveFeature { feature: Feature },
 
-       // RemoveCoreSlot { core_slot: CoreSlot },
-       // BurnArtistNft {},
-       // BurnArtNft {}
+    // RequestCoreSlot { core_slot: CoreSlot },
+
+    // RemoveCoreSlot { core_slot: CoreSlot },
+    // BurnArtistNft {},
+    // BurnArtNft {}
 }
 
 /// This structure stores data for a CW20 hook message.
@@ -67,6 +70,16 @@ pub enum Cw20HookMsg {
         description: String,
         duration: u64,
         amount: Uint128,
+    },
+    Improvement {
+        title: String,
+        description: String,
+        msgs: Vec<CosmosMsg>,
+    },
+    CoreSlot {
+        title: String,
+        description: String,
+        slot: CoreSlot,
     },
 }
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
@@ -92,9 +105,7 @@ pub enum Feature {
 #[serde(rename_all = "snake_case")]
 pub enum CoreSlot {
     Brand {},
-    Marketing {},
     Creative {},
-    BizDev {},
     CoreTech {},
 }
 

@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 // use crate::msg::Feature::ArtistCurator;
 use crate::msg::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{Config, CONFIG, PROPOSAL_COUNT};
+use crate::state::{Config, CoreSlots, CONFIG, CORE_SLOTS, PROPOSAL_COUNT};
 use artist_curator::msg::ExecuteMsg::ApproveCurator;
 use bjmes_token::msg::QueryMsg as BjmesQueryMsg;
 use cosmwasm_std::{
@@ -44,6 +44,15 @@ pub fn instantiate(
 
     CONFIG.save(deps.storage, &config)?;
 
+    CORE_SLOTS.save(
+        deps.storage,
+        &CoreSlots {
+            brand: None,
+            core_tech: None,
+            creative: None,
+        },
+    )?;
+
     PROPOSAL_COUNT.save(deps.storage, &(0 as u64))?;
     Ok(Response::new())
 }
@@ -71,6 +80,7 @@ pub fn execute(
         Receive(cw20_msg) => exec::receive_cw20(deps, env, info, cw20_msg),
         Vote { id, vote } => exec::vote(deps, env, info, id, vote),
         Conclude { id } => exec::conclude(deps, env, id),
+        SetCoreSlot { proposal_id } => exec::set_core_slot(deps, env, info, proposal_id),
         SetContract {
             distribution,
             artist_curator,
@@ -87,20 +97,23 @@ pub fn execute(
 }
 
 mod exec {
-    use cosmwasm_std::{Addr, CosmosMsg, Uint128, WasmMsg};
+    use crate::contract::exec::CosmosMsg::Wasm;
+    use cosmwasm_std::{Addr, CosmosMsg, Decimal, Uint128, WasmMsg};
     use cw20::{BalanceResponse, Cw20ExecuteMsg};
     use identityservice::msg::GetIdentityByOwnerResponse;
 
     use super::*;
 
     use crate::contract::query::period_info;
-    use crate::msg::{AddGrant, AddGrantMsg, Feature, PeriodInfoResponse, ProposalPeriod};
-    use crate::state::ProposalStatus;
+    use crate::msg::{
+        AddGrant, AddGrantMsg, CoreSlot, Feature, PeriodInfoResponse, ProposalPeriod,
+    };
     use crate::state::{
         Proposal, ProposalType,
         VoteOption::{self, *},
         PROPOSALS,
     };
+    use crate::state::{ProposalStatus, SlotVoteResult, CORE_SLOTS};
 
     pub fn receive_cw20(
         deps: DepsMut,
@@ -196,6 +209,44 @@ mod exec {
                     description,
                     duration,
                     amount,
+                )
+            }
+            Cw20HookMsg::Improvement {
+                title,
+                description,
+                msgs,
+            } => {
+                let sender = deps.api.addr_validate(&cw20_msg.sender)?;
+                improvement(
+                    deps,
+                    info,
+                    env,
+                    sender,
+                    config,
+                    period_info,
+                    deposit_amount,
+                    title,
+                    description,
+                    msgs,
+                )
+            }
+            Cw20HookMsg::CoreSlot {
+                title,
+                description,
+                slot,
+            } => {
+                let sender = deps.api.addr_validate(&cw20_msg.sender)?;
+                core_slot(
+                    deps,
+                    info,
+                    env,
+                    sender,
+                    config,
+                    period_info,
+                    deposit_amount,
+                    title,
+                    description,
+                    slot,
                 )
             }
         }
@@ -305,7 +356,7 @@ mod exec {
         duration: u64,
         amount: Uint128,
     ) -> Result<Response, ContractError> {
-        // Only daos can submit proposals, only that dao address can receive the grant funding
+        // Only daos can submit proposals and only that dao address can receive the grant funding
         let dao = sender.clone();
 
         let msg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -338,6 +389,97 @@ mod exec {
             voting_end: period_info.current_voting_end,
             concluded: false,
             msgs: Some(vec![msg]),
+        };
+
+        println!("\n\nproposal {:?}", proposal);
+
+        proposal.validate()?;
+
+        PROPOSALS.save(deps.storage, id, &proposal)?;
+
+        Ok(Response::new())
+    }
+
+    pub fn improvement(
+        deps: DepsMut,
+        _info: MessageInfo,
+        env: Env,
+        sender: Addr,
+        _config: Config,
+        period_info: PeriodInfoResponse,
+        deposit_amount: Uint128,
+        title: String,
+        description: String,
+        msgs: Vec<CosmosMsg>,
+    ) -> Result<Response, ContractError> {
+        // TODO only core tech slot dao can submit improvement proposals
+        let core_tech_dao = sender.clone();
+
+        let id = Proposal::next_id(deps.storage)?;
+        let proposal = Proposal {
+            id,
+            dao: core_tech_dao.clone(),
+            title,
+            description,
+            prop_type: ProposalType::Improvement {},
+            coins_no: Uint128::zero(),
+            coins_yes: Uint128::zero(),
+            yes_voters: Vec::new(),
+            no_voters: Vec::new(),
+            deposit_amount,
+            start_block: env.block.height, // used for voting coin lookup
+            posting_start: period_info.current_posting_start,
+            voting_start: period_info.current_voting_start,
+            voting_end: period_info.current_voting_end,
+            concluded: false,
+            msgs: Some(msgs),
+        };
+
+        println!("\n\nproposal {:?}", proposal);
+
+        proposal.validate()?;
+
+        PROPOSALS.save(deps.storage, id, &proposal)?;
+
+        Ok(Response::new())
+    }
+
+    pub fn core_slot(
+        deps: DepsMut,
+        _info: MessageInfo,
+        env: Env,
+        sender: Addr,
+        _config: Config,
+        period_info: PeriodInfoResponse,
+        deposit_amount: Uint128,
+        title: String,
+        description: String,
+        slot: CoreSlot,
+    ) -> Result<Response, ContractError> {
+        let dao = sender.clone();
+
+        let id = Proposal::next_id(deps.storage)?;
+        let proposal = Proposal {
+            id,
+            dao: dao.clone(),
+            title,
+            description,
+            prop_type: ProposalType::CoreSlot(slot.clone()),
+            coins_no: Uint128::zero(),
+            coins_yes: Uint128::zero(),
+            yes_voters: Vec::new(),
+            no_voters: Vec::new(),
+            deposit_amount,
+            start_block: env.block.height, // used for voting coin lookup
+            posting_start: period_info.current_posting_start,
+            voting_start: period_info.current_voting_start,
+            voting_end: period_info.current_voting_end,
+            concluded: false,
+            msgs: Some(vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_binary(&ExecuteMsg::SetCoreSlot { proposal_id: id })?,
+                funds: vec![],
+            })]),
         };
 
         println!("\n\nproposal {:?}", proposal);
@@ -451,6 +593,114 @@ mod exec {
         }
 
         Ok(Response::new().add_messages(msgs))
+    }
+
+    pub fn set_core_slot(
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        proposal_id: u64,
+    ) -> Result<Response, ContractError> {
+        // Only the governance contract itself can set core slots
+        if info.sender != env.contract.address {
+            return Err(ContractError::Unauthorized {});
+        }
+
+        let proposal = PROPOSALS.load(deps.storage, proposal_id)?;
+
+        let dao = deps.api.addr_validate(&proposal.dao.to_string())?;
+
+        let yes_ratio =
+            Decimal::from_ratio(proposal.coins_yes, proposal.coins_yes + proposal.coins_no);
+
+        let proposal_voting_end = proposal.voting_end;
+
+        let some_slot_vote_result = Some(SlotVoteResult {
+            dao,
+            yes_ratio,
+            proposal_voting_end,
+        });
+
+        let mut core_slots = CORE_SLOTS.load(deps.storage)?;
+        let mut result: String;
+
+        fn winning_core_slot(
+            current_slot: SlotVoteResult,
+            new_slot: SlotVoteResult,
+        ) -> (Option<SlotVoteResult>, String) {
+            let mut result: String;
+
+            if new_slot.proposal_voting_end > current_slot.proposal_voting_end {
+                result = "claimed core slot from previous period slot vote result".to_string();
+                (Some(new_slot), result)
+            } else if new_slot.proposal_voting_end == current_slot.proposal_voting_end {
+                if new_slot.yes_ratio > current_slot.yes_ratio {
+                    result =
+                    "claimed core slot from current period slot vote result with smaller yes_ratio".to_string();
+                    (Some(new_slot), result)
+                } else {
+                    result = "error: slot vote result with larger yes_ratio exists".to_string();
+                    (Some(current_slot), result)
+                }
+            } else {
+                // new_slot.proposal_voting_end < current_slot.proposal_voting_end
+                result = "error: proposal is older than current slot vote result".to_string();
+                (Some(current_slot), result)
+            }
+        }
+
+        match proposal.prop_type {
+            ProposalType::CoreSlot(CoreSlot::Brand {}) => {
+                if core_slots.brand.is_none() {
+                    core_slots.brand = some_slot_vote_result;
+                    result = "claimed empty core slot".to_string();
+                } else {
+                    (core_slots.brand, result) = winning_core_slot(
+                        core_slots.brand.unwrap(),
+                        some_slot_vote_result.unwrap(),
+                    );
+                }
+            }
+            ProposalType::CoreSlot(CoreSlot::Creative {}) => {
+                if core_slots.creative.is_none() {
+                    core_slots.creative = some_slot_vote_result;
+                    result = "claimed empty core slot".to_string();
+                } else {
+                    (core_slots.creative, result) = winning_core_slot(
+                        core_slots.creative.unwrap(),
+                        some_slot_vote_result.unwrap(),
+                    );
+                }
+            }
+            ProposalType::CoreSlot(CoreSlot::CoreTech {}) => {
+                if core_slots.core_tech.is_none() {
+                    core_slots.core_tech = some_slot_vote_result;
+                    result = "claimed empty core slot".to_string();
+                } else {
+                    (core_slots.core_tech, result) = winning_core_slot(
+                        core_slots.core_tech.unwrap(),
+                        some_slot_vote_result.unwrap(),
+                    );
+                }
+            }
+            _ => {
+                return Err(ContractError::InvalidProposalType {});
+            }
+        }
+
+        CORE_SLOTS.save(deps.storage, &core_slots)?;
+
+        println!("\n\n core_slots {:#?}", core_slots);
+
+        Ok(Response::new().add_attributes(vec![
+            ("action", "set_core_slot"),
+            ("proposal_id", &proposal_id.to_string()),
+            ("dao", &proposal.dao.to_string()),
+            // ("proposal_type", &proposal.prop_type.to_string()),
+            ("yes_ratio", &yes_ratio.to_string()),
+            ("proposal_voting_end", &proposal_voting_end.to_string()),
+            ("result", &result),
+        ]))
     }
 
     // One time setup function

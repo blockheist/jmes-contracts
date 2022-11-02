@@ -3,11 +3,13 @@ use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 
 use crate::error::ContractError;
 // use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, PeriodInfoResponse, ProposalResponse, QueryMsg};
+use crate::msg::{
+    CoreSlot, ExecuteMsg, InstantiateMsg, PeriodInfoResponse, ProposalResponse, QueryMsg,
+};
 use crate::state::VoteOption;
 use crate::{execute, instantiate, query};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GovernanceContract(Addr);
 
 impl GovernanceContract {
@@ -54,6 +56,23 @@ impl GovernanceContract {
             None,
         )
         .map(GovernanceContract)
+        .map_err(|err| err.downcast().unwrap())
+    }
+
+    #[track_caller]
+    pub fn set_core_slot(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+
+        proposal_id: u64,
+    ) -> Result<AppResponse, ContractError> {
+        app.execute_contract(
+            sender.clone(),
+            self.0.clone(),
+            &ExecuteMsg::SetCoreSlot { proposal_id },
+            &[],
+        )
         .map_err(|err| err.downcast().unwrap())
     }
 

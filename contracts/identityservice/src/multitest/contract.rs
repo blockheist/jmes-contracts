@@ -7,7 +7,7 @@ use crate::contract::{execute, instantiate, query, reply};
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::ContractError;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IdentityserviceContract(Addr);
 
 impl IdentityserviceContract {

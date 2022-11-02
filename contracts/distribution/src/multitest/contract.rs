@@ -7,7 +7,7 @@ use crate::ContractError;
 // use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DistributionContract(Addr);
 
 impl DistributionContract {

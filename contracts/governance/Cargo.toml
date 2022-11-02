@@ -38,19 +38,19 @@ art-nft = { path = "../art-nft", version = "0.14.0", features = [
   "library",
 ]  }
 bjmes-token = { path = "../bjmes-token", version = "0.15.0", features = [
-  "library","cw-multi-test"
+  "library"
 ]  }
 artist-curator = { path = "../artist-curator", version = "0.14.0", features = [
   "library",
 ]  }
 distribution = { path = "../distribution", version = "0.15.0", features = [
-  "library","cw-multi-test"
+  "library"
 ]  }
 identityservice = { path = "../identityservice", version = "0.1.0", features = [
-  "library","cw-multi-test"
+  "library"
 ]  }
 dao = { path = "../dao", version = "0.15.0", features = [
-  "library","cw-multi-test"
+  "library"
 ]  }
 jmes = { path = "../../packages/jmes", version = "0.14.0", features = [
   "library",
@@ -60,3 +60,15 @@ jmes = { path = "../../packages/jmes", version = "0.14.0", features = [
 cw-multi-test = "0.15.0"
 cw3 = { path = "../../packages/cw3", version = "0.15.0"}
 cosmwasm-schema = { version = "1.0.0" }
+dao = { path = "../dao", version = "0.15.0", features = [
+  "tests"
+]  }
+identityservice = { path = "../identityservice", version = "0.1.0", features = [
+  "tests"
+]  }
+distribution = { path = "../distribution", version = "0.15.0", features = [
+  "tests"
+]  }
+bjmes-token = { path = "../bjmes-token", version = "0.15.0", features = [
+  "tests"
+]  }
