@@ -77,6 +77,18 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "core_slots"
+      ],
+      "properties": {
+        "core_slots": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
     }
   ]
 }

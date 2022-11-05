@@ -4,7 +4,8 @@ use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 use crate::error::ContractError;
 // use crate::error::ContractError;
 use crate::msg::{
-    CoreSlot, ExecuteMsg, InstantiateMsg, PeriodInfoResponse, ProposalResponse, QueryMsg,
+    CoreSlot, CoreSlotsResponse, ExecuteMsg, InstantiateMsg, PeriodInfoResponse, ProposalResponse,
+    QueryMsg,
 };
 use crate::state::VoteOption;
 use crate::{execute, instantiate, query};
@@ -71,6 +72,24 @@ impl GovernanceContract {
             sender.clone(),
             self.0.clone(),
             &ExecuteMsg::SetCoreSlot { proposal_id },
+            &[],
+        )
+        .map_err(|err| err.downcast().unwrap())
+    }
+
+    #[track_caller]
+    pub fn resign_core_slot(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+
+        slot: CoreSlot,
+        note: String,
+    ) -> Result<AppResponse, ContractError> {
+        app.execute_contract(
+            sender.clone(),
+            self.0.clone(),
+            &ExecuteMsg::ResignCoreSlot { slot, note },
             &[],
         )
         .map_err(|err| err.downcast().unwrap())
@@ -148,6 +167,12 @@ impl GovernanceContract {
     pub fn query_proposal(&self, app: &mut App, id: u64) -> StdResult<ProposalResponse> {
         app.wrap()
             .query_wasm_smart(self.0.clone(), &QueryMsg::Proposal { id })
+    }
+
+    #[track_caller]
+    pub fn query_core_slots(&self, app: &mut App) -> StdResult<CoreSlotsResponse> {
+        app.wrap()
+            .query_wasm_smart(self.0.clone(), &QueryMsg::CoreSlots {})
     }
 }
 

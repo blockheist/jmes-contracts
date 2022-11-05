@@ -19,5 +19,6 @@ fn main() {
     export_schema(&schema_for!(PeriodInfoResponse), &out_dir);
     export_schema(&schema_for!(ProposalResponse), &out_dir);
     export_schema(&schema_for!(ProposalsResponse), &out_dir);
-    export_schema(&schema_for!(Cw20HookMsg), &out_dir);
+    export_schema(&schema_for!(ProposalMsg), &out_dir);
+    export_schema(&schema_for!(CoreSlotsResponse), &out_dir);
 }

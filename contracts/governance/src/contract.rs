@@ -1,14 +1,11 @@
 use crate::error::ContractError;
 // use crate::msg::Feature::ArtistCurator;
-use crate::msg::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, ProposalMsg, QueryMsg};
 use crate::state::{Config, CoreSlots, CONFIG, CORE_SLOTS, PROPOSAL_COUNT};
 use artist_curator::msg::ExecuteMsg::ApproveCurator;
 use bjmes_token::msg::QueryMsg as BjmesQueryMsg;
-use cosmwasm_std::{
-    from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
-use cw20::Cw20ReceiveMsg;
 use identityservice::msg::QueryMsg::GetIdentityByOwner;
 use identityservice::state::IdType::Dao;
 
@@ -65,6 +62,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         PeriodInfo {} => to_binary(&query::period_info(deps, env)?),
         Proposal { id } => to_binary(&query::proposal(deps, env, id)?),
         Proposals { start, limit } => to_binary(&query::proposals(deps, env, start, limit)?),
+        CoreSlots {} => to_binary(&query::core_slots(deps, env)?),
     }
 }
 
@@ -77,10 +75,12 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
-        Receive(cw20_msg) => exec::receive_cw20(deps, env, info, cw20_msg),
+        Propose(proposal_msg) => exec::proposal(deps, env, info, proposal_msg),
         Vote { id, vote } => exec::vote(deps, env, info, id, vote),
         Conclude { id } => exec::conclude(deps, env, id),
         SetCoreSlot { proposal_id } => exec::set_core_slot(deps, env, info, proposal_id),
+        UnsetCoreSlot { proposal_id } => exec::unset_core_slot(deps, env, info, proposal_id),
+        ResignCoreSlot { slot, note } => exec::resign_core_slot(deps, env, info, slot, note),
         SetContract {
             distribution,
             artist_curator,
@@ -97,9 +97,8 @@ pub fn execute(
 }
 
 mod exec {
-    use crate::contract::exec::CosmosMsg::Wasm;
-    use cosmwasm_std::{Addr, CosmosMsg, Decimal, Uint128, WasmMsg};
-    use cw20::{BalanceResponse, Cw20ExecuteMsg};
+    use cosmwasm_std::{coins, BankMsg, CosmosMsg, Decimal, Uint128, WasmMsg};
+    use cw20::BalanceResponse;
     use identityservice::msg::GetIdentityByOwnerResponse;
 
     use super::*;
@@ -107,6 +106,7 @@ mod exec {
     use crate::contract::query::period_info;
     use crate::msg::{
         AddGrant, AddGrantMsg, CoreSlot, Feature, PeriodInfoResponse, ProposalPeriod,
+        RevokeCoreSlot,
     };
     use crate::state::{
         Proposal, ProposalType,
@@ -115,23 +115,33 @@ mod exec {
     };
     use crate::state::{ProposalStatus, SlotVoteResult, CORE_SLOTS};
 
-    pub fn receive_cw20(
+    pub fn proposal(
         deps: DepsMut,
         env: Env,
         info: MessageInfo,
-        cw20_msg: Cw20ReceiveMsg,
+        proposal_msg: ProposalMsg,
     ) -> Result<Response, ContractError> {
-        println!("\n\n info {:?}", info);
-        println!("\n\n cw20_msg {:?}", cw20_msg);
         let config = CONFIG.load(deps.storage)?;
+
+        // Check if governance is already enabled (ensures fair distribution of coins for proposal deposit)
+        if env.block.time.seconds() <= config.period_start_epoch {
+            return Err(ContractError::TooEarly {
+                start_epoch: config.period_start_epoch,
+            });
+        }
         let period_info = period_info(deps.as_ref(), env.clone())?;
-        let deposit_amount = cw20_msg.amount;
+        let deposit_amount = info
+            .funds
+            .iter()
+            .find(|coin| coin.denom == "uluna")
+            .unwrap()
+            .amount;
 
         // Only DAO identities are allowed to post proposals
         let maybe_identity_resp: GetIdentityByOwnerResponse = deps.querier.query_wasm_smart(
             config.clone().identityservice_addr.unwrap().clone(),
             &GetIdentityByOwner {
-                owner: cw20_msg.sender.clone().into(),
+                owner: info.sender.clone().into(),
             },
         )?;
 
@@ -146,117 +156,106 @@ mod exec {
             return Err(ContractError::NotPostingPeriod {});
         }
 
-        // Only the bondedJMES contract is allowed to provide the deposit
-        if info.sender != config.bjmes_token_addr {
-            return Err(ContractError::Unauthorized {});
-        }
-
         // A minimum deposit is required to post a proposal
         if deposit_amount < Uint128::from(config.proposal_required_deposit) {
             return Err(ContractError::InsufficientDeposit {});
         }
 
-        match from_binary(&cw20_msg.msg)? {
-            Cw20HookMsg::TextProposal { title, description } => {
-                let sender = deps.api.addr_validate(&cw20_msg.sender)?;
-                text_proposal(
-                    deps,
-                    info,
-                    env,
-                    sender,
-                    config,
-                    period_info,
-                    deposit_amount,
-                    title,
-                    description,
-                )
-            }
-            Cw20HookMsg::RequestFeature {
+        match proposal_msg {
+            ProposalMsg::TextProposal { title, description } => text_proposal(
+                deps,
+                info,
+                env,
+                config,
+                period_info,
+                deposit_amount,
+                title,
+                description,
+            ),
+            ProposalMsg::RequestFeature {
                 title,
                 description,
                 feature,
-            } => {
-                let sender = deps.api.addr_validate(&cw20_msg.sender)?;
-                request_feature(
-                    deps,
-                    info,
-                    env,
-                    sender,
-                    config,
-                    period_info,
-                    deposit_amount,
-                    title,
-                    description,
-                    feature,
-                )
-            }
-            Cw20HookMsg::Funding {
+            } => request_feature(
+                deps,
+                info,
+                env,
+                config,
+                period_info,
+                deposit_amount,
+                title,
+                description,
+                feature,
+            ),
+            ProposalMsg::Funding {
                 title,
                 description,
                 duration,
                 amount,
-            } => {
-                let sender = deps.api.addr_validate(&cw20_msg.sender)?;
-                funding(
-                    deps,
-                    info,
-                    env,
-                    sender,
-                    config,
-                    period_info,
-                    deposit_amount,
-                    title,
-                    description,
-                    duration,
-                    amount,
-                )
-            }
-            Cw20HookMsg::Improvement {
+            } => funding(
+                deps,
+                info,
+                env,
+                config,
+                period_info,
+                deposit_amount,
+                title,
+                description,
+                duration,
+                amount,
+            ),
+            ProposalMsg::Improvement {
                 title,
                 description,
                 msgs,
-            } => {
-                let sender = deps.api.addr_validate(&cw20_msg.sender)?;
-                improvement(
-                    deps,
-                    info,
-                    env,
-                    sender,
-                    config,
-                    period_info,
-                    deposit_amount,
-                    title,
-                    description,
-                    msgs,
-                )
-            }
-            Cw20HookMsg::CoreSlot {
+            } => improvement(
+                deps,
+                info,
+                env,
+                config,
+                period_info,
+                deposit_amount,
+                title,
+                description,
+                msgs,
+            ),
+            ProposalMsg::CoreSlot {
                 title,
                 description,
                 slot,
-            } => {
-                let sender = deps.api.addr_validate(&cw20_msg.sender)?;
-                core_slot(
-                    deps,
-                    info,
-                    env,
-                    sender,
-                    config,
-                    period_info,
-                    deposit_amount,
-                    title,
-                    description,
-                    slot,
-                )
-            }
+            } => core_slot(
+                deps,
+                info,
+                env,
+                config,
+                period_info,
+                deposit_amount,
+                title,
+                description,
+                slot,
+            ),
+            ProposalMsg::RevokeCoreSlot {
+                title,
+                description,
+                revoke_slot,
+            } => revoke_core_slot(
+                deps,
+                info,
+                env,
+                config,
+                period_info,
+                deposit_amount,
+                title,
+                description,
+                revoke_slot,
+            ),
         }
     }
 
     pub fn text_proposal(
         deps: DepsMut,
-        _info: MessageInfo,
+        info: MessageInfo,
         env: Env,
-        sender: Addr,
         _config: Config,
         period_info: PeriodInfoResponse,
         deposit_amount: Uint128,
@@ -266,7 +265,7 @@ mod exec {
         let id = Proposal::next_id(deps.storage)?;
         let proposal = Proposal {
             id,
-            dao: sender,
+            dao: info.sender,
             title,
             description,
             prop_type: ProposalType::Text {},
@@ -292,9 +291,8 @@ mod exec {
 
     pub fn request_feature(
         deps: DepsMut,
-        _info: MessageInfo,
+        info: MessageInfo,
         env: Env,
-        sender: Addr,
         config: Config,
         period_info: PeriodInfoResponse,
         deposit_amount: Uint128,
@@ -306,7 +304,7 @@ mod exec {
             Feature::ArtistCurator { approved, duration } => CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: config.artist_curator_addr.unwrap().to_string(),
                 msg: to_binary(&ApproveCurator {
-                    dao: sender.clone(),
+                    dao: info.sender.clone(),
                     approved,
                     duration,
                 })?,
@@ -317,7 +315,7 @@ mod exec {
         let id = Proposal::next_id(deps.storage)?;
         let proposal = Proposal {
             id,
-            dao: sender,
+            dao: info.sender,
             title,
             description,
             prop_type: ProposalType::FeatureRequest(feature),
@@ -345,9 +343,8 @@ mod exec {
 
     pub fn funding(
         deps: DepsMut,
-        _info: MessageInfo,
+        info: MessageInfo,
         env: Env,
-        sender: Addr,
         config: Config,
         period_info: PeriodInfoResponse,
         deposit_amount: Uint128,
@@ -357,7 +354,7 @@ mod exec {
         amount: Uint128,
     ) -> Result<Response, ContractError> {
         // Only daos can submit proposals and only that dao address can receive the grant funding
-        let dao = sender.clone();
+        let dao = info.sender.clone();
 
         let msg = CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: config.distribution_addr.unwrap().to_string(),
@@ -402,9 +399,8 @@ mod exec {
 
     pub fn improvement(
         deps: DepsMut,
-        _info: MessageInfo,
+        info: MessageInfo,
         env: Env,
-        sender: Addr,
         _config: Config,
         period_info: PeriodInfoResponse,
         deposit_amount: Uint128,
@@ -412,8 +408,14 @@ mod exec {
         description: String,
         msgs: Vec<CosmosMsg>,
     ) -> Result<Response, ContractError> {
-        // TODO only core tech slot dao can submit improvement proposals
-        let core_tech_dao = sender.clone();
+        let core_slots = CORE_SLOTS.load(deps.storage)?;
+
+        // Only the CoreSlot DAO can submit proposals
+        if core_slots.core_tech.map(|s| s.dao) != Some(info.sender.clone()) {
+            return Err(ContractError::Unauthorized {});
+        }
+
+        let core_tech_dao = info.sender.clone();
 
         let id = Proposal::next_id(deps.storage)?;
         let proposal = Proposal {
@@ -446,9 +448,8 @@ mod exec {
 
     pub fn core_slot(
         deps: DepsMut,
-        _info: MessageInfo,
+        info: MessageInfo,
         env: Env,
-        sender: Addr,
         _config: Config,
         period_info: PeriodInfoResponse,
         deposit_amount: Uint128,
@@ -456,7 +457,7 @@ mod exec {
         description: String,
         slot: CoreSlot,
     ) -> Result<Response, ContractError> {
-        let dao = sender.clone();
+        let dao = info.sender.clone();
 
         let id = Proposal::next_id(deps.storage)?;
         let proposal = Proposal {
@@ -574,27 +575,163 @@ mod exec {
 
         let mut msgs: Vec<CosmosMsg> = vec![];
 
-        // Refund the proposal deposit
-        msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.bjmes_token_addr.to_string(),
-            msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                recipient: proposal.dao.to_string(),
-                amount: proposal.deposit_amount,
-            })?,
-            funds: vec![],
-        }));
-
         // Only execute proposal msgs on success
         if proposal.status(env, config.proposal_required_percentage)
             == ProposalStatus::SuccessConcluded
             && proposal.msgs.is_some()
         {
             msgs.extend(proposal.msgs.unwrap());
+
+            // Refund the proposal deposit
+            msgs.push(CosmosMsg::Bank(BankMsg::Send {
+                to_address: proposal.dao.to_string(),
+                amount: coins(proposal.deposit_amount.u128(), "uluna"),
+            }));
+        } else {
+            // Forward the proposal deposit to the distribution contract
+            msgs.push(CosmosMsg::Bank(BankMsg::Send {
+                to_address: config.distribution_addr.unwrap().to_string(),
+                amount: coins(proposal.deposit_amount.u128(), "uluna"),
+            }));
         }
 
         Ok(Response::new().add_messages(msgs))
     }
 
+    pub fn resign_core_slot(
+        deps: DepsMut,
+        _env: Env,
+        info: MessageInfo,
+        slot: CoreSlot,
+        note: String,
+    ) -> Result<Response, ContractError> {
+        let mut core_slots = CORE_SLOTS.load(deps.storage)?;
+
+        match slot {
+            CoreSlot::Brand {} => {
+                if core_slots.brand.unwrap().dao != info.sender {
+                    return Err(ContractError::Unauthorized {});
+                }
+                core_slots.brand = None;
+            }
+            CoreSlot::CoreTech {} => {
+                if core_slots.core_tech.unwrap().dao != info.sender {
+                    return Err(ContractError::Unauthorized {});
+                }
+                core_slots.core_tech = None;
+            }
+            CoreSlot::Creative {} => {
+                if core_slots.creative.unwrap().dao != info.sender {
+                    return Err(ContractError::Unauthorized {});
+                }
+                core_slots.creative = None;
+            }
+        }
+
+        CORE_SLOTS.save(deps.storage, &core_slots)?;
+
+        Ok(Response::new()
+            .add_attribute("action", "resign_core_slot")
+            .add_attribute("dao", info.sender.to_string())
+            .add_attribute("slot", slot.to_string())
+            .add_attribute("note", note))
+    }
+
+    pub fn revoke_core_slot(
+        deps: DepsMut,
+        info: MessageInfo,
+        env: Env,
+        _config: Config,
+        period_info: PeriodInfoResponse,
+        deposit_amount: Uint128,
+        title: String,
+        description: String,
+        revoke_slot: RevokeCoreSlot,
+    ) -> Result<Response, ContractError> {
+        let dao = info.sender.clone();
+
+        let id = Proposal::next_id(deps.storage)?;
+        let proposal = Proposal {
+            id,
+            dao: dao.clone(),
+            title,
+            description,
+            prop_type: ProposalType::RevokeCoreSlot(revoke_slot),
+            coins_no: Uint128::zero(),
+            coins_yes: Uint128::zero(),
+            yes_voters: Vec::new(),
+            no_voters: Vec::new(),
+            deposit_amount,
+            start_block: env.block.height, // used for voting coin lookup
+            posting_start: period_info.current_posting_start,
+            voting_start: period_info.current_voting_start,
+            voting_end: period_info.current_voting_end,
+            concluded: false,
+            msgs: Some(vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_binary(&ExecuteMsg::UnsetCoreSlot { proposal_id: id })?,
+                funds: vec![],
+            })]),
+        };
+
+        println!("\n\nproposal {:?}", proposal);
+
+        proposal.validate()?;
+
+        PROPOSALS.save(deps.storage, id, &proposal)?;
+
+        Ok(Response::new())
+    }
+
+    pub fn unset_core_slot(
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        proposal_id: u64,
+    ) -> Result<Response, ContractError> {
+        // Only the governance contract itself can unset core slots
+        if info.sender != env.contract.address {
+            return Err(ContractError::Unauthorized {});
+        }
+
+        let proposal = PROPOSALS.load(deps.storage, proposal_id)?;
+
+        let mut core_slots = CORE_SLOTS.load(deps.storage)?;
+
+        match proposal.prop_type {
+            ProposalType::RevokeCoreSlot(revoke_slot) => match revoke_slot {
+                RevokeCoreSlot { slot, dao } => match slot {
+                    CoreSlot::CoreTech {} => {
+                        if core_slots.core_tech.unwrap().dao != dao {
+                            return Err(ContractError::WrongDao {});
+                        }
+                        core_slots.core_tech = None;
+                    }
+                    CoreSlot::Brand {} => {
+                        if core_slots.brand.unwrap().dao != dao {
+                            return Err(ContractError::WrongDao {});
+                        }
+                        core_slots.brand = None;
+                    }
+                    CoreSlot::Creative {} => {
+                        if core_slots.creative.unwrap().dao != dao {
+                            return Err(ContractError::WrongDao {});
+                        }
+                        core_slots.creative = None;
+                    }
+                },
+            },
+            _ => {
+                return Err(ContractError::ProposalNotValid {
+                    error: "Invalid RevokeCoreSlot proposal".into(),
+                });
+            }
+        }
+
+        CORE_SLOTS.save(deps.storage, &core_slots)?;
+
+        Ok(Response::new())
+    }
     pub fn set_core_slot(
         deps: DepsMut,
         env: Env,
@@ -616,19 +753,34 @@ mod exec {
         let proposal_voting_end = proposal.voting_end;
 
         let some_slot_vote_result = Some(SlotVoteResult {
-            dao,
+            dao: dao.clone(),
             yes_ratio,
             proposal_voting_end,
         });
 
         let mut core_slots = CORE_SLOTS.load(deps.storage)?;
-        let mut result: String;
+
+        // A DAO can only hold one core slot at a time
+        if Some(dao.clone()) == core_slots.brand.as_ref().map(|s| s.dao.clone())
+            || Some(dao.clone()) == core_slots.core_tech.as_ref().map(|s| s.dao.clone())
+            || Some(dao.clone()) == core_slots.creative.as_ref().map(|s| s.dao.clone())
+        {
+            // We don't return an error because we want the proposal to be marked as concluded
+            return Ok(Response::new().add_attributes(vec![
+                ("action", "set_core_slot"),
+                ("proposal_id", &proposal_id.to_string()),
+                ("dao", &proposal.dao.to_string()),
+                ("error", "dao already holds a core slot"),
+            ]));
+        }
+
+        let result: String;
 
         fn winning_core_slot(
             current_slot: SlotVoteResult,
             new_slot: SlotVoteResult,
         ) -> (Option<SlotVoteResult>, String) {
-            let mut result: String;
+            let result: String;
 
             if new_slot.proposal_voting_end > current_slot.proposal_voting_end {
                 result = "claimed core slot from previous period slot vote result".to_string();
@@ -742,7 +894,9 @@ mod query {
     use cosmwasm_std::Order;
     use cw_storage_plus::Bound;
 
-    use crate::msg::{PeriodInfoResponse, ProposalPeriod, ProposalResponse, ProposalsResponse};
+    use crate::msg::{
+        CoreSlotsResponse, PeriodInfoResponse, ProposalPeriod, ProposalResponse, ProposalsResponse,
+    };
     use crate::state::{PROPOSALS, PROPOSAL_COUNT};
 
     use super::*;
@@ -786,6 +940,15 @@ mod query {
             posting_period_length: config.posting_period_length,
             voting_period_length: config.voting_period_length,
             cycle_length: config.posting_period_length + config.voting_period_length,
+        })
+    }
+
+    pub fn core_slots(deps: Deps, _env: Env) -> StdResult<CoreSlotsResponse> {
+        let core_slots = CORE_SLOTS.load(deps.storage)?;
+        Ok(CoreSlotsResponse {
+            brand: core_slots.brand,
+            creative: core_slots.creative,
+            core_tech: core_slots.core_tech,
         })
     }
 

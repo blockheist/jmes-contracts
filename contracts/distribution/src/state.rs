@@ -45,8 +45,11 @@ impl<'a> IndexList<Grant> for GrantIndexes<'a> {
 
 pub fn grants<'a>() -> IndexedMap<'a, String, Grant, GrantIndexes<'a>> {
     let indexes = GrantIndexes {
-        dao: MultiIndex::new(|d: &Grant| d.dao.clone(), "grants", "grants__dao"),
+        dao: MultiIndex::new(
+            |_pk: &[u8], d: &Grant| d.dao.clone(),
+            "grants",
+            "grants__dao",
+        ),
     };
     IndexedMap::new("grants", indexes)
 }
-

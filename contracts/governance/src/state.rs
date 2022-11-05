@@ -1,6 +1,6 @@
 use crate::{
     error::ContractError,
-    msg::{CoreSlot, Feature},
+    msg::{CoreSlot, Feature, RevokeCoreSlot},
 };
 use cosmwasm_std::{Addr, CosmosMsg, Decimal, Env, StdResult, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
@@ -182,6 +182,7 @@ pub enum ProposalType {
     Funding {},
     Improvement {},
     CoreSlot(CoreSlot),
+    RevokeCoreSlot(RevokeCoreSlot),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

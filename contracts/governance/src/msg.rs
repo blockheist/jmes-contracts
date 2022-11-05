@@ -1,9 +1,10 @@
+use std::fmt;
+
 use cosmwasm_std::{Addr, CosmosMsg, Uint128};
-use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::state::{ProposalStatus, ProposalType, VoteOption};
+use crate::state::{ProposalStatus, ProposalType, SlotVoteResult, VoteOption};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -26,7 +27,7 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     /// Receive a message of type [`Cw20ReceiveMsg`]
-    Receive(Cw20ReceiveMsg),
+    Propose(ProposalMsg),
     Vote {
         id: u64,
         vote: VoteOption,
@@ -41,7 +42,13 @@ pub enum ExecuteMsg {
     },
     SetCoreSlot {
         proposal_id: u64,
-
+    },
+    UnsetCoreSlot {
+        proposal_id: u64,
+    },
+    ResignCoreSlot {
+        slot: CoreSlot,
+        note: String, // Can be used to explain why the dao is resigning, is only added as an attribute to the events
     },
     // RemoveFeature { feature: Feature },
 
@@ -52,10 +59,10 @@ pub enum ExecuteMsg {
     // BurnArtNft {}
 }
 
-/// This structure stores data for a CW20 hook message.
+/// This structure stores the parameters for the different proposal types
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum Cw20HookMsg {
+pub enum ProposalMsg {
     TextProposal {
         title: String,
         description: String,
@@ -80,6 +87,11 @@ pub enum Cw20HookMsg {
         title: String,
         description: String,
         slot: CoreSlot,
+    },
+    RevokeCoreSlot {
+        title: String,
+        description: String,
+        revoke_slot: RevokeCoreSlot,
     },
 }
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
@@ -111,6 +123,23 @@ pub enum CoreSlot {
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub struct RevokeCoreSlot {
+    pub slot: CoreSlot,
+    pub dao: String,
+}
+
+impl fmt::Display for CoreSlot {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            CoreSlot::Brand {} => write!(f, "brand"),
+            CoreSlot::Creative {} => write!(f, "creative"),
+            CoreSlot::CoreTech {} => write!(f, "core_tech"),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
     PeriodInfo {},
@@ -121,6 +150,7 @@ pub enum QueryMsg {
         start: Option<u64>,
         limit: Option<u32>,
     },
+    CoreSlots {},
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
@@ -146,6 +176,13 @@ pub struct PeriodInfoResponse {
     pub cycle_length: u64,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct CoreSlotsResponse {
+    pub brand: Option<SlotVoteResult>,
+    pub creative: Option<SlotVoteResult>,
+    pub core_tech: Option<SlotVoteResult>,
+}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct ProposalResponse {
