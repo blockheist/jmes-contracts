@@ -332,8 +332,6 @@ mod exec {
             msgs: Some(vec![msg]),
         };
 
-        println!("\n\nproposal {:?}", proposal);
-
         proposal.validate()?;
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
@@ -353,7 +351,7 @@ mod exec {
         duration: u64,
         amount: Uint128,
     ) -> Result<Response, ContractError> {
-        // Only daos can submit proposals and only that dao address can receive the grant funding
+        // Only the submitting dao address can receive the grant funding
         let dao = info.sender.clone();
 
         let msg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -387,8 +385,6 @@ mod exec {
             concluded: false,
             msgs: Some(vec![msg]),
         };
-
-        println!("\n\nproposal {:?}", proposal);
 
         proposal.validate()?;
 
@@ -437,8 +433,6 @@ mod exec {
             msgs: Some(msgs),
         };
 
-        println!("\n\nproposal {:?}", proposal);
-
         proposal.validate()?;
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
@@ -482,8 +476,6 @@ mod exec {
                 funds: vec![],
             })]),
         };
-
-        println!("\n\nproposal {:?}", proposal);
 
         proposal.validate()?;
 

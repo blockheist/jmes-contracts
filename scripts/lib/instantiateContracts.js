@@ -7,6 +7,7 @@ import { executeMsg } from "./executeMsg.js";
 import { getAttribute } from "../../e2e/lib/getAttribute.js";
 import { readContractAddrs } from "../../e2e/lib/readContractAddrs.js";
 import { readCodeIds } from "../../e2e/lib/readCodeIds.js";
+import { sleep } from "./sleep.js";
 
 function storeContractAddr(contractName, contractAddr) {
   let contractAddrs = readContractAddrs();
@@ -134,6 +135,7 @@ async function instantiateContracts(client, user, options = {}) {
       initMsg,
       options
     );
+    await sleep(2000);
   }
 
   const contractAddrs = readContractAddrs();
@@ -150,22 +152,11 @@ async function instantiateContracts(client, user, options = {}) {
     }
   );
 
-  // console.log("setContractsMsg :>> ", setContractsMsg);
+  console.log("setContractsMsg :>> ", setContractsMsg);
 
   const result = await executeMsg(client, setContractsMsg, user.wallet);
 
-  // console.log("result :>> ", result);
-
-  // const query = { get_config: {} };
-  // const result = await _query(client, contractAddrs.artist_curator, query);
-  // console.log("result :>> ", result);
-
-  // console.log("result.artist_nft_address :>> ", result.artist_nft_address);
-  // console.log("result.art_nft_address :>> ", result.art_nft_address);
-  // if (options.cache) {
-  //   _storeContractAddr("artist_nft", result.artist_nft_address);
-  //   _storeContractAddr("art_nft", result.art_nft_address);
-  // }
+  console.log("result :>> ", result);
 
   console.log("contractAddrs :>> ", readContractAddrs());
 

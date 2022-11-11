@@ -116,15 +116,41 @@
     {
       "type": "object",
       "required": [
+        "unset_core_slot"
+      ],
+      "properties": {
+        "unset_core_slot": {
+          "type": "object",
+          "required": [
+            "proposal_id"
+          ],
+          "properties": {
+            "proposal_id": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "resign_core_slot"
       ],
       "properties": {
         "resign_core_slot": {
           "type": "object",
           "required": [
+            "note",
             "slot"
           ],
           "properties": {
+            "note": {
+              "type": "string"
+            },
             "slot": {
               "$ref": "#/definitions/CoreSlot"
             }
@@ -547,8 +573,51 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "revoke_core_slot"
+          ],
+          "properties": {
+            "revoke_core_slot": {
+              "type": "object",
+              "required": [
+                "description",
+                "revoke_slot",
+                "title"
+              ],
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "revoke_slot": {
+                  "$ref": "#/definitions/RevokeCoreSlot"
+                },
+                "title": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
         }
       ]
+    },
+    "RevokeCoreSlot": {
+      "type": "object",
+      "required": [
+        "dao",
+        "slot"
+      ],
+      "properties": {
+        "dao": {
+          "type": "string"
+        },
+        "slot": {
+          "$ref": "#/definitions/CoreSlot"
+        }
+      }
     },
     "StakingMsg": {
       "description": "The message types of the staking module.\n\nSee https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto",

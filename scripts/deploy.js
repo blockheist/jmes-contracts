@@ -9,10 +9,10 @@ import { instantiateContracts } from "./lib/instantiateContracts.js";
 export const deploy = async () => {
   const client = await createClient();
 
-  const user2 = createUser(client, process.env.USER2_MNEMONIC);
+  const user = createUser(client, process.env.USER1_MNEMONIC);
 
-  await uploadContracts(client, user2);
-  await instantiateContracts(client, user2, { cache: true });
+  await uploadContracts(client, user);
+  await instantiateContracts(client, user, { cache: true });
 };
 
 await deploy();

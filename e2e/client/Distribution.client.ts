@@ -7,7 +7,7 @@
 import { LCDClient, Coins, MnemonicKey, MsgExecuteContract, WaitTxBroadcastResult } from "@terra-money/terra.js";
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, ConfigResponse, ExecuteMsg, Uint128, Timestamp, Uint64, GrantResponse, GrantsResponse, Grant, InstantiateMsg, QueryMsg } from "./Distribution.types";
+import { Addr, ConfigResponse, ExecuteMsg, Uint128, Timestamp, Uint64, GrantResponse, InstantiateMsg, QueryMsg } from "./Distribution.types";
 export interface DistributionReadOnlyInterface {
   contractAddress: string;
   config: () => Promise<ConfigResponse>;

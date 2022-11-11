@@ -36,19 +36,6 @@ export interface GrantResponse {
   started: Timestamp;
   [k: string]: unknown;
 }
-export interface GrantsResponse {
-  grants: Grant[];
-  [k: string]: unknown;
-}
-export interface Grant {
-  amount_approved: Uint128;
-  amount_remaining: Uint128;
-  dao: Addr;
-  expires: Timestamp;
-  grant_id: number;
-  started: Timestamp;
-  [k: string]: unknown;
-}
 export interface InstantiateMsg {
   identityservice_contract: Addr;
   owner: Addr;

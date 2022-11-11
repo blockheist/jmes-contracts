@@ -188,9 +188,9 @@ export interface DownloadLogoResponse {
   data: Binary;
   mime_type: string;
 }
-export type LogoInfo = "embedded" | {
+export type LogoInfo = {
   url: string;
-};
+} | "embedded";
 export type Addr = string;
 export interface MarketingInfoResponse {
   description?: string | null;
