@@ -1,10 +1,12 @@
-use cosmwasm_std::{Addr, StdResult};
+use cosmwasm_std::{Addr, Decimal, StdResult};
 use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
-use cw_utils::{Duration, Threshold};
-use jmes::msg::{DaoInstantiateMsg, Voter};
+use cw_utils::Duration;
 
 use crate::contract::{execute, instantiate, query, reply};
-use crate::msg::{ExecuteMsg, InstantiateMsg};
+use crate::msg::{
+    DaosResponse, ExecuteMsg, GetIdentityByNameResponse, GetIdentityByOwnerResponse,
+    InstantiateMsg, Ordering, QueryMsg,
+};
 use crate::ContractError;
 
 #[derive(Debug, Clone)]
@@ -28,14 +30,16 @@ impl IdentityserviceContract {
         label: &str,
 
         governance_addr: Addr,
-        dao_code_id: u64,
+        dao_members_code_id: u64,
+        dao_multisig_code_id: u64,
     ) -> StdResult<Self> {
         app.instantiate_contract(
             code_id,
             sender.clone(),
             &InstantiateMsg {
                 owner: governance_addr,
-                dao_code_id,
+                dao_members_code_id,
+                dao_multisig_code_id,
             },
             &[],
             label,
@@ -67,25 +71,62 @@ impl IdentityserviceContract {
         &self,
         app: &mut App,
         sender: &Addr,
-
+        members: Vec<cw4::Member>,
         dao_name: String,
-        voters: Vec<Voter>,
-        threshold: Threshold,
+        threshold_percentage: Decimal,
         max_voting_period: Duration,
     ) -> Result<AppResponse, ContractError> {
         app.execute_contract(
             sender.clone(),
             self.0.clone(),
-            &ExecuteMsg::RegisterDao(DaoInstantiateMsg {
+            &ExecuteMsg::RegisterDao(dao_members::msg::InstantiateMsg {
+                members,
                 dao_name,
-                voters,
-                threshold,
                 max_voting_period,
+                threshold_percentage,
             }),
             &[],
         )
         .map_err(|err| err.downcast().unwrap())
         // .map(|_| ())
+    }
+
+    #[track_caller]
+    pub fn query_daos(
+        &self,
+        app: &mut App,
+        start_after: Option<u64>,
+        limit: Option<u32>,
+        order: Option<Ordering>,
+    ) -> StdResult<DaosResponse> {
+        app.wrap().query_wasm_smart(
+            self.0.clone(),
+            &QueryMsg::Daos {
+                limit,
+                order,
+                start_after,
+            },
+        )
+    }
+
+    #[track_caller]
+    pub fn query_get_identity_by_owner(
+        &self,
+        app: &mut App,
+        owner: String,
+    ) -> StdResult<GetIdentityByOwnerResponse> {
+        app.wrap()
+            .query_wasm_smart(self.0.clone(), &QueryMsg::GetIdentityByOwner { owner })
+    }
+
+    #[track_caller]
+    pub fn query_get_identity_by_name(
+        &self,
+        app: &mut App,
+        name: String,
+    ) -> StdResult<GetIdentityByNameResponse> {
+        app.wrap()
+            .query_wasm_smart(self.0.clone(), &QueryMsg::GetIdentityByName { name })
     }
 }
 

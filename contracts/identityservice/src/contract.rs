@@ -7,8 +7,8 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw_storage_plus::Bound;
 use cw_utils::parse_reply_instantiate_data;
-use dao::msg::NameResponse;
-use dao::msg::QueryMsg as DaoQueryMsg;
+use dao_multisig::msg::InstantiateResponse;
+use dao_multisig::state::Executor;
 
 use crate::error::ContractError;
 use crate::msg::{
@@ -16,7 +16,6 @@ use crate::msg::{
     InstantiateMsg, Ordering, QueryMsg,
 };
 use crate::state::{identities, next_dao_id, Config, IdType, Identity, CONFIG, DAOS};
-use jmes::msg::DaoInstantiateMsg;
 
 const MIN_NAME_LENGTH: u64 = 3;
 const MAX_NAME_LENGTH: u64 = 20;
@@ -29,7 +28,8 @@ const DEFAULT_LIMIT: u32 = 10;
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-const INSTANTIATE_DAO_REPLY_ID: u64 = 1u64;
+const INSTANTIATE_DAO_MEMBERS_REPLY_ID: u64 = 1u64;
+const INSTANTIATE_DAO_MULTISIG_REPLY_ID: u64 = 2u64;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -42,7 +42,8 @@ pub fn instantiate(
 
     let config = Config {
         owner: msg.owner,
-        dao_code_id: msg.dao_code_id,
+        dao_members_code_id: msg.dao_members_code_id,
+        dao_multisig_code_id: msg.dao_multisig_code_id,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -60,8 +61,8 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::RegisterUser { name } => execute_register_user(deps, env, info, name),
-        ExecuteMsg::RegisterDao(dao_instantiate_msg) => {
-            execute_register_dao(deps, env, info, dao_instantiate_msg)
+        ExecuteMsg::RegisterDao(dao_members_instantiate_msg) => {
+            execute_register_dao(deps, env, info, dao_members_instantiate_msg)
         }
     }
 }
@@ -105,72 +106,131 @@ pub fn execute_register_dao(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    dao_instantiate_msg: DaoInstantiateMsg,
+    dao_members_instantiate_msg: dao_members::msg::InstantiateMsg,
 ) -> Result<Response, ContractError> {
     // Validate requested identity name
-    validate_name(&dao_instantiate_msg.dao_name)?;
+    // validate_name(&dao_instantiate_msg.dao_name)?;
 
     let config: Config = CONFIG.load(deps.storage)?;
 
     // Check if requested name is already taken
-    let maybe_name_exists = identities()
-        .idx
-        .name
-        .item(deps.storage, dao_instantiate_msg.dao_name.clone());
+    // let maybe_name_exists = identities()
+    //     .idx
+    //     .name
+    //     .item(deps.storage, dao_instantiate_msg.dao_name.clone());
 
-    if maybe_name_exists?.is_some() {
-        return Err(ContractError::NameTaken {
-            name: dao_instantiate_msg.dao_name,
-        });
-    }
+    // if maybe_name_exists?.is_some() {
+    //     return Err(ContractError::NameTaken {
+    //         name: dao_instantiate_msg.dao_name,
+    //     });
+    // }
 
     // Instantiate the DAO contract
-    let instantiate_dao_message: WasmMsg = WasmMsg::Instantiate {
-        label: "dao".to_string(),
+    let instantiate_dao_members_message: WasmMsg = WasmMsg::Instantiate {
+        label: "dao-members".to_string(),
         admin: None,
-        code_id: config.dao_code_id,
-        msg: to_binary(&dao_instantiate_msg)?,
+        code_id: config.dao_members_code_id,
+        msg: to_binary(&dao_members_instantiate_msg)?,
         funds: vec![],
     };
 
+    println!(
+        "\n\n instantiate_dao_members_message {:?}",
+        instantiate_dao_members_message
+    );
+
     // Wrap DAO Instantiate Msg into a SubMsg
-    let instantiate_dao_submsg: SubMsg = SubMsg {
-        id: INSTANTIATE_DAO_REPLY_ID,
-        msg: instantiate_dao_message.into(),
+    let instantiate_dao_members_submsg: SubMsg = SubMsg {
+        id: INSTANTIATE_DAO_MEMBERS_REPLY_ID,
+        msg: instantiate_dao_members_message.into(),
         gas_limit: None,
         reply_on: ReplyOn::Success,
     };
 
-    let response = Response::new().add_submessage(instantiate_dao_submsg);
+    let response = Response::new().add_submessage(instantiate_dao_members_submsg);
 
     Ok(response)
 }
 
 #[entry_point]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        INSTANTIATE_DAO_REPLY_ID => instantiate_dao_reply(deps, msg),
+        INSTANTIATE_DAO_MEMBERS_REPLY_ID => instantiate_dao_members_reply(deps, env, msg),
+        INSTANTIATE_DAO_MULTISIG_REPLY_ID => instantiate_dao_multisig_reply(deps, env, msg),
         _ => Err(ContractError::Std(StdError::generic_err(
             "Unknown reply id.",
         ))),
     }
 }
 
-fn instantiate_dao_reply(deps: DepsMut, msg: Reply) -> Result<Response, ContractError> {
-    let reply = parse_reply_instantiate_data(msg).unwrap();
-    let dao_addr = Addr::unchecked(&reply.contract_address);
-    // Read name from the dao contract config
-    let name_response: NameResponse = deps
-        .querier
-        .query_wasm_smart(&dao_addr, &DaoQueryMsg::Name {})
-        .unwrap();
+fn instantiate_dao_members_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: Reply,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
 
-    let name = name_response.name.unwrap();
+    let reply = parse_reply_instantiate_data(msg).unwrap();
+    let dao_members_addr = Addr::unchecked(&reply.contract_address);
+    let dao_members_config: dao_members::msg::ConfigResponse = deps
+        .querier
+        .query_wasm_smart(&dao_members_addr, &dao_members::msg::QueryMsg::Config {})?;
+
+    let dao_multisig_instantiate_msg = dao_multisig::msg::InstantiateMsg {
+        group_addr: dao_members_addr.to_string(),
+        executor: Some(Executor::Member),
+        max_voting_period: dao_members_config.max_voting_period,
+        threshold: dao_members_config.threshold,
+        dao_name: dao_members_config.dao_name,
+    };
+
+    let instantiate_dao_multisig_message: WasmMsg = WasmMsg::Instantiate {
+        label: "dao-multisig".to_string(),
+        admin: None,
+        code_id: config.dao_multisig_code_id,
+        msg: to_binary(&dao_multisig_instantiate_msg)?,
+        funds: vec![],
+    };
+
+    // Wrap dao-multisig InstantiateMsg into a SubMsg
+    let instantiate_dao_multisig_submsg: SubMsg = SubMsg {
+        id: INSTANTIATE_DAO_MULTISIG_REPLY_ID,
+        msg: instantiate_dao_multisig_message.into(),
+        gas_limit: None,
+        reply_on: ReplyOn::Success,
+    };
+
+    Ok(Response::new().add_submessage(instantiate_dao_multisig_submsg))
+}
+
+fn instantiate_dao_multisig_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: Reply,
+) -> Result<Response, ContractError> {
+    let reply = parse_reply_instantiate_data(msg).unwrap();
+    let dao_multisig_addr = Addr::unchecked(&reply.contract_address);
+    let dao_multisig_config: dao_multisig::msg::ConfigResponse = deps
+        .querier
+        .query_wasm_smart(&dao_multisig_addr, &dao_multisig::msg::QueryMsg::Config {})?;
+
+    let dao_name = dao_multisig_config.dao_name;
+
+    // Update the admin of dao-members to the dao-multisig-addr
+    let update_admin_msg = dao_members::msg::ExecuteMsg::UpdateAdmin {
+        admin: Some(dao_multisig_addr.to_string()),
+    };
+
+    let update_admin_msg_wasm = WasmMsg::Execute {
+        contract_addr: dao_multisig_config.dao_members_addr.into(),
+        msg: to_binary(&update_admin_msg)?,
+        funds: vec![],
+    };
 
     // Store requested name as an identity struct
     let identity = Identity {
-        owner: dao_addr.clone(),
-        name,
+        owner: dao_multisig_addr.clone(),
+        name: dao_name,
         id_type: IdType::Dao,
     };
 
@@ -178,9 +238,11 @@ fn instantiate_dao_reply(deps: DepsMut, msg: Reply) -> Result<Response, Contract
 
     // This is used to allow paginating through all daos
     let dao_id = next_dao_id(deps.storage)?;
-    DAOS.save(deps.storage, dao_id, &dao_addr)?;
+    DAOS.save(deps.storage, dao_id, &dao_multisig_addr)?;
 
-    Ok(Response::new().add_attribute("reply", format!("{:?}", reply)))
+    Ok(Response::new()
+        .set_data(to_binary(&InstantiateResponse { dao_multisig_addr })?)
+        .add_message(update_admin_msg_wasm))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

@@ -52,7 +52,7 @@ async function uploadContracts(client, user) {
       cachedContractChecksums[contract] = checksum;
       writeCachedContractChecksums(cachedContractChecksums);
 
-      // update codeIds 
+      // update codeIds
       codeIds[getContractNameFromPath(path)] = getCodeIdFromResult(result);
       fs.writeFileSync(
         `configs/codeIds_${process.env.NETWORK_ENV}.json`,

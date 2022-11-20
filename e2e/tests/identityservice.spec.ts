@@ -119,7 +119,7 @@ describe("User Identity", function () {
 
     const result = await identityClient.registerDao({
       daoName: user2_name,
-      voters: [
+      members: [
         {
           addr: user1.address,
           weight: 1,
@@ -129,11 +129,8 @@ describe("User Identity", function () {
           weight: 1,
         },
       ],
-      threshold: {
-        absolute_count: {
-          weight: 2,
-        },
-      },
+      thresholdPercentage: "0.51"
+      ,
       maxVotingPeriod: {
         height: 1180000,
       },
@@ -160,7 +157,7 @@ describe("User Identity", function () {
 
     const result = await identityClient.registerDao({
       daoName: user2_name + "another_dao",
-      voters: [
+      members: [
         {
           addr: user1.address,
           weight: 1,
@@ -170,11 +167,7 @@ describe("User Identity", function () {
           weight: 1,
         },
       ],
-      threshold: {
-        absolute_count: {
-          weight: 2,
-        },
-      },
+      thresholdPercentage: "0.51",
       maxVotingPeriod: {
         height: 1180000,
       },

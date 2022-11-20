@@ -7,7 +7,7 @@
 import { LCDClient, Coins, MnemonicKey, MsgExecuteContract, WaitTxBroadcastResult } from "@terra-money/terra.js";
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, DaosResponse, ExecuteMsg, Duration, Threshold, Decimal, DaoInstantiateMsg, Voter, IdType, GetIdentityByNameResponse, Identity, GetIdentityByOwnerResponse, InstantiateMsg, QueryMsg, Ordering } from "./Identityservice.types";
+import { Addr, DaosResponse, ExecuteMsg, Duration, Decimal, InstantiateMsg, Member, IdType, GetIdentityByNameResponse, Identity, GetIdentityByOwnerResponse, QueryMsg, Ordering } from "./Identityservice.types";
 export interface IdentityserviceReadOnlyInterface {
   contractAddress: string;
   getIdentityByOwner: ({
@@ -90,15 +90,17 @@ export interface IdentityserviceInterface extends IdentityserviceReadOnlyInterfa
     name: string;
   }, coins?: Coins) => Promise<WaitTxBroadcastResult>;
   registerDao: ({
+    admin,
     daoName,
     maxVotingPeriod,
-    threshold,
-    voters
+    members,
+    thresholdPercentage
   }: {
+    admin?: string;
     daoName: string;
     maxVotingPeriod: Duration;
-    threshold: Threshold;
-    voters: Voter[];
+    members: Member[];
+    thresholdPercentage: Decimal;
   }, coins?: Coins) => Promise<WaitTxBroadcastResult>;
 }
 export class IdentityserviceClient extends IdentityserviceQueryClient implements IdentityserviceInterface {
@@ -132,24 +134,27 @@ export class IdentityserviceClient extends IdentityserviceQueryClient implements
     return await this.client.tx.broadcast(tx);
   };
   registerDao = async ({
+    admin,
     daoName,
     maxVotingPeriod,
-    threshold,
-    voters
+    members,
+    thresholdPercentage
   }: {
+    admin?: string;
     daoName: string;
     maxVotingPeriod: Duration;
-    threshold: Threshold;
-    voters: Voter[];
+    members: Member[];
+    thresholdPercentage: Decimal;
   }, coins?: Coins): Promise<WaitTxBroadcastResult> => {
     const key = new MnemonicKey(this.user.mnemonicKeyOptions);
     const wallet = this.client.wallet(key);
     const execMsg = new MsgExecuteContract(this.user.address, this.contractAddress, {
       register_dao: {
+        admin,
         dao_name: daoName,
         max_voting_period: maxVotingPeriod,
-        threshold,
-        voters
+        members,
+        threshold_percentage: thresholdPercentage
       }
     }, coins);
     const txOptions = { msgs: [execMsg] };

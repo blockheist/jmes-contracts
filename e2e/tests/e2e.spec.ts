@@ -12,8 +12,10 @@ import { toBase64 } from "../lib/toBase64.js"
 import { sleep } from "../lib/sleep.js"
 
 import { IdentityserviceClient } from "../client/Identityservice.client.js";
-import { DaoClient } from "../client/Dao.client.js";
-import * as Dao from "../client/Dao.types";
+import { DaoMultisigQueryClient, DaoMultisigClient } from "../client/DaoMultisig.client.js";
+import { DaoMembersQueryClient } from "../client/DaoMembers.client.js";
+import * as DaoMultisig from "../client/DaoMultisig.types";
+import * as DaoMembers from "../client/DaoMembers.types";
 import { GovernanceClient, GovernanceQueryClient } from "../client/Governance.client.js";
 import * as Governance from "../client/Governance.types.js";
 import * as BjmesToken from "../client/BjmesToken.types.js";
@@ -58,101 +60,207 @@ describe("End-to-End Tests", function () {
     before(async function () {
       global.addrs = readContractAddrs();
       global.codeIds = readCodeIds();
+      console.log('global.addrs :>> ', global.addrs);
+      console.log('global.codeIds :>> ', global.codeIds);
     });
     it("should register a dao identity with valid name", async function () {
       const contract_addr = global.addrs.identityservice;
       const identityClient = new IdentityserviceClient(client, user2, contract_addr);
-      const result = await identityClient.registerDao({
-        daoName: user2_name,
-        voters: [
-          {
-            addr: user1.address,
-            weight: 1,
+
+      try {
+        const result = await identityClient.registerDao({
+          daoName: user2_name,
+          members: [
+            {
+              addr: user1.address,
+              weight: 1,
+            },
+            {
+              addr: user2.address,
+              weight: 1,
+            },
+          ],
+          thresholdPercentage: "0.51",
+          maxVotingPeriod: {
+            height: 1180000,
           },
-          {
-            addr: user2.address,
-            weight: 1,
-          },
-        ],
-        threshold: {
-          absolute_count: {
-            weight: 2,
-          },
-        },
-        maxVotingPeriod: {
-          height: 1180000,
-        },
-      });
+        });
 
-      global.liveAddrs.dao = getAttribute(
-        result,
-        "instantiate",
-        "_contract_address"
-      );
+        // TODO use binary response to read contract address
+        global.liveAddrs.dao_members = result.logs[0]['eventsByType'].instantiate._contract_address[0];
+        global.liveAddrs.dao_multisig = result.logs[0]['eventsByType'].instantiate._contract_address[1];
 
-      expect(result['code']).to.equal(0);
+        expect(result['code']).to.equal(0);
 
-      console.log('user1.address :>> ', user1.address);
-      console.log('global.liveAddrs.dao :>> ', global.liveAddrs.dao);
+        console.log('user1.address :>> ', user1.address);
+        console.log('global.liveAddrs.dao_multisig :>> ', global.liveAddrs.dao_multisig);
 
-      return result;
+        return result;
+      } catch (e) {
+        console.error(e)
+        throw e
+      }
+
 
     });
   });
 
-  describe.skip("DAO Proposal", function () {
+  describe("DAO Proposal", function () {
     before(async function () {
-      client.send(user3, global.liveAddrs.dao, "1000uluna")
+      client.send(user3, global.liveAddrs.dao_multisig, "1000uluna")
     });
-    it("should create a dao proposal: send tokens", async function () {
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user1, contractAddress);
+    describe.skip("spend dao tokens", function () {
+      it("should create a dao proposal: send tokens", async function () {
+        const contractAddress = global.liveAddrs.dao_multisig
+        const daoClient = new DaoMultisigClient(client, user1, contractAddress);
 
-      const coin: Dao.Coin = { denom: "uluna", amount: "1000" }
-      const bankMsg: Dao.BankMsg = { send: { amount: [coin], to_address: user2.address } }
+        const coin: DaoMultisig.Coin = { denom: "uluna", amount: "1000" }
+        const bankMsg: DaoMultisig.BankMsg = { send: { amount: [coin], to_address: user2.address } }
 
-      const msg: Dao.ExecuteMsg = {
-        propose: {
-          title: "Funds withdrawal",
-          description: "Spend 1000 coins",
-          msgs: [
-            {
-              bank: bankMsg
-            },
-          ],
+        const msg: DaoMultisig.ExecuteMsg = {
+          propose: {
+            title: "Funds withdrawal",
+            description: "Spend 1000 coins",
+            msgs: [
+              {
+                bank: bankMsg
+              },
+            ],
+          }
+        };
+
+        const result = await daoClient.propose(msg.propose);
+
+        this.dao_send_token_proposal_id = parseInt(
+          getAttribute(result, "wasm", "proposal_id")
+        );
+
+        expect(result['code']).to.equal(0);
+        return result;
+      });
+      it("should vote on a dao proposal: send tokens", async function () {
+        const contractAddress = global.liveAddrs.dao_multisig
+        const daoClient = new DaoMultisigClient(client, user2, contractAddress);
+
+        const result = await daoClient.vote({ proposalId: this.dao_send_token_proposal_id, vote: "yes" });
+
+        expect(result['code']).to.equal(0);
+        return result;
+      });
+      it("should execute on a passed dao proposal: send tokens", async function () {
+        const contractAddress = global.liveAddrs.dao_multisig
+        const daoClient = new DaoMultisigClient(client, user1, contractAddress);
+
+        const result = await daoClient.execute({ proposalId: this.dao_send_token_proposal_id });
+
+        global.governance_proposal_id = parseInt(
+          getAttribute(result, "wasm", "proposal_id")
+        );
+
+        expect(result['code']).to.equal(0);
+        return result;
+      });
+    });
+    describe("update dao members", function () {
+      it("should create a dao proposal: updatemembers", async function () {
+        const contractAddress = global.liveAddrs.dao_multisig
+        const daoMultisigClient = new DaoMultisigClient(client, user1, contractAddress);
+
+        const dao_members_addr = (await daoMultisigClient.config()).dao_members_addr;
+
+        const updateMembersMsg: DaoMembers.ExecuteMsg = {
+          update_members: {
+            add: [{ addr: user1.address, weight: 25 }, { addr: user3.address, weight: 27 }],
+            remove: [user2.address],
+          }
+        };
+
+        const wasmMsg: Governance.WasmMsg = {
+          execute: {
+            contract_addr: dao_members_addr,
+            funds: [],
+            msg: toBase64(updateMembersMsg)
+          }
         }
-      };
 
-      const result = await daoClient.propose(msg.propose);
+        const msg: DaoMultisig.ExecuteMsg = {
+          propose: {
+            title: "UpdateMembers",
+            description: "Add user3, remove user2",
+            msgs: [
+              {
+                wasm: wasmMsg
+              },
+            ],
+          }
+        };
 
-      this.dao_send_token_proposal_id = parseInt(
-        getAttribute(result, "wasm", "proposal_id")
-      );
+        const result = await daoMultisigClient.propose(msg.propose);
 
-      expect(result['code']).to.equal(0);
-      return result;
-    });
-    it("should vote on a dao proposal: send tokens", async function () {
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user2, contractAddress);
+        this.dao_send_token_proposal_id = parseInt(
+          getAttribute(result, "wasm", "proposal_id")
+        );
 
-      const result = await daoClient.vote({ proposalId: this.dao_send_token_proposal_id, vote: "yes" });
+        expect(result['code']).to.equal(0);
+        return result;
+      });
+      it("should vote on a dao proposal: update members", async function () {
+        const contractAddress = global.liveAddrs.dao_multisig
+        const daoClient = new DaoMultisigClient(client, user2, contractAddress);
 
-      expect(result['code']).to.equal(0);
-      return result;
-    });
-    it("should execute on a passed dao proposal: send tokens", async function () {
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user1, contractAddress);
+        const result = await daoClient.vote({ proposalId: this.dao_send_token_proposal_id, vote: "yes" });
 
-      const result = await daoClient.execute({ proposalId: this.dao_send_token_proposal_id });
+        expect(result['code']).to.equal(0);
+        return result;
+      });
+      it("should execute on a passed dao proposal: update members", async function () {
+        try {
+          const contractAddress = global.liveAddrs.dao_multisig
+          const daoMultisigClient = new DaoMultisigClient(client, user1, contractAddress);
 
-      global.governance_proposal_id = parseInt(
-        getAttribute(result, "wasm", "proposal_id")
-      );
+          const result = await daoMultisigClient.execute({ proposalId: this.dao_send_token_proposal_id });
 
-      expect(result['code']).to.equal(0);
-      return result;
+          global.governance_proposal_id = parseInt(
+            getAttribute(result, "wasm", "proposal_id")
+          );
+
+          expect(result['code']).to.equal(0);
+          return result;
+        } catch (e) {
+          console.error(e)
+          throw e
+        }
+      });
+      it("should fetch the new members", async function () {
+        try {
+          const daoMultisigAddr = global.liveAddrs.dao_multisig
+          const daoMultisigConfig = await new DaoMultisigQueryClient(client, daoMultisigAddr).config();
+
+          const daoMembersAddr = daoMultisigConfig.dao_members_addr;
+          const daoMembersQueryClient = new DaoMembersQueryClient(client, daoMembersAddr);
+
+          const result = await daoMembersQueryClient.listMembers({ limit: 10, startAfter: null });
+
+          expect(result).to.deep.equal(
+            {
+              members: [
+                {
+                  addr: 'terra1757tkx08n0cqrw7p86ny9lnxsqeth0wgp0em95',
+                  weight: 27
+                },
+                {
+                  addr: 'terra1x46rqay4d3cssq8gxxvqz8xt6nwlz4td20k38v',
+                  weight: 25
+                }
+              ]
+            });
+
+          return result;
+        } catch (e) {
+          console.error(e)
+          throw e
+        }
+      });
     });
   });
 
@@ -164,7 +272,7 @@ describe("End-to-End Tests", function () {
       await client.send(user3, global.addrs.distribution, "3000000uluna")
 
       // Fund the dao for the governance proposal deposit
-      await client.send(user3, global.liveAddrs.dao, "2000uluna")
+      await client.send(user3, global.liveAddrs.dao_multisig, "2000uluna")
 
       // Mint bondedJMES token so we can vote
       const bjmesTokenClient = new BjmesTokenClient(client, user1, global.addrs.bjmes_token)
@@ -174,8 +282,8 @@ describe("End-to-End Tests", function () {
 
 
     it("should create a dao proposal: Governance Funding", async function () {
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user1, contractAddress);
+      const contractAddress = global.liveAddrs.dao_multisig
+      const daoClient = new DaoMultisigClient(client, user1, contractAddress);
 
       // Governance Proposal Msg
       const proposalMsg: Governance.ExecuteMsg = {
@@ -201,10 +309,8 @@ describe("End-to-End Tests", function () {
         }
       }
 
-      console.log('wasmMsg :>> ', wasmMsg);
-
       // Dao Proposal Msg (Executes the bondedJMES (cw20) Send Msg)
-      const msg: Dao.ExecuteMsg = {
+      const msg: DaoMultisig.ExecuteMsg = {
         propose: {
           title: "Request Funding from Governance",
           description: "Make us rich",
@@ -232,8 +338,8 @@ describe("End-to-End Tests", function () {
 
     });
     it("should vote on a dao proposal: Governance Funding", async function () {
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user2, contractAddress);
+      const contractAddress = global.liveAddrs.dao_multisig
+      const daoClient = new DaoMultisigClient(client, user2, contractAddress);
 
       const result = await daoClient.vote({ proposalId: this.dao_send_token_proposal_id, vote: "yes" });
 
@@ -241,8 +347,8 @@ describe("End-to-End Tests", function () {
       return result;
     });
     it("should execute on a passed dao proposal: Governance Funding", async function () {
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user1, contractAddress);
+      const contractAddress = global.liveAddrs.dao_multisig
+      const daoClient = new DaoMultisigClient(client, user1, contractAddress);
       try {
         const result = await daoClient.execute({ proposalId: this.dao_send_token_proposal_id });
 
@@ -307,7 +413,7 @@ describe("End-to-End Tests", function () {
       return result
     })
   });
-  describe("Governance CoreSlot and Improvement Proposal ", function () {
+  describe.skip("Governance CoreSlot and Improvement Proposal ", function () {
     before(async function () {
       global.addrs = await readContractAddrs();
 
@@ -315,7 +421,7 @@ describe("End-to-End Tests", function () {
       await client.send(user3, global.addrs.governance, "300000uluna")
 
       // Fund the dao for the governance proposal deposit
-      await client.send(user3, global.liveAddrs.dao, "2000uluna")
+      await client.send(user3, global.liveAddrs.dao_multisig, "2000uluna")
 
       // Mint bondedJMES token so we can vote
       const bjmesTokenClient = new BjmesTokenClient(client, user1, global.addrs.bjmes_token)
@@ -325,8 +431,8 @@ describe("End-to-End Tests", function () {
 
 
     it("should create a dao proposal: Governance CoreSlot: CoreTech", async function () {
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user1, contractAddress);
+      const contractAddress = global.liveAddrs.dao_multisig
+      const daoClient = new DaoMultisigClient(client, user1, contractAddress);
       const slot: Governance.CoreSlot = { core_tech: {} };
       // Governance Proposal Msg
       const proposalMsg: Governance.ExecuteMsg = {
@@ -353,7 +459,7 @@ describe("End-to-End Tests", function () {
       console.log('wasmMsg :>> ', wasmMsg);
 
       // Dao Proposal Msg (Executes the bondedJMES (cw20) Send Msg)
-      const msg: Dao.ExecuteMsg = {
+      const msg: DaoMultisig.ExecuteMsg = {
         propose: {
           title: "Make me CoreTech",
           description: "Serving the Chain",
@@ -382,8 +488,8 @@ describe("End-to-End Tests", function () {
     });
     it("should vote on a dao proposal: Governance CoreSlot: CoreTech", async function () {
 
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user2, contractAddress);
+      const contractAddress = global.liveAddrs.dao_multisig
+      const daoClient = new DaoMultisigClient(client, user2, contractAddress);
 
       const result = await daoClient.vote({ proposalId: this.dao_send_token_proposal_id, vote: "yes" });
 
@@ -391,8 +497,8 @@ describe("End-to-End Tests", function () {
       return result;
     });
     it("should execute on a passed dao proposal: Governance CoreSlot: CoreTech", async function () {
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user1, contractAddress);
+      const contractAddress = global.liveAddrs.dao_multisig
+      const daoClient = new DaoMultisigClient(client, user1, contractAddress);
       try {
         const result = await daoClient.execute({ proposalId: this.dao_send_token_proposal_id });
 
@@ -431,7 +537,7 @@ describe("End-to-End Tests", function () {
 
         const result = await governanceClient.vote({ id: 1, vote: "yes" })
 
-        console.log('result :>> ', result);
+        // console.log('result :>> ', result);
 
         return result
       } catch (e) {
@@ -460,13 +566,12 @@ describe("End-to-End Tests", function () {
     it("should fetch the core slots, user1 should hold the core_tech slot", async function () {
       const governanceQueryClient = new GovernanceQueryClient(client, global.addrs.governance);
       const result = await governanceQueryClient.coreSlots()
-      console.log('core_slots result :>> ', result);
-      expect(result.core_tech.dao).to.eq(global.liveAddrs.dao);
+      expect(result.core_tech.dao).to.eq(global.liveAddrs.dao_multisig);
       return result
     });
     it("should create a dao proposal: Governance Improvement", async function () {
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user1, contractAddress);
+      const contractAddress = global.liveAddrs.dao_multisig
+      const daoClient = new DaoMultisigClient(client, user1, contractAddress);
       const slot: Governance.CoreSlot = { core_tech: {} };
       // Governance Proposal Msg
       const proposalMsg: Governance.ExecuteMsg = {
@@ -492,7 +597,7 @@ describe("End-to-End Tests", function () {
       console.log('wasmMsg :>> ', wasmMsg);
 
       // Dao Proposal Msg (Executes the bondedJMES (cw20) Send Msg)
-      const msg: Dao.ExecuteMsg = {
+      const msg: DaoMultisig.ExecuteMsg = {
         propose: {
           title: "Send Funds",
           description: "Improvement BankMsg",
@@ -521,8 +626,8 @@ describe("End-to-End Tests", function () {
     });
     it("should vote on a dao proposal: Governance Improvement", async function () {
 
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user2, contractAddress);
+      const contractAddress = global.liveAddrs.dao_multisig
+      const daoClient = new DaoMultisigClient(client, user2, contractAddress);
 
       const result = await daoClient.vote({ proposalId: this.dao_send_token_proposal_id, vote: "yes" });
 
@@ -530,8 +635,8 @@ describe("End-to-End Tests", function () {
       return result;
     });
     it("should execute on a passed dao proposal: Governance Improvement", async function () {
-      const contractAddress = global.liveAddrs.dao
-      const daoClient = new DaoClient(client, user1, contractAddress);
+      const contractAddress = global.liveAddrs.dao_multisig
+      const daoClient = new DaoMultisigClient(client, user1, contractAddress);
       try {
         const result = await daoClient.execute({ proposalId: this.dao_send_token_proposal_id });
 
@@ -571,7 +676,7 @@ describe("End-to-End Tests", function () {
 
         const result = await governanceClient.vote({ id: 2, vote: "yes" })
 
-        console.log('result :>> ', result);
+        // console.log('result :>> ', result);
 
         return result
       } catch (e) {

@@ -3,11 +3,17 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "dao_code_id",
+    "dao_members_code_id",
+    "dao_multisig_code_id",
     "owner"
   ],
   "properties": {
-    "dao_code_id": {
+    "dao_members_code_id": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "dao_multisig_code_id": {
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0

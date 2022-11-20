@@ -8,7 +8,7 @@ import { UseQueryOptions, useQuery, useMutation, UseMutationOptions } from "@tan
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
 import { Coin } from "@terra-money/terra.js";
-import { Addr, ConfigResponse, ExecuteMsg, Uint128, Timestamp, Uint64, GrantResponse, InstantiateMsg, QueryMsg } from "./Distribution.types";
+import { Addr, ConfigResponse, ExecuteMsg, Uint128, Timestamp, Uint64, GrantResponse, GrantsResponse, Grant, InstantiateMsg, QueryMsg } from "./Distribution.types";
 import { DistributionQueryClient, DistributionClient } from "./Distribution.client";
 export const distributionQueryKeys = {
   contract: ([{

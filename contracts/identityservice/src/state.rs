@@ -7,7 +7,8 @@ use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, UniqueIndex};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
-    pub dao_code_id: u64,
+    pub dao_members_code_id: u64,
+    pub dao_multisig_code_id: u64,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");

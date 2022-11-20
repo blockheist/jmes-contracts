@@ -1,5 +1,4 @@
 use cosmwasm_std::Addr;
-use jmes::msg::DaoInstantiateMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -13,14 +12,15 @@ pub struct Voter {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub owner: Addr,
-    pub dao_code_id: u64,
+    pub dao_members_code_id: u64,
+    pub dao_multisig_code_id: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     RegisterUser { name: String },
-    RegisterDao(DaoInstantiateMsg),
+    RegisterDao(dao_members::msg::InstantiateMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

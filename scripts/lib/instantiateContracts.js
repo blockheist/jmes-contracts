@@ -94,7 +94,8 @@ async function instantiateContracts(client, user, options = {}) {
     {
       identityservice: {
         owner: "__governance", // __ gets hydrated with governance contract addr
-        dao_code_id: codeIds["dao"],
+        dao_members_code_id: codeIds["dao_members"],
+        dao_multisig_code_id: codeIds["dao_multisig"],
       },
     },
     {

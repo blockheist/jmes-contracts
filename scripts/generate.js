@@ -19,8 +19,12 @@ codegen
         dir: "../contracts/bjmes-token/schema",
       },
       {
-        name: "dao",
-        dir: "../contracts/dao/schema",
+        name: "dao-members",
+        dir: "../contracts/dao-members/schema",
+      },
+      {
+        name: "dao-multisig",
+        dir: "../contracts/dao-multisig/schema",
       },
       {
         name: "distribution",
