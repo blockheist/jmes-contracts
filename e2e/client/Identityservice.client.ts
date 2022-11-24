@@ -7,7 +7,7 @@
 import { LCDClient, Coins, MnemonicKey, MsgExecuteContract, WaitTxBroadcastResult } from "@terra-money/terra.js";
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, DaosResponse, ExecuteMsg, Duration, Decimal, InstantiateMsg, Member, IdType, GetIdentityByNameResponse, Identity, GetIdentityByOwnerResponse, QueryMsg, Ordering } from "./Identityservice.types";
+import { Addr, DaosResponse, ExecuteMsg, Duration, Decimal, DaoMembersInstantiateMsg, Member, IdType, GetIdentityByNameResponse, Identity, GetIdentityByOwnerResponse, InstantiateMsg, QueryMsg, Ordering } from "./Identityservice.types";
 export interface IdentityserviceReadOnlyInterface {
   contractAddress: string;
   getIdentityByOwner: ({

@@ -11,7 +11,6 @@ export type Duration = {
 };
 export type Decimal = string;
 export interface InstantiateMsg {
-  admin?: string | null;
   dao_name: string;
   max_voting_period: Duration;
   members: Member[];

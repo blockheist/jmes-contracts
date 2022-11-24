@@ -8,7 +8,7 @@ import { UseQueryOptions, useQuery, useMutation, UseMutationOptions } from "@tan
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
 import { Coin } from "@terra-money/terra.js";
-import { Addr, DaosResponse, ExecuteMsg, Duration, Decimal, InstantiateMsg, Member, IdType, GetIdentityByNameResponse, Identity, GetIdentityByOwnerResponse, QueryMsg, Ordering } from "./Identityservice.types";
+import { Addr, DaosResponse, ExecuteMsg, Duration, Decimal, DaoMembersInstantiateMsg, Member, IdType, GetIdentityByNameResponse, Identity, GetIdentityByOwnerResponse, InstantiateMsg, QueryMsg, Ordering } from "./Identityservice.types";
 import { IdentityserviceQueryClient, IdentityserviceClient } from "./Identityservice.client";
 export const identityserviceQueryKeys = {
   contract: ([{
@@ -90,7 +90,7 @@ export function useIdentityserviceGetIdentityByOwnerQuery<TData = GetIdentityByO
 }
 export interface IdentityserviceRegisterDaoMutation {
   client: IdentityserviceClient;
-  msg: InstantiateMsg;
+  msg: DaoMembersInstantiateMsg;
   args?: {
     coins?: Coins;
   };
