@@ -28,6 +28,9 @@ cosmwasm-std = { version = "1.0.0" }
 schemars = "0.8.10"
 serde = { version = "1.0.140", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
+bjmes-token = { path = "../bjmes-token", version = "0.15.0", features = [
+  "library"
+]  }
 
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0" }

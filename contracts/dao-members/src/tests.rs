@@ -10,14 +10,13 @@ use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::{ADMIN, HOOKS};
 use crate::ContractError;
 
-const INIT_ADMIN: &str = "juan";
+const INIT_ADMIN: &str = "creator";
 const USER1: &str = "somebody";
 const USER2: &str = "else";
 const USER3: &str = "funny";
 
 fn set_up(deps: DepsMut) {
     let msg = InstantiateMsg {
-        admin: Some(INIT_ADMIN.into()),
         members: vec![
             Member {
                 addr: USER1.into(),
@@ -73,7 +72,6 @@ fn duplicate_members_instantiation() {
     let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
-        admin: Some(INIT_ADMIN.into()),
         members: vec![
             Member {
                 addr: USER1.into(),

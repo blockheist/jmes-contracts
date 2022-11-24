@@ -2,4 +2,5 @@
 wasm = "build --release --lib --target wasm32-unknown-unknown"
 wasm-debug = "build --lib --target wasm32-unknown-unknown"
 unit-test = "test --lib"
+test-debug = "test --lib -- --show-output"
 schema = "run --bin schema"

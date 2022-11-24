@@ -108,7 +108,8 @@ pub fn execute_register_dao(
     _info: MessageInfo,
     dao_members_instantiate_msg: dao_members::msg::InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    // Validate requested identity name
+    println!("\n\n _env {:?}", _env.contract.address);
+    // TODO Validate requested identity name
     // validate_name(&dao_instantiate_msg.dao_name)?;
 
     let config: Config = CONFIG.load(deps.storage)?;

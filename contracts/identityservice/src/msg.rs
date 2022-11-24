@@ -1,4 +1,5 @@
 use cosmwasm_std::Addr;
+use dao_members::msg::InstantiateMsg as DaoInstantiateMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -20,7 +21,7 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     RegisterUser { name: String },
-    RegisterDao(dao_members::msg::InstantiateMsg),
+    RegisterDao(DaoInstantiateMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

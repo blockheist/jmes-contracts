@@ -5,8 +5,6 @@ use cw_utils::{Duration, Threshold};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    /// The admin is the only account that can update the group state.
-    /// Omit it to make the group immutable.
     pub members: Vec<Member>,
     pub dao_name: String,
     pub threshold_percentage: Decimal,

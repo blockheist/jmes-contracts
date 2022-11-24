@@ -1344,3 +1344,6 @@ fn governance_funding_proposal_failing() {
         app.wrap()
             .query_all_balances(contracts.distribution.addr().clone())
             .unwrap(),
+        coins(DISTRIBUTION_INIT_BALANCE, "uluna")
+    );
+}

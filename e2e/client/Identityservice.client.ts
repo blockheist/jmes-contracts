@@ -90,13 +90,11 @@ export interface IdentityserviceInterface extends IdentityserviceReadOnlyInterfa
     name: string;
   }, coins?: Coins) => Promise<WaitTxBroadcastResult>;
   registerDao: ({
-    admin,
     daoName,
     maxVotingPeriod,
     members,
     thresholdPercentage
   }: {
-    admin?: string;
     daoName: string;
     maxVotingPeriod: Duration;
     members: Member[];
@@ -134,13 +132,11 @@ export class IdentityserviceClient extends IdentityserviceQueryClient implements
     return await this.client.tx.broadcast(tx);
   };
   registerDao = async ({
-    admin,
     daoName,
     maxVotingPeriod,
     members,
     thresholdPercentage
   }: {
-    admin?: string;
     daoName: string;
     maxVotingPeriod: Duration;
     members: Member[];
@@ -150,7 +146,6 @@ export class IdentityserviceClient extends IdentityserviceQueryClient implements
     const wallet = this.client.wallet(key);
     const execMsg = new MsgExecuteContract(this.user.address, this.contractAddress, {
       register_dao: {
-        admin,
         dao_name: daoName,
         max_voting_period: maxVotingPeriod,
         members,
