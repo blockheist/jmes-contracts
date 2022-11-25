@@ -14,7 +14,7 @@ use cw_utils::{maybe_addr, Threshold};
 
 use crate::error::ContractError;
 use crate::helpers::validate_unique_members;
-use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ConfigResponse, DaoMembersInstantiateMsg, ExecuteMsg, QueryMsg};
 use crate::state::{Config, ADMIN, CONFIG, HOOKS, MEMBERS, TOTAL};
 
 // version info for migration info
@@ -28,7 +28,7 @@ pub fn instantiate(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    msg: InstantiateMsg,
+    msg: DaoMembersInstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     println!("\n\n info {:?}", info);

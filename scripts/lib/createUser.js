@@ -1,4 +1,4 @@
-import { MnemonicKey } from "@terra-money/terra.js";
+import { MnemonicKey } from "jmes/build/Client/providers/LCDClient/key/index.js";
 
 function createUser(client, mnemonic) {
   const key = new MnemonicKey({ mnemonic });

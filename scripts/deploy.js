@@ -12,7 +12,7 @@ export const deploy = async () => {
   const user = createUser(client, process.env.USER1_MNEMONIC);
 
   await uploadContracts(client, user);
-  await instantiateContracts(client, user, { cache: true });
+  // await instantiateContracts(client, user, { cache: true });
 };
 
 await deploy();

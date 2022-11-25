@@ -4,7 +4,7 @@ use cw4::Member;
 use cw_utils::{Duration, Threshold};
 
 #[cw_serde]
-pub struct InstantiateMsg {
+pub struct DaoMembersInstantiateMsg {
     pub members: Vec<Member>,
     pub dao_name: String,
     pub threshold_percentage: Decimal,

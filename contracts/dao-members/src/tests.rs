@@ -6,7 +6,7 @@ use cw_controllers::{AdminError, HookError};
 use crate::contract::{
     execute, instantiate, query_list_members, query_member, query_total_weight, update_members,
 };
-use crate::msg::{ExecuteMsg, InstantiateMsg};
+use crate::msg::{DaoMembersInstantiateMsg, ExecuteMsg};
 use crate::state::{ADMIN, HOOKS};
 use crate::ContractError;
 
@@ -16,7 +16,7 @@ const USER2: &str = "else";
 const USER3: &str = "funny";
 
 fn set_up(deps: DepsMut) {
-    let msg = InstantiateMsg {
+    let msg = DaoMembersInstantiateMsg {
         members: vec![
             Member {
                 addr: USER1.into(),
@@ -71,7 +71,7 @@ fn try_member_queries() {
 fn duplicate_members_instantiation() {
     let mut deps = mock_dependencies();
 
-    let msg = InstantiateMsg {
+    let msg = DaoMembersInstantiateMsg {
         members: vec![
             Member {
                 addr: USER1.into(),

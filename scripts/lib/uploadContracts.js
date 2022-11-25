@@ -1,4 +1,4 @@
-import { MsgStoreCode } from "@terra-money/terra.js";
+import { MsgStoreCode } from "jmes/build/Client/providers/LCDClient/core/index.js";
 import * as fs from "fs";
 import { sleep } from "./sleep.js";
 import { executeMsg } from "./executeMsg.js";

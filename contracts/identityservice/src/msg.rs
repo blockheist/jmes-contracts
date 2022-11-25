@@ -1,5 +1,5 @@
 use cosmwasm_std::Addr;
-use dao_members::msg::InstantiateMsg as DaoInstantiateMsg;
+use dao_members::msg::DaoMembersInstantiateMsg as DaoInstantiateMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

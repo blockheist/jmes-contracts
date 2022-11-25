@@ -106,7 +106,7 @@ pub fn execute_register_dao(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    dao_members_instantiate_msg: dao_members::msg::InstantiateMsg,
+    dao_members_instantiate_msg: dao_members::msg::DaoMembersInstantiateMsg,
 ) -> Result<Response, ContractError> {
     println!("\n\n _env {:?}", _env.contract.address);
     // TODO Validate requested identity name

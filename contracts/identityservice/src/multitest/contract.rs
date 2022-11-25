@@ -79,7 +79,7 @@ impl IdentityserviceContract {
         app.execute_contract(
             sender.clone(),
             self.0.clone(),
-            &ExecuteMsg::RegisterDao(dao_members::msg::InstantiateMsg {
+            &ExecuteMsg::RegisterDao(dao_members::msg::DaoMembersInstantiateMsg {
                 members,
                 dao_name,
                 max_voting_period,

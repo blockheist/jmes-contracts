@@ -15,9 +15,9 @@
   "license": "ISC",
   "dependencies": {
     "@jmes-cosmwasm/ts-codegen": "file:../../ts-codegen/packages/ts-codegen",
-    "@terra-money/terra.js": "^3.1.5",
     "chai": "^4.3.4",
     "dotenv": "^12.0.4",
+    "jmes": "github:jmesworld/jmes.js",
     "mocha": "^9.2.0"
   }
 }

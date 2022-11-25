@@ -4,7 +4,7 @@ use cw_multi_test::{App, ContractWrapper, Executor};
 use cw_utils::Duration;
 
 use crate::contract::{execute, instantiate, query};
-use crate::msg::InstantiateMsg;
+use crate::msg::DaoMembersInstantiateMsg;
 
 #[derive(Debug)]
 pub struct DaoMembersContract(Addr);
@@ -34,7 +34,7 @@ impl DaoMembersContract {
         app.instantiate_contract(
             code_id,
             sender.clone(),
-            &InstantiateMsg {
+            &DaoMembersInstantiateMsg {
                 members,
                 dao_name,
                 max_voting_period,
