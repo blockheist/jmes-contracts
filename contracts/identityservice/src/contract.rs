@@ -108,23 +108,21 @@ pub fn execute_register_dao(
     _info: MessageInfo,
     dao_members_instantiate_msg: dao_members::msg::InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    println!("\n\n _env {:?}", _env.contract.address);
-    // TODO Validate requested identity name
-    // validate_name(&dao_instantiate_msg.dao_name)?;
+    validate_name(&dao_members_instantiate_msg.dao_name)?;
 
     let config: Config = CONFIG.load(deps.storage)?;
 
     // Check if requested name is already taken
-    // let maybe_name_exists = identities()
-    //     .idx
-    //     .name
-    //     .item(deps.storage, dao_instantiate_msg.dao_name.clone());
+    let maybe_name_exists = identities()
+        .idx
+        .name
+        .item(deps.storage, dao_members_instantiate_msg.dao_name.clone());
 
-    // if maybe_name_exists?.is_some() {
-    //     return Err(ContractError::NameTaken {
-    //         name: dao_instantiate_msg.dao_name,
-    //     });
-    // }
+    if maybe_name_exists?.is_some() {
+        return Err(ContractError::NameTaken {
+            name: dao_members_instantiate_msg.dao_name,
+        });
+    }
 
     // Instantiate the DAO contract
     let instantiate_dao_members_message: WasmMsg = WasmMsg::Instantiate {
@@ -134,11 +132,6 @@ pub fn execute_register_dao(
         msg: to_binary(&dao_members_instantiate_msg)?,
         funds: vec![],
     };
-
-    println!(
-        "\n\n instantiate_dao_members_message {:?}",
-        instantiate_dao_members_message
-    );
 
     // Wrap DAO Instantiate Msg into a SubMsg
     let instantiate_dao_members_submsg: SubMsg = SubMsg {
