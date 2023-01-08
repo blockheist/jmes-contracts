@@ -3,7 +3,6 @@ use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 
 use crate::contract::{execute, instantiate, query};
 use crate::ContractError;
-// use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 
 #[derive(Debug, Clone)]

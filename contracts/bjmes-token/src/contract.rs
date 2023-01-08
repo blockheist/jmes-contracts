@@ -12,11 +12,11 @@ use cw20::{
 };
 use cw_utils::ensure_from_older_version;
 
-use crate::allowances::{
-    execute_burn_from, execute_decrease_allowance, execute_increase_allowance, execute_send_from,
-    execute_transfer_from, query_allowance,
-};
-use crate::enumerable::{query_all_accounts, query_owner_allowances, query_spender_allowances};
+// use crate::allowances::{
+//     execute_burn_from, execute_decrease_allowance, execute_increase_allowance, execute_send_from,
+//     execute_transfer_from, query_allowance,
+// };
+use crate::enumerable::query_all_accounts;
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{
@@ -197,47 +197,47 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Transfer { recipient, amount } => {
-            execute_transfer(deps, env, info, recipient, amount)
-        }
+        // ExecuteMsg::Transfer { recipient, amount } => {
+        // execute_transfer(deps, env, info, recipient, amount)
+        // }
         ExecuteMsg::Burn { amount } => execute_burn(deps, env, info, amount),
-        ExecuteMsg::Send {
-            contract,
-            amount,
-            msg,
-        } => execute_send(deps, env, info, contract, amount, msg),
+        // ExecuteMsg::Send {
+        //     contract,
+        //     amount,
+        //     msg,
+        // } => execute_send(deps, env, info, contract, amount, msg),
         ExecuteMsg::Mint { recipient, amount } => execute_mint(deps, env, info, recipient, amount),
-        ExecuteMsg::IncreaseAllowance {
-            spender,
-            amount,
-            expires,
-        } => execute_increase_allowance(deps, env, info, spender, amount, expires),
-        ExecuteMsg::DecreaseAllowance {
-            spender,
-            amount,
-            expires,
-        } => execute_decrease_allowance(deps, env, info, spender, amount, expires),
-        ExecuteMsg::TransferFrom {
-            owner,
-            recipient,
-            amount,
-        } => execute_transfer_from(deps, env, info, owner, recipient, amount),
-        ExecuteMsg::BurnFrom { owner, amount } => execute_burn_from(deps, env, info, owner, amount),
-        ExecuteMsg::SendFrom {
-            owner,
-            contract,
-            amount,
-            msg,
-        } => execute_send_from(deps, env, info, owner, contract, amount, msg),
+        // ExecuteMsg::IncreaseAllowance {
+        //     spender,
+        //     amount,
+        //     expires,
+        // } => execute_increase_allowance(deps, env, info, spender, amount, expires),
+        // ExecuteMsg::DecreaseAllowance {
+        //     spender,
+        //     amount,
+        //     expires,
+        // } => execute_decrease_allowance(deps, env, info, spender, amount, expires),
+        // ExecuteMsg::TransferFrom {
+        //     owner,
+        //     recipient,
+        //     amount,
+        // } => execute_transfer_from(deps, env, info, owner, recipient, amount),
+        // ExecuteMsg::BurnFrom { owner, amount } => execute_burn_from(deps, env, info, owner, amount),
+        // ExecuteMsg::SendFrom {
+        //     owner,
+        //     contract,
+        //     amount,
+        //     msg,
+        // } => execute_send_from(deps, env, info, owner, contract, amount, msg),
         ExecuteMsg::UpdateMarketing {
             project,
             description,
             marketing,
         } => execute_update_marketing(deps, env, info, project, description, marketing),
         ExecuteMsg::UploadLogo(logo) => execute_upload_logo(deps, env, info, logo),
-        ExecuteMsg::UpdateMinter { new_minter } => {
-            execute_update_minter(deps, env, info, new_minter)
-        }
+        // ExecuteMsg::UpdateMinter { new_minter } => {
+        //     execute_update_minter(deps, env, info, new_minter)
+        // }
     }
 }
 
@@ -547,24 +547,24 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::TotalSupplyAt { block } => to_binary(&get_total_supply_at(deps.storage, block)?),
         QueryMsg::TokenInfo {} => to_binary(&query_token_info(deps)?),
         QueryMsg::Minter {} => to_binary(&query_minter(deps)?),
-        QueryMsg::Allowance { owner, spender } => {
-            to_binary(&query_allowance(deps, owner, spender)?)
-        }
-        QueryMsg::AllAllowances {
-            owner,
-            start_after,
-            limit,
-        } => to_binary(&query_owner_allowances(deps, owner, start_after, limit)?),
-        QueryMsg::AllSpenderAllowances {
-            spender,
-            start_after,
-            limit,
-        } => to_binary(&query_spender_allowances(
-            deps,
-            spender,
-            start_after,
-            limit,
-        )?),
+        // QueryMsg::Allowance { owner, spender } => {
+        // to_binary(&query_allowance(deps, owner, spender)?)
+        // }
+        // QueryMsg::AllAllowances {
+        // owner,
+        // start_after,
+        // limit,
+        // } => to_binary(&query_owner_allowances(deps, owner, start_after, limit)?),
+        // QueryMsg::AllSpenderAllowances {
+        // spender,
+        // start_after,
+        // limit,
+        // } => to_binary(&query_spender_allowances(
+        // deps,
+        // spender,
+        // start_after,
+        // limit,
+        // )?),
         QueryMsg::AllAccounts { start_after, limit } => {
             to_binary(&query_all_accounts(deps, start_after, limit)?)
         }
@@ -653,7 +653,7 @@ mod tests {
     use cosmwasm_std::testing::{
         mock_dependencies, mock_dependencies_with_balance, mock_env, mock_info,
     };
-    use cosmwasm_std::{coins, from_binary, Addr, CosmosMsg, StdError, SubMsg, WasmMsg};
+    use cosmwasm_std::{coins, from_binary, Addr, CosmosMsg, StdError, WasmMsg};
 
     use super::*;
     use crate::msg::InstantiateMarketingInfo;
@@ -982,58 +982,58 @@ mod tests {
     //     assert_eq!(err, ContractError::Unauthorized {});
     // }
 
-    #[test]
-    fn minter_can_update_minter_but_not_cap() {
-        let mut deps = mock_dependencies();
-        let minter = String::from("minter");
-        let cap = Some(Uint128::from(3000000u128));
-        do_instantiate_with_minter(
-            deps.as_mut(),
-            &String::from("genesis"),
-            Uint128::new(1234),
-            &minter,
-            cap,
-        );
+    // #[test]
+    // fn minter_can_update_minter_but_not_cap() {
+    //     let mut deps = mock_dependencies();
+    //     let minter = String::from("minter");
+    //     let cap = Some(Uint128::from(3000000u128));
+    //     do_instantiate_with_minter(
+    //         deps.as_mut(),
+    //         &String::from("genesis"),
+    //         Uint128::new(1234),
+    //         &minter,
+    //         cap,
+    //     );
 
-        let new_minter = "new_minter";
-        let msg = ExecuteMsg::UpdateMinter {
-            new_minter: Some(new_minter.to_string()),
-        };
+    //     let new_minter = "new_minter";
+    //     let msg = ExecuteMsg::UpdateMinter {
+    //         new_minter: Some(new_minter.to_string()),
+    //     };
 
-        let info = mock_info(&minter, &[]);
-        let env = mock_env();
-        let res = execute(deps.as_mut(), env.clone(), info, msg);
-        assert!(res.is_ok());
-        let query_minter_msg = QueryMsg::Minter {};
-        let res = query(deps.as_ref(), env, query_minter_msg);
-        let mint: MinterResponse = from_binary(&res.unwrap()).unwrap();
+    //     let info = mock_info(&minter, &[]);
+    //     let env = mock_env();
+    //     let res = execute(deps.as_mut(), env.clone(), info, msg);
+    //     assert!(res.is_ok());
+    //     let query_minter_msg = QueryMsg::Minter {};
+    //     let res = query(deps.as_ref(), env, query_minter_msg);
+    //     let mint: MinterResponse = from_binary(&res.unwrap()).unwrap();
 
-        // Minter cannot update cap.
-        assert!(mint.cap == cap);
-        assert!(mint.minter == new_minter)
-    }
+    //     // Minter cannot update cap.
+    //     assert!(mint.cap == cap);
+    //     assert!(mint.minter == new_minter)
+    // }
 
-    #[test]
-    fn others_cannot_update_minter() {
-        let mut deps = mock_dependencies();
-        let minter = String::from("minter");
-        do_instantiate_with_minter(
-            deps.as_mut(),
-            &String::from("genesis"),
-            Uint128::new(1234),
-            &minter,
-            None,
-        );
+    // #[test]
+    // fn others_cannot_update_minter() {
+    //     let mut deps = mock_dependencies();
+    //     let minter = String::from("minter");
+    //     do_instantiate_with_minter(
+    //         deps.as_mut(),
+    //         &String::from("genesis"),
+    //         Uint128::new(1234),
+    //         &minter,
+    //         None,
+    //     );
 
-        let msg = ExecuteMsg::UpdateMinter {
-            new_minter: Some("new_minter".to_string()),
-        };
+    //     let msg = ExecuteMsg::UpdateMinter {
+    //         new_minter: Some("new_minter".to_string()),
+    //     };
 
-        let info = mock_info("not the minter", &[]);
-        let env = mock_env();
-        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-        assert_eq!(err, ContractError::Unauthorized {});
-    }
+    //     let info = mock_info("not the minter", &[]);
+    //     let env = mock_env();
+    //     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    //     assert_eq!(err, ContractError::Unauthorized {});
+    // }
 
     // #[test]
     // fn unset_minter() {
@@ -1189,65 +1189,65 @@ mod tests {
         assert_eq!(loaded.balance, Uint128::zero());
     }
 
-    #[test]
-    fn transfer() {
-        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-        let addr1 = String::from("addr0001");
-        let addr2 = String::from("addr0002");
-        let amount1 = Uint128::from(12340000u128);
-        let transfer = Uint128::from(76543u128);
-        let too_much = Uint128::from(12340321u128);
+    // #[test]
+    // fn transfer() {
+    //     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    //     let addr1 = String::from("addr0001");
+    //     let addr2 = String::from("addr0002");
+    //     let amount1 = Uint128::from(12340000u128);
+    //     let transfer = Uint128::from(76543u128);
+    //     let too_much = Uint128::from(12340321u128);
 
-        do_instantiate(deps.as_mut(), &addr1, amount1);
+    //     do_instantiate(deps.as_mut(), &addr1, amount1);
 
-        // cannot transfer nothing
-        let info = mock_info(addr1.as_ref(), &[]);
-        let env = mock_env();
-        let msg = ExecuteMsg::Transfer {
-            recipient: addr2.clone(),
-            amount: Uint128::zero(),
-        };
-        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-        assert_eq!(err, ContractError::InvalidZeroAmount {});
+    //     // cannot transfer nothing
+    //     let info = mock_info(addr1.as_ref(), &[]);
+    //     let env = mock_env();
+    //     let msg = ExecuteMsg::Transfer {
+    //         recipient: addr2.clone(),
+    //         amount: Uint128::zero(),
+    //     };
+    //     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    //     assert_eq!(err, ContractError::InvalidZeroAmount {});
 
-        // cannot send more than we have
-        let info = mock_info(addr1.as_ref(), &[]);
-        let env = mock_env();
-        let msg = ExecuteMsg::Transfer {
-            recipient: addr2.clone(),
-            amount: too_much,
-        };
-        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-        assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
+    //     // cannot send more than we have
+    //     let info = mock_info(addr1.as_ref(), &[]);
+    //     let env = mock_env();
+    //     let msg = ExecuteMsg::Transfer {
+    //         recipient: addr2.clone(),
+    //         amount: too_much,
+    //     };
+    //     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    //     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
-        // cannot send from empty account
-        let info = mock_info(addr2.as_ref(), &[]);
-        let env = mock_env();
-        let msg = ExecuteMsg::Transfer {
-            recipient: addr1.clone(),
-            amount: transfer,
-        };
-        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-        assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
+    //     // cannot send from empty account
+    //     let info = mock_info(addr2.as_ref(), &[]);
+    //     let env = mock_env();
+    //     let msg = ExecuteMsg::Transfer {
+    //         recipient: addr1.clone(),
+    //         amount: transfer,
+    //     };
+    //     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    //     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
-        // valid transfer
-        let info = mock_info(addr1.as_ref(), &[]);
-        let env = mock_env();
-        let msg = ExecuteMsg::Transfer {
-            recipient: addr2.clone(),
-            amount: transfer,
-        };
-        let res = execute(deps.as_mut(), env, info, msg).unwrap();
-        assert_eq!(res.messages.len(), 0);
+    //     // valid transfer
+    //     let info = mock_info(addr1.as_ref(), &[]);
+    //     let env = mock_env();
+    //     let msg = ExecuteMsg::Transfer {
+    //         recipient: addr2.clone(),
+    //         amount: transfer,
+    //     };
+    //     let res = execute(deps.as_mut(), env, info, msg).unwrap();
+    //     assert_eq!(res.messages.len(), 0);
 
-        let remainder = amount1.checked_sub(transfer).unwrap();
-        assert_eq!(get_balance(deps.as_ref(), addr1), remainder);
-        assert_eq!(get_balance(deps.as_ref(), addr2), transfer);
-        assert_eq!(
-            query_token_info(deps.as_ref()).unwrap().total_supply,
-            amount1
-        );
-    }
+    //     let remainder = amount1.checked_sub(transfer).unwrap();
+    //     assert_eq!(get_balance(deps.as_ref(), addr1), remainder);
+    //     assert_eq!(get_balance(deps.as_ref(), addr2), transfer);
+    //     assert_eq!(
+    //         query_token_info(deps.as_ref()).unwrap().total_supply,
+    //         amount1
+    //     );
+    // }
 
     #[test]
     fn burn() {
@@ -1298,87 +1298,85 @@ mod tests {
         );
     }
 
-    #[test]
-    fn send() {
-        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-        let addr1 = String::from("addr0001");
-        let contract = String::from("addr0002");
-        let amount1 = Uint128::from(12340000u128);
-        let transfer = Uint128::from(76543u128);
-        let too_much = Uint128::from(12340321u128);
-        let send_msg = Binary::from(r#"{"some":123}"#.as_bytes());
+    // #[test]
+    // fn send() {
+    //     let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+    //     let addr1 = String::from("addr0001");
+    //     let contract = String::from("addr0002");
+    //     let amount1 = Uint128::from(12340000u128);
+    //     let transfer = Uint128::from(76543u128);
+    //     let too_much = Uint128::from(12340321u128);
+    //     let send_msg = Binary::from(r#"{"some":123}"#.as_bytes());
 
-        do_instantiate(deps.as_mut(), &addr1, amount1);
+    //     do_instantiate(deps.as_mut(), &addr1, amount1);
 
-        // cannot send nothing
-        let info = mock_info(addr1.as_ref(), &[]);
-        let env = mock_env();
-        let msg = ExecuteMsg::Send {
-            contract: contract.clone(),
-            amount: Uint128::zero(),
-            msg: send_msg.clone(),
-        };
-        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-        assert_eq!(err, ContractError::InvalidZeroAmount {});
+    //     // cannot send nothing
+    //     let info = mock_info(addr1.as_ref(), &[]);
+    //     let env = mock_env();
+    //     let msg = ExecuteMsg::Send {
+    //         contract: contract.clone(),
+    //         amount: Uint128::zero(),
+    //         msg: send_msg.clone(),
+    //     };
+    //     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    //     assert_eq!(err, ContractError::InvalidZeroAmount {});
 
-        // cannot send more than we have
-        let info = mock_info(addr1.as_ref(), &[]);
-        let env = mock_env();
-        let msg = ExecuteMsg::Send {
-            contract: contract.clone(),
-            amount: too_much,
-            msg: send_msg.clone(),
-        };
-        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-        assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
+    //     // cannot send more than we have
+    //     let info = mock_info(addr1.as_ref(), &[]);
+    //     let env = mock_env();
+    //     let msg = ExecuteMsg::Send {
+    //         contract: contract.clone(),
+    //         amount: too_much,
+    //         msg: send_msg.clone(),
+    //     };
+    //     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    //     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
-        // valid transfer
-        let info = mock_info(addr1.as_ref(), &[]);
-        let env = mock_env();
-        let msg = ExecuteMsg::Send {
-            contract: contract.clone(),
-            amount: transfer,
-            msg: send_msg.clone(),
-        };
-        let res = execute(deps.as_mut(), env, info, msg).unwrap();
-        assert_eq!(res.messages.len(), 1);
+    //     // valid transfer
+    //     let info = mock_info(addr1.as_ref(), &[]);
+    //     let env = mock_env();
+    //     let msg = ExecuteMsg::Send {
+    //         contract: contract.clone(),
+    //         amount: transfer,
+    //         msg: send_msg.clone(),
+    //     };
+    //     let res = execute(deps.as_mut(), env, info, msg).unwrap();
+    //     assert_eq!(res.messages.len(), 1);
 
-        // ensure proper send message sent
-        // this is the message we want delivered to the other side
-        let binary_msg = Cw20ReceiveMsg {
-            sender: addr1.clone(),
-            amount: transfer,
-            msg: send_msg,
-        }
-        .into_binary()
-        .unwrap();
-        // and this is how it must be wrapped for the vm to process it
-        assert_eq!(
-            res.messages[0],
-            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract.clone(),
-                msg: binary_msg,
-                funds: vec![],
-            }))
-        );
+    //     // ensure proper send message sent
+    //     // this is the message we want delivered to the other side
+    //     let binary_msg = Cw20ReceiveMsg {
+    //         sender: addr1.clone(),
+    //         amount: transfer,
+    //         msg: send_msg,
+    //     }
+    //     .into_binary()
+    //     .unwrap();
+    //     // and this is how it must be wrapped for the vm to process it
+    //     assert_eq!(
+    //         res.messages[0],
+    //         SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+    //             contract_addr: contract.clone(),
+    //             msg: binary_msg,
+    //             funds: vec![],
+    //         }))
+    //     );
 
-        // ensure balance is properly transferred
-        let remainder = amount1.checked_sub(transfer).unwrap();
-        assert_eq!(get_balance(deps.as_ref(), addr1), remainder);
-        assert_eq!(get_balance(deps.as_ref(), contract), transfer);
-        assert_eq!(
-            query_token_info(deps.as_ref()).unwrap().total_supply,
-            amount1
-        );
-    }
+    //     // ensure balance is properly transferred
+    //     let remainder = amount1.checked_sub(transfer).unwrap();
+    //     assert_eq!(get_balance(deps.as_ref(), addr1), remainder);
+    //     assert_eq!(get_balance(deps.as_ref(), contract), transfer);
+    //     assert_eq!(
+    //         query_token_info(deps.as_ref()).unwrap().total_supply,
+    //         amount1
+    //     );
+    // }
 
     mod migration {
         use super::*;
 
         use cosmwasm_std::Empty;
-        use cw20::{AllAllowancesResponse, AllSpenderAllowancesResponse, SpenderAllowanceInfo};
         use cw_multi_test::{App, Contract, ContractWrapper, Executor};
-        use cw_utils::Expiration;
 
         fn cw20_contract() -> Box<dyn Contract<Empty>> {
             let contract = ContractWrapper::new(
@@ -1417,33 +1415,33 @@ mod tests {
                 .unwrap();
 
             // no allowance to start
-            let allowance: AllAllowancesResponse = app
-                .wrap()
-                .query_wasm_smart(
-                    cw20_addr.to_string(),
-                    &QueryMsg::AllAllowances {
-                        owner: "sender".to_string(),
-                        start_after: None,
-                        limit: None,
-                    },
-                )
-                .unwrap();
-            assert_eq!(allowance, AllAllowancesResponse::default());
+            // let allowance: AllAllowancesResponse = app
+            //     .wrap()
+            //     .query_wasm_smart(
+            //         cw20_addr.to_string(),
+            //         &QueryMsg::AllAllowances {
+            //             owner: "sender".to_string(),
+            //             start_after: None,
+            //             limit: None,
+            //         },
+            //     )
+            //     .unwrap();
+            // assert_eq!(allowance, AllAllowancesResponse::default());
 
-            // Set allowance
-            let allow1 = Uint128::new(7777);
-            let expires = Expiration::AtHeight(123_456);
-            let msg = CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: cw20_addr.to_string(),
-                msg: to_binary(&ExecuteMsg::IncreaseAllowance {
-                    spender: "spender".into(),
-                    amount: allow1,
-                    expires: Some(expires),
-                })
-                .unwrap(),
-                funds: vec![],
-            });
-            app.execute(Addr::unchecked("sender"), msg).unwrap();
+            // // Set allowance
+            // let allow1 = Uint128::new(7777);
+            // let expires = Expiration::AtHeight(123_456);
+            // let msg = CosmosMsg::Wasm(WasmMsg::Execute {
+            //     contract_addr: cw20_addr.to_string(),
+            //     msg: to_binary(&ExecuteMsg::IncreaseAllowance {
+            //         spender: "spender".into(),
+            //         amount: allow1,
+            //         expires: Some(expires),
+            //     })
+            //     .unwrap(),
+            //     funds: vec![],
+            // });
+            // app.execute(Addr::unchecked("sender"), msg).unwrap();
 
             // Now migrate
             app.execute(
@@ -1470,25 +1468,25 @@ mod tests {
             assert_eq!(balance.balance, Uint128::new(100));
 
             // Confirm that the allowance per spender is there
-            let allowance: AllSpenderAllowancesResponse = app
-                .wrap()
-                .query_wasm_smart(
-                    cw20_addr,
-                    &QueryMsg::AllSpenderAllowances {
-                        spender: "spender".to_string(),
-                        start_after: None,
-                        limit: None,
-                    },
-                )
-                .unwrap();
-            assert_eq!(
-                allowance.allowances,
-                &[SpenderAllowanceInfo {
-                    owner: "sender".to_string(),
-                    allowance: allow1,
-                    expires
-                }]
-            );
+            // let allowance: AllSpenderAllowancesResponse = app
+            //     .wrap()
+            //     .query_wasm_smart(
+            //         cw20_addr,
+            //         &QueryMsg::AllSpenderAllowances {
+            //             spender: "spender".to_string(),
+            //             start_after: None,
+            //             limit: None,
+            //         },
+            //     )
+            //     .unwrap();
+            // assert_eq!(
+            //     allowance.allowances,
+            //     &[SpenderAllowanceInfo {
+            //         owner: "sender".to_string(),
+            //         allowance: allow1,
+            //         expires
+            //     }]
+            // );
         }
     }
 

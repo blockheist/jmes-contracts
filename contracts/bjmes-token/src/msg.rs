@@ -91,24 +91,24 @@ pub enum QueryMsg {
     Minter {},
     /// Only with "allowance" extension.
     /// Returns how much spender can use from owner account, 0 if unset.
-    #[returns(cw20::AllowanceResponse)]
-    Allowance { owner: String, spender: String },
+    // #[returns(cw20::AllowanceResponse)]
+    // Allowance { owner: String, spender: String },
     /// Only with "enumerable" extension (and "allowances")
     /// Returns all allowances this owner has approved. Supports pagination.
-    #[returns(cw20::AllAllowancesResponse)]
-    AllAllowances {
-        owner: String,
-        start_after: Option<String>,
-        limit: Option<u32>,
-    },
+    // #[returns(cw20::AllAllowancesResponse)]
+    // AllAllowances {
+    // owner: String,
+    // start_after: Option<String>,
+    // limit: Option<u32>,
+    // },
     /// Only with "enumerable" extension (and "allowances")
     /// Returns all allowances this spender has been granted. Supports pagination.
-    #[returns(cw20::AllSpenderAllowancesResponse)]
-    AllSpenderAllowances {
-        spender: String,
-        start_after: Option<String>,
-        limit: Option<u32>,
-    },
+    // #[returns(cw20::AllSpenderAllowancesResponse)]
+    // AllSpenderAllowances {
+    //     spender: String,
+    //     start_after: Option<String>,
+    //     limit: Option<u32>,
+    // },
     /// Only with "enumerable" extension
     /// Returns all accounts that have balances. Supports pagination.
     #[returns(cw20::AllAccountsResponse)]

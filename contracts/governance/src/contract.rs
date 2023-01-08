@@ -519,9 +519,9 @@ mod exec {
 
             let bjmes_amount: BalanceResponse = deps.querier.query_wasm_smart(
                 config.bjmes_token_addr,
-                &BjmesQueryMsg::Balance {
+                &BjmesQueryMsg::BalanceAt {
                     address: info.sender.to_string(),
-                    // block: proposal.start_block, // TODO enable block height balance lookup
+                    block: proposal.start_block,
                 },
             )?;
 

@@ -66,14 +66,15 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
 
     let bjmes_code_id = BjmesTokenContract::store_code(app);
     let bjmes_contract =
-        BjmesTokenContract::instantiate(app, bjmes_code_id, &user1, "bjmes").unwrap();
+        BjmesTokenContract::instantiate(app, bjmes_code_id, &user1, "bonded JMES Contract")
+            .unwrap();
 
     let governance_code_id = GovernanceContract::store_code(app);
     let governance_contract = GovernanceContract::instantiate(
         app,
         governance_code_id,
         &user1,
-        "Counting contract",
+        "Governance Contract",
         owner.clone().into(),
         bjmes_contract.addr().into(),
         None,
@@ -251,7 +252,7 @@ fn gov_vote_helper(
     println!("\n\n period_info_posting {:?}", period_info_posting);
     assert_eq!(period_info_posting.current_period, ProposalPeriod::Posting);
 
-    // Skip period from Posting to VotingBLOKSECNDS
+    // Skip period from Posting to Voting
     app.update_block(|mut block| {
         block.time = block
             .time
@@ -261,21 +262,21 @@ fn gov_vote_helper(
 
     let period_info_voting = contracts.governance.query_period_info(app).unwrap();
     println!("\n\n period_info_voting{:?}", period_info_voting);
-    // // assert_eq!(
-    // //     period_info_voting,
-    // //     PeriodInfoResponse {
-    // //         current_block: 12350,
-    // //         current_period: ProposalPeriod::Voting,
-    // //         current_time_in_cycle: 35,
-    // //         current_posting_start: 1660000000,
-    // //         current_voting_start: 1660000020,
-    // //         current_voting_end: 1660000040,
-    // //         next_posting_start: 1660000040,
-    // //         next_voting_start: 1660000060,
-    // //         posting_period_length: 20,
-    // //         voting_period_length: 20,
-    // //         cycle_length: 40
-    // //     }
+    // assert_eq!(
+    //     period_info_voting,
+    //     PeriodInfoResponse {
+    //         current_block: 12350,
+    //         current_period: ProposalPeriod::Voting,
+    //         current_time_in_cycle: 35,
+    //         current_posting_start: 1660000000,
+    //         current_voting_start: 1660000020,
+    //         current_voting_end: 1660000040,
+    //         next_posting_start: 1660000040,
+    //         next_voting_start: 1660000060,
+    //         posting_period_length: 20,
+    //         voting_period_length: 20,
+    //         cycle_length: 40
+    //     }
     // );
 
     // User1 votes yes to on the governance proposal to pass it

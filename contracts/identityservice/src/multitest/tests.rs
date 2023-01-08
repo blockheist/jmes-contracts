@@ -3,10 +3,9 @@
 use cosmwasm_std::{Addr, Decimal};
 use cw4::Member;
 use cw_multi_test::App;
-use cw_utils::{Duration, MsgInstantiateContractResponse, Threshold};
+use cw_utils::Duration;
 use dao_members::multitest::contract::DaoMembersContract;
 use dao_multisig::multitest::contract::DaoMultisigContract;
-use jmes::{msg::Voter, test_utils::get_attribute};
 
 use crate::{
     msg::{DaosResponse, GetIdentityByNameResponse, GetIdentityByOwnerResponse},
