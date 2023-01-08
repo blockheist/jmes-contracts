@@ -1,6 +1,11 @@
-import { LCDClient, MsgSend } from "@terra-money/terra.js";
-import { MnemonicKey } from "@terra-money/terra.js";
-import { MsgExecuteContract } from "@terra-money/terra.js";
+import { Client } from "jmes";
+import {
+  MsgExecuteContract,
+  MsgSend,
+} from "jmes/build/Client/providers/LCDClient/core/index.js";
+import { MnemonicKey } from "jmes/build/Client/providers/LCDClient/key/index.js";
+
+let clientFactory = new Client();
 
 async function createClient() {
   const LCDOptions = {
@@ -8,7 +13,8 @@ async function createClient() {
     chainID: process.env.CHAINID,
   };
   console.log("LCDOptions :>> ", LCDOptions);
-  const client = new LCDClient(LCDOptions);
+  const client = clientFactory.createLCDClient(LCDOptions);
+  // const client = new LCDClient(LCDOptions);
 
   client.query = async function (contractAddr, query) {
     return await client.wasm.contractQuery(contractAddr, query);

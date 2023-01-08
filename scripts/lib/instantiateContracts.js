@@ -1,7 +1,7 @@
 import {
   MsgExecuteContract,
   MsgInstantiateContract,
-} from "@terra-money/terra.js";
+} from "jmes/build/Client/providers/LCDClient/core/index.js";
 import { writeFileSync } from "fs";
 import { executeMsg } from "./executeMsg.js";
 import { getAttribute } from "../../e2e/lib/getAttribute.js";
