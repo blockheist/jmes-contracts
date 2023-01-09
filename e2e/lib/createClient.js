@@ -11,6 +11,7 @@ async function createClient() {
   const LCDOptions = {
     URL: process.env.LCDURL,
     chainID: process.env.CHAINID,
+    isClassic: false,
   };
   console.log("LCDOptions :>> ", LCDOptions);
   const client = clientFactory.createLCDClient(LCDOptions);
