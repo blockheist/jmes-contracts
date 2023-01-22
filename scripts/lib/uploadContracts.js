@@ -18,7 +18,8 @@ function createStoreMsg(contract, user) {
 
 function getContractNameFromPath(path) {
   let regex = RegExp(/artifacts\/(.*?)\.wasm/, "i");
-  return path.match(regex)[1];
+  let match = path.match(regex)[1];
+  return match.replace(/-aarch64/g, ""); // remove -aarch64 from contract name on M1 Macs
 }
 
 function getCodeIdFromResult(result) {
