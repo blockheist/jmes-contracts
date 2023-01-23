@@ -209,7 +209,7 @@ pub fn execute_claim(
         .add_message(BankMsg::Send {
             to_address: grant.dao.to_string(),
             amount: vec![Coin {
-                denom: "uluna".to_string(),
+                denom: "ujmes".to_string(),
                 amount: claimable_amount,
             }],
         })

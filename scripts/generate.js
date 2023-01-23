@@ -1,4 +1,5 @@
-import codegen from "@jmes-cosmwasm/ts-codegen";
+import codegen from "@cosmwasm/ts-codegen";
+
 codegen
   .default({
     contracts: [

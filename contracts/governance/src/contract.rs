@@ -133,7 +133,7 @@ mod exec {
         let deposit_amount = info
             .funds
             .iter()
-            .find(|coin| coin.denom == "uluna")
+            .find(|coin| coin.denom == "ujmes")
             .unwrap()
             .amount;
 
@@ -577,13 +577,13 @@ mod exec {
             // Refund the proposal deposit
             msgs.push(CosmosMsg::Bank(BankMsg::Send {
                 to_address: proposal.dao.to_string(),
-                amount: coins(proposal.deposit_amount.u128(), "uluna"),
+                amount: coins(proposal.deposit_amount.u128(), "ujmes"),
             }));
         } else {
             // Forward the proposal deposit to the distribution contract
             msgs.push(CosmosMsg::Bank(BankMsg::Send {
                 to_address: config.distribution_addr.unwrap().to_string(),
-                amount: coins(proposal.deposit_amount.u128(), "uluna"),
+                amount: coins(proposal.deposit_amount.u128(), "ujmes"),
             }));
         }
 

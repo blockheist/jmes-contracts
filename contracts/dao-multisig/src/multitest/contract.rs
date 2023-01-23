@@ -128,7 +128,7 @@ impl DaoMultisigContract {
         let wasm_msg = WasmMsg::Execute {
             contract_addr: gov_contract.to_string(),
             msg: proposal_msg.unwrap(),
-            funds: coins(proposal_deposit, "uluna"),
+            funds: coins(proposal_deposit, "ujmes"),
         };
 
         let dao_propose_response = DaoMultisigContract::propose(

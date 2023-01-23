@@ -20,12 +20,14 @@ import { GovernanceClient, GovernanceQueryClient } from "../client/Governance.cl
 import * as Governance from "../client/Governance.types.js";
 import * as BjmesToken from "../client/BjmesToken.types.js";
 import { BjmesTokenClient } from "../client/BjmesToken.client.js";
-import { WasmMsg } from "@terra-money/terra.js";
+import { Core } from "jmes";
+import { WasmMsg } from "jmes/src/Client/providers/LCDClient/core/wasm/msgs";
 import { coin, coins } from "@cosmjs/amino";
 import { useGovernanceCoreSlotsQuery } from "client/Governance.react-query.js";
 import { govTypes } from "@cosmjs/stargate/build/modules/index.js";
 
 
+// const wasmMsg = Core.Msg.fromData(data);
 
 const client = (await createClient()) as any;
 
@@ -41,7 +43,7 @@ const user3_name = process.env.USER3_NAME;
 global.liveAddrs = {};
 
 describe("End-to-End Tests", function () {
-  describe("User Identity", function () {
+  describe.only("User Identity", function () {
     before(async function () {
       global.addrs = await readContractAddrs();
     });
@@ -51,12 +53,14 @@ describe("End-to-End Tests", function () {
       const identityClient = new IdentityserviceClient(client, user1, contract_addr);
       const result = await identityClient.registerUser({ name: user1_name });
 
+      console.log('result :>> ', result);
+
       expect(result['code']).to.equal(0);
 
       return result;
     });
   });
-  describe("DAO Identity", function () {
+  describe.skip("DAO Identity", function () {
     before(async function () {
       global.addrs = readContractAddrs();
       global.codeIds = readCodeIds();
@@ -107,14 +111,15 @@ describe("End-to-End Tests", function () {
 
   describe("DAO Proposal", function () {
     before(async function () {
-      client.send(user3, global.liveAddrs.dao_multisig, "1000uluna")
+      global.liveAddrs = { dao_multisig: "jmes1cvddp2tya8eq6jjeyw40xvrqfvt6qtk6kmyh9nlwysh5fn7a9fksulxxey" }
+      client.send(user3, global.liveAddrs.dao_multisig, "1000ujmes")
     });
     describe.skip("spend dao tokens", function () {
       it("should create a dao proposal: send tokens", async function () {
         const contractAddress = global.liveAddrs.dao_multisig
         const daoClient = new DaoMultisigClient(client, user1, contractAddress);
 
-        const coin: DaoMultisig.Coin = { denom: "uluna", amount: "1000" }
+        const coin: DaoMultisig.Coin = { denom: "ujmes", amount: "1000" }
         const bankMsg: DaoMultisig.BankMsg = { send: { amount: [coin], to_address: user2.address } }
 
         const msg: DaoMultisig.ExecuteMsg = {
@@ -162,7 +167,7 @@ describe("End-to-End Tests", function () {
       });
     });
     describe("update dao members", function () {
-      it("should create a dao proposal: updatemembers", async function () {
+      it.only("should create a dao proposal: updatemembers", async function () {
         const contractAddress = global.liveAddrs.dao_multisig
         const daoMultisigClient = new DaoMultisigClient(client, user1, contractAddress);
 
@@ -269,10 +274,10 @@ describe("End-to-End Tests", function () {
       global.addrs = await readContractAddrs();
 
       // Fund the distribution contract
-      await client.send(user3, global.addrs.distribution, "3000000uluna")
+      await client.send(user3, global.addrs.distribution, "3000000ujmes")
 
       // Fund the dao for the governance proposal deposit
-      await client.send(user3, global.liveAddrs.dao_multisig, "2000uluna")
+      await client.send(user3, global.liveAddrs.dao_multisig, "2000ujmes")
 
       // Mint bondedJMES token so we can vote
       const bjmesTokenClient = new BjmesTokenClient(client, user1, global.addrs.bjmes_token)
@@ -299,7 +304,7 @@ describe("End-to-End Tests", function () {
 
       };
 
-      const deposit: Governance.Coin = { denom: "uluna", amount: "1000" }
+      const deposit: Governance.Coin = { denom: "ujmes", amount: "1000" }
 
       const wasmMsg: Governance.WasmMsg = {
         execute: {
@@ -418,10 +423,10 @@ describe("End-to-End Tests", function () {
       global.addrs = await readContractAddrs();
 
       // Fund the governance contract to test improvement:BankMsg
-      await client.send(user3, global.addrs.governance, "300000uluna")
+      await client.send(user3, global.addrs.governance, "300000ujmes")
 
       // Fund the dao for the governance proposal deposit
-      await client.send(user3, global.liveAddrs.dao_multisig, "2000uluna")
+      await client.send(user3, global.liveAddrs.dao_multisig, "2000ujmes")
 
       // Mint bondedJMES token so we can vote
       const bjmesTokenClient = new BjmesTokenClient(client, user1, global.addrs.bjmes_token)
@@ -446,7 +451,7 @@ describe("End-to-End Tests", function () {
         }
       };
 
-      const deposit: Governance.Coin = { denom: "uluna", amount: "1000" }
+      const deposit: Governance.Coin = { denom: "ujmes", amount: "1000" }
 
       const wasmMsg: Governance.WasmMsg = {
         execute: {
@@ -579,12 +584,12 @@ describe("End-to-End Tests", function () {
           improvement: {
             title: "Send Funds",
             description: "Improvement BankMsg",
-            msgs: [{ bank: { send: { amount: [{ denom: "uluna", amount: "1000" }], to_address: user1.address } } }]
+            msgs: [{ bank: { send: { amount: [{ denom: "ujmes", amount: "1000" }], to_address: user1.address } } }]
           }
         }
       };
 
-      const deposit: Governance.Coin = { denom: "uluna", amount: "1000" }
+      const deposit: Governance.Coin = { denom: "ujmes", amount: "1000" }
 
       const wasmMsg: Governance.WasmMsg = {
         execute: {

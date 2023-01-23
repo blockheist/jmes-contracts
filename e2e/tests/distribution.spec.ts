@@ -26,7 +26,7 @@ describe("Distribution", function () {
     global.addrs = await readContractAddrs();
   });
   it("should add funds to the distribution contract", async function () {
-    const result = await client.send(user1, global.addrs.distribution, "1000000uluna");
+    const result = await client.send(user1, global.addrs.distribution, "1000000ujmes");
     return result;
   });
 

@@ -42,9 +42,9 @@ async function createClient() {
       return await client.tx.broadcast(tx);
     } catch (err) {
       if (err.response && err.response.data) {
-        console.error("ERROR:", err.response.data);
+        console.error("ERROR DATA execute:", err.response.data);
       } else {
-        console.error("ERROR:", err);
+        console.error("ERROR RAW execute:", err);
       }
 
       throw err;
@@ -68,9 +68,9 @@ async function createClient() {
       return await client.tx.broadcast(tx);
     } catch (err) {
       if (err.response && err.response.data) {
-        console.error("ERROR:", err.response.data);
+        console.error("ERROR DATA send:", err.response.data);
       } else {
-        console.error("ERROR:", err);
+        console.error("ERROR RAW send:", err);
       }
 
       throw err;

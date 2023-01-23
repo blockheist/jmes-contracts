@@ -140,7 +140,7 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
                 storage,
                 distribution_contract.addr(),
                 vec![Coin {
-                    denom: "uluna".to_string(),
+                    denom: "ujmes".to_string(),
                     amount: Uint128::from(DISTRIBUTION_INIT_BALANCE),
                 }],
             )
@@ -152,7 +152,7 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
                 storage,
                 governance_contract.addr(),
                 vec![Coin {
-                    denom: "uluna".to_string(),
+                    denom: "ujmes".to_string(),
                     amount: Uint128::from(GOVERNANCE_INIT_BALANCE),
                 }],
             )
@@ -229,7 +229,7 @@ fn create_dao(app: &mut App, contracts: Contracts, user1: Addr, user2: Addr) -> 
     app.send_tokens(
         contracts.distribution.addr().clone(),
         Addr::unchecked(my_dao_addr.clone()),
-        &coins(PROPOSAL_REQUIRED_DEPOSIT, "uluna"),
+        &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
     )
     .unwrap();
 
@@ -476,7 +476,7 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
     app.send_tokens(
         contracts.distribution.addr().clone(),
         Addr::unchecked(my_dao_addr.clone()),
-        &coins(PROPOSAL_REQUIRED_DEPOSIT, "uluna"),
+        &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
     )
     .unwrap();
 
@@ -816,7 +816,7 @@ fn improvement_bankmsg() {
         msgs: vec![CosmosMsg::Bank(BankMsg::Send {
             to_address: user1.clone().into(),
             amount: vec![Coin {
-                denom: "uluna".to_string(),
+                denom: "ujmes".to_string(),
                 amount: Uint128::from(GOVERNANCE_INIT_BALANCE),
             }],
         })],
@@ -842,7 +842,7 @@ fn improvement_bankmsg() {
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "uluna")
+        coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
     );
 
     // Vote on and execute the governance proposal
@@ -859,7 +859,7 @@ fn improvement_bankmsg() {
     // Test that the funds were sent from governance to user1
     assert_eq!(
         app.wrap().query_all_balances(user1.clone()).unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE, "uluna")
+        coins(GOVERNANCE_INIT_BALANCE, "ujmes")
     );
     assert_eq!(
         app.wrap()
@@ -934,7 +934,7 @@ fn improvement_bankmsg_failing() {
         msgs: vec![CosmosMsg::Bank(BankMsg::Send {
             to_address: user1.clone().into(),
             amount: vec![Coin {
-                denom: "uluna".to_string(),
+                denom: "ujmes".to_string(),
                 amount: Uint128::from(GOVERNANCE_INIT_BALANCE),
             }],
         })],
@@ -960,7 +960,7 @@ fn improvement_bankmsg_failing() {
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "uluna")
+        coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
     );
 
     // Vote on and execute the governance proposal
@@ -985,13 +985,13 @@ fn improvement_bankmsg_failing() {
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE, "uluna")
+        coins(GOVERNANCE_INIT_BALANCE, "ujmes")
     );
     assert_eq!(
         app.wrap()
             .query_all_balances(contracts.distribution.addr().clone())
             .unwrap(),
-        coins(DISTRIBUTION_INIT_BALANCE, "uluna")
+        coins(DISTRIBUTION_INIT_BALANCE, "ujmes")
     );
 
     let final_proposal: ProposalResponse = app
@@ -1064,7 +1064,7 @@ fn governance_funding_proposal_passing() {
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "uluna")
+        coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
     );
 
     let period_info_voting = contracts.governance.query_period_info(&mut app).unwrap();
@@ -1149,7 +1149,7 @@ fn governance_funding_proposal_passing() {
         app.wrap()
             .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
             .unwrap(),
-        coins(FUNDING_AMOUNT / 2 + PROPOSAL_REQUIRED_DEPOSIT, "uluna")
+        coins(FUNDING_AMOUNT / 2 + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
     );
 
     // Skip double the grant duration time to claim 100% of the funds
@@ -1168,7 +1168,7 @@ fn governance_funding_proposal_passing() {
         app.wrap()
             .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
             .unwrap(),
-        coins(FUNDING_AMOUNT + PROPOSAL_REQUIRED_DEPOSIT, "uluna")
+        coins(FUNDING_AMOUNT + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
     );
 
     // Skip period from Posting to VotingBLOKSECNDS
@@ -1345,6 +1345,6 @@ fn governance_funding_proposal_failing() {
         app.wrap()
             .query_all_balances(contracts.distribution.addr().clone())
             .unwrap(),
-        coins(DISTRIBUTION_INIT_BALANCE, "uluna")
+        coins(DISTRIBUTION_INIT_BALANCE, "ujmes")
     );
 }

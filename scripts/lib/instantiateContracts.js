@@ -52,7 +52,7 @@ async function instantiateContract(
   let result;
   try {
     result = await executeMsg(client, instantiateContractMsg, user.wallet);
-    // console.log("result instantiateContractMsg :>> ", result, user.address); // If this fails make sure your wallet has LUNA to pay the fees
+    // console.log("result instantiateContractMsg :>> ", result, user.address); // If this fails make sure your wallet has ujmes to pay the fees
   } catch (err) {
     console.log(err);
     throw err;
