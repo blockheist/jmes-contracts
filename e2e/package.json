@@ -5,6 +5,7 @@
     "lint": "eslint . --ext .ts",
     "local": "NETWORK_ENV=localterra mocha './tests/e2e.spec.ts' ",
     "pisco1": "NETWORK_ENV=pisco1 mocha './tests/e2e.spec.ts' ",
+    "jmes-888": "NETWORK_ENV=jmes-888 mocha './tests/e2e.spec.ts' ",
     "local:identityservice": "NETWORK_ENV=localterra mocha './tests/identityservice.spec.ts' ",
     "pisco1:identityservice": "NETWORK_ENV=pisco1 mocha './tests/identityservice.spec.ts' ",
     "local:distribution": "NETWORK_ENV=localterra mocha './tests/distribution.spec.ts' ",
@@ -18,7 +19,7 @@
     "@types/node": "^18.7.14",
     "chai": "^4.3.4",
     "dotenv": "^12.0.4",
-    "jmes": "^1.2.0",
+    "jmes": "^1.2.1",
     "mocha": "^9.2.0",
     "ts-node": "^10.9.1"
   },
