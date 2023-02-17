@@ -9,7 +9,6 @@ use cw_multi_test::{next_block, App, AppBuilder, AppResponse, BankKeeper, Execut
 use cw_utils::Duration;
 use dao_members::multitest::contract::DaoMembersContract;
 use dao_multisig::multitest::contract::DaoMultisigContract;
-use distribution::multitest::contract::DistributionContract;
 use identityservice::multitest::contract::IdentityserviceContract;
 use jmes::test_utils::get_attribute;
 
@@ -35,7 +34,6 @@ const FUNDING_AMOUNT: u128 = 1000000u128;
 const USER1_VOTING_COINS: u128 = 2000;
 const USER2_VOTING_COINS: u128 = 3000;
 
-const DISTRIBUTION_INIT_BALANCE: u128 = 10_000_000;
 const GOVERNANCE_INIT_BALANCE: u128 = 100_000; // To test improvement proposal: BankMsg
 
 fn mock_app() -> App {
@@ -57,7 +55,6 @@ fn mock_app() -> App {
 struct Contracts {
     governance: GovernanceContract,
     _bjmes_token: BjmesTokenContract,
-    distribution: DistributionContract,
     identityservice: IdentityserviceContract,
 }
 
@@ -103,24 +100,12 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
     )
     .unwrap();
 
-    let distribution_code_id = DistributionContract::store_code(app);
-    let distribution_contract = DistributionContract::instantiate(
-        app,
-        distribution_code_id,
-        &user1,
-        "distribution",
-        governance_contract.addr().clone(),
-        identityservice_contract.addr().clone(),
-    )
-    .unwrap();
-
     println!("\n\nbjmes_contract {:?}", bjmes_contract);
     println!("\n\ngovernance_contract {:?}", governance_contract);
     println!(
         "\n\nidentityservice_contract {:?}",
         identityservice_contract
     );
-    println!("\n\ndistribution_contract {:?}", distribution_contract);
 
     // Set contract options
     governance_contract
@@ -132,7 +117,8 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
             identityservice_contract.addr().into(),
         )
         .unwrap();
-    // Fund the distribution contract
+
+    // Fund the governance contract
     app.init_modules(|router, _, storage| {
         router
             .bank
@@ -192,7 +178,6 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
     Contracts {
         governance: governance_contract,
         _bjmes_token: bjmes_contract,
-        distribution: distribution_contract,
         identityservice: identityservice_contract,
     }
 }
@@ -227,7 +212,7 @@ fn create_dao(app: &mut App, contracts: Contracts, user1: Addr, user2: Addr) -> 
 
     // Fund dao addr with JMES so it can send the deposit
     app.send_tokens(
-        contracts.distribution.addr().clone(),
+        contracts..addr().clone(),
         Addr::unchecked(my_dao_addr.clone()),
         &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
     )

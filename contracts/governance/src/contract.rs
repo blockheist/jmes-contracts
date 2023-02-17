@@ -29,7 +29,6 @@ pub fn instantiate(
     let config = Config {
         owner: Some(owner_addr),
         bjmes_token_addr: deps.api.addr_validate(&msg.bjmes_token_addr)?,
-        distribution_addr: None,
         artist_curator_addr: None,
         identityservice_addr: None,
         proposal_required_deposit: msg.proposal_required_deposit,
@@ -82,14 +81,12 @@ pub fn execute(
         UnsetCoreSlot { proposal_id } => exec::unset_core_slot(deps, env, info, proposal_id),
         ResignCoreSlot { slot, note } => exec::resign_core_slot(deps, env, info, slot, note),
         SetContract {
-            distribution,
             artist_curator,
             identityservice,
         } => exec::set_contract(
             deps,
             env,
             info,
-            distribution,
             artist_curator,
             identityservice,
         ),
@@ -354,17 +351,18 @@ mod exec {
         // Only the submitting dao address can receive the grant funding
         let dao = info.sender.clone();
 
-        let msg = CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.distribution_addr.unwrap().to_string(),
-            msg: to_binary(&AddGrantMsg {
-                add_grant: AddGrant {
-                    dao: dao.clone(),
-                    duration,
-                    amount,
-                },
-            })?,
-            funds: vec![],
-        });
+        todo!() // add vec of payouts
+        // let msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        //     contract_addr: config.distribution_addr.unwrap().to_string(),
+        //     msg: to_binary(&AddGrantMsg {
+        //         add_grant: AddGrant {
+        //             dao: dao.clone(),
+        //             duration,
+        //             amount,
+        //         },
+        //     })?,
+        //     funds: vec![],
+        // });
 
         let id = Proposal::next_id(deps.storage)?;
         let proposal = Proposal {
@@ -580,11 +578,12 @@ mod exec {
                 amount: coins(proposal.deposit_amount.u128(), "ujmes"),
             }));
         } else {
+            todo!() // burn the deposit
             // Forward the proposal deposit to the distribution contract
-            msgs.push(CosmosMsg::Bank(BankMsg::Send {
-                to_address: config.distribution_addr.unwrap().to_string(),
-                amount: coins(proposal.deposit_amount.u128(), "ujmes"),
-            }));
+            // msgs.push(CosmosMsg::Bank(BankMsg::Send {
+            //     to_address: config.distribution_addr.unwrap().to_string(),
+            //     amount: coins(proposal.deposit_amount.u128(), "uluna"),
+            // }));
         }
 
         Ok(Response::new().add_messages(msgs))
@@ -852,7 +851,6 @@ mod exec {
         deps: DepsMut,
         _env: Env,
         info: MessageInfo,
-        distribution: String,
         artist_curator: String,
         identityservice: String,
     ) -> Result<Response, ContractError> {
@@ -863,11 +861,9 @@ mod exec {
             return Err(ContractError::Unauthorized {});
         }
 
-        let distribution_addr = deps.api.addr_validate(&distribution)?;
         let artist_curator_addr = deps.api.addr_validate(&artist_curator)?;
         let identityservice_addr = deps.api.addr_validate(&identityservice)?;
 
-        config.distribution_addr = Some(distribution_addr);
         config.artist_curator_addr = Some(artist_curator_addr);
         config.identityservice_addr = Some(identityservice_addr);
 

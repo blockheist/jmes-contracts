@@ -109,9 +109,7 @@ impl GovernanceContract {
             sender.clone(),
             self.0.clone(),
             &ExecuteMsg::SetContract {
-                distribution,
                 artist_curator,
-
                 identityservice,
             },
             &[],
