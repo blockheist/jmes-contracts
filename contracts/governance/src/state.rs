@@ -4,6 +4,7 @@ use crate::{
 };
 use cosmwasm_std::{Addr, CosmosMsg, Decimal, Env, StdResult, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
+use cw_utils::Duration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -184,7 +185,6 @@ pub enum ProposalStatus {
 pub enum ProposalType {
     Text {},
     FeatureRequest(Feature),
-    Funding {},
     Improvement {},
     CoreSlot(CoreSlot),
     RevokeCoreSlot(RevokeCoreSlot),
@@ -195,4 +195,12 @@ pub enum ProposalType {
 pub enum VoteOption {
     Yes,
     No,
+}
+
+// Funding is an optional add-on to a proposal
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Funding {
+    pub amount: Uint128,
+    pub duration: Duration,
+    pub dao: Addr,
 }
