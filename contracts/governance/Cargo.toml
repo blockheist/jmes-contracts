@@ -42,9 +42,6 @@ bjmes-token = { path = "../bjmes-token", version = "0.15.0", features = [
 artist-curator = { path = "../artist-curator", version = "0.14.0", features = [
   "library",
 ]  }
-distribution = { path = "../distribution", version = "0.15.0", features = [
-  "library"
-]  }
 identityservice = { path = "../identityservice", version = "0.1.0", features = [
   "library"
 ]  }
@@ -58,9 +55,6 @@ cw3 ="0.16.0"
 cw4 = "0.16.0"
 cosmwasm-schema = { version = "1.0.0" }
 identityservice = { path = "../identityservice", version = "0.1.0", features = [
-  "tests"
-]  }
-distribution = { path = "../distribution", version = "0.15.0", features = [
   "tests"
 ]  }
 bjmes-token = { path = "../bjmes-token", version = "0.15.0", features = [

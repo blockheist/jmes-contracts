@@ -527,7 +527,7 @@ mod exec {
         }
 
         // Finally save winning grants after housekeeping and adding the new funding grant
-        WINNING_GRANTS.save(deps.storage, &funders)?;
+        WINNING_GRANTS.save(deps.storage, &winning_grants)?;
 
         Ok(Response::new().add_messages(msgs))
     }

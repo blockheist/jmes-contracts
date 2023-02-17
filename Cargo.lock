@@ -790,19 +790,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw721"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94a1ea6e6277bdd6dfc043a9b1380697fe29d6e24b072597439523658d21d791"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-utils 0.16.0",
- "schemars",
- "serde",
-]
-
-[[package]]
 name = "dao-members"
 version = "0.16.0"
 dependencies = [
@@ -877,28 +864,6 @@ dependencies = [
  "block-buffer 0.10.3",
  "crypto-common",
  "subtle",
-]
-
-[[package]]
-name = "distribution"
-version = "0.15.0"
-dependencies = [
- "artist-nft",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-multi-test",
- "cw-storage-plus 0.16.0",
- "cw-utils 0.16.0",
- "cw2 0.16.0",
- "cw20 0.16.0",
- "cw3 0.16.0",
- "cw721 0.16.0",
- "identityservice",
- "prost 0.11.2",
- "schemars",
- "serde",
- "thiserror",
 ]
 
 [[package]]
@@ -1016,7 +981,6 @@ dependencies = [
  "cw4 0.16.0",
  "dao-members",
  "dao-multisig",
- "distribution",
  "identityservice",
  "jmes",
  "schemars",

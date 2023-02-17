@@ -112,7 +112,6 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
         .set_contract(
             app,
             &owner,
-            distribution_contract.addr().into(),
             "artist_curator".into(), // TODO instantiate artist_curator contract and use actual address
             identityservice_contract.addr().into(),
         )
@@ -976,7 +975,7 @@ fn improvement_bankmsg_failing() {
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(DISTRIBUTION_INIT_BALANCE, "ujmes")
+        coins(GOVERNANCE_INIT_BALANCE, "uluna")
     );
 
     let final_proposal: ProposalResponse = app
@@ -1142,11 +1141,13 @@ fn governance_funding_proposal_passing() {
         block.height += FUNDING_DURATION * 2 / SECONDS_PER_BLOCK;
     });
 
-    let claim_funds_result = contracts
-        .distribution
-        .claim(&mut app, &Addr::unchecked(my_dao_addr.clone()), 1)
-        .unwrap();
-    println!("\n\n claim_funds_result {:?}", claim_funds_result);
+    todo!(); // instead of claiming funds, we receive the funds from L1 with every block
+
+    // let claim_funds_result = contracts
+    //     .distribution
+    //     .claim(&mut app, &Addr::unchecked(my_dao_addr.clone()), 1)
+    //     .unwrap();
+    // println!("\n\n claim_funds_result {:?}", claim_funds_result);
 
     assert_eq!(
         app.wrap()
