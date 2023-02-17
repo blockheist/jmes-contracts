@@ -534,6 +534,10 @@ mod exec {
                     dao: proposal.dao.clone(),
                     amount: proposal.funding.clone().unwrap().amount,
                     expiration: proposal.funding.clone().unwrap().duration.after(&env.block),
+                    yes_ratio: Decimal::from_ratio(
+                        proposal.coins_yes,
+                        proposal.coins_yes + proposal.coins_no,
+                    ),
                 });
             }
         }

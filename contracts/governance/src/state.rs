@@ -34,6 +34,7 @@ pub struct WinningGrant {
     pub dao: Addr,
     pub amount: Uint128,
     pub expiration: Expiration,
+    pub yes_ratio: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
