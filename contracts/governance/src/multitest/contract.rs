@@ -101,7 +101,6 @@ impl GovernanceContract {
         app: &mut App,
         sender: &Addr,
 
-        distribution: String,
         artist_curator: String,
         identityservice: String,
     ) -> Result<AppResponse, ContractError> {

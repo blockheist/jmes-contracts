@@ -127,12 +127,6 @@ mod exec {
             });
         }
         let period_info = period_info(deps.as_ref(), env.clone())?;
-        let deposit_amount = info
-            .funds
-            .iter()
-            .find(|coin| coin.denom == "ujmes")
-            .unwrap()
-            .amount;
 
         // Only DAO identities are allowed to post proposals
         let maybe_identity_resp: GetIdentityByOwnerResponse = deps.querier.query_wasm_smart(
@@ -153,7 +147,14 @@ mod exec {
             return Err(ContractError::NotPostingPeriod {});
         }
 
-        // A minimum deposit is required to post a proposal
+        // A proposal fee must be paid when posting a proposal
+        todo!(); // The fee must be burned (should be attached msg to burning address)
+        let deposit_amount = info
+            .funds
+            .iter()
+            .find(|coin| coin.denom == "uluna")
+            .unwrap()
+            .amount;
         if deposit_amount < Uint128::from(config.proposal_required_deposit) {
             return Err(ContractError::InsufficientDeposit {});
         }
@@ -571,21 +572,10 @@ mod exec {
             && proposal.msgs.is_some()
         {
             msgs.extend(proposal.msgs.unwrap());
+            
+            todo!(); // If proposal type is funding, add funding to the funders vector
 
-            // Refund the proposal deposit
-            msgs.push(CosmosMsg::Bank(BankMsg::Send {
-                to_address: proposal.dao.to_string(),
-                amount: coins(proposal.deposit_amount.u128(), "ujmes"),
-            }));
-        } else {
-            todo!() // burn the deposit
-            // Forward the proposal deposit to the distribution contract
-            // msgs.push(CosmosMsg::Bank(BankMsg::Send {
-            //     to_address: config.distribution_addr.unwrap().to_string(),
-            //     amount: coins(proposal.deposit_amount.u128(), "uluna"),
-            // }));
-        }
-
+        } 
         Ok(Response::new().add_messages(msgs))
     }
 

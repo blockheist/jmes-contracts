@@ -24,6 +24,12 @@ pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
 
 pub const PROPOSALS: Map<u64, Proposal> = Map::new("proposals");
 
+// This is a map, we read it by proposal id and on conclude copy it to winning grants on success or delete it on failure
+pub const PROPOSED_GRANTS: Map<u64, Grant> = Map::new("proposed_grants");
+
+// This is an item of type vec that gets updated on every conclude and old grants are deleted
+pub const WINNING_GRANTS: Item<Vec<WinningGrants>> = Item::new("winning_grants");
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct SlotVoteResult {

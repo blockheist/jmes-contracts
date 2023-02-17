@@ -459,7 +459,7 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
 
     // Fund my_dao_addr so it can send the deposit
     app.send_tokens(
-        contracts.distribution.addr().clone(),
+        contracts.governance.addr().clone(),
         Addr::unchecked(my_dao_addr.clone()),
         &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
     )
@@ -974,7 +974,7 @@ fn improvement_bankmsg_failing() {
     );
     assert_eq!(
         app.wrap()
-            .query_all_balances(contracts.distribution.addr().clone())
+            .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
         coins(DISTRIBUTION_INIT_BALANCE, "ujmes")
     );
@@ -1127,8 +1127,7 @@ fn governance_funding_proposal_passing() {
         block.height += FUNDING_DURATION / 2 / SECONDS_PER_BLOCK;
     });
 
-    let claim_funds_result = contracts.distribution.claim(&mut app, &user1, 1).unwrap();
-    println!("\n\n claim_funds_result {:?}", claim_funds_result);
+    todo!(); // instead of claiming funds, we receive the funds from L1 with every block
 
     assert_eq!(
         app.wrap()
@@ -1182,7 +1181,7 @@ fn governance_funding_proposal_passing() {
     let post_conclusion_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
     assert_eq!(post_conclusion_proposal.coins_no, Uint128::zero());
 
-    // Test that a failing proposal sends the deposit to the distribution contract and doesn't execute the msgs
+    todo!() // Test that a failing proposal never executes the msgs
 }
 
 #[test]
@@ -1311,25 +1310,12 @@ fn governance_funding_proposal_failing() {
         block.height += FUNDING_DURATION / 2 / SECONDS_PER_BLOCK;
     });
 
-    let claim_funds_err = contracts
-        .distribution
-        .claim(&mut app, &user1, 1)
-        .unwrap_err();
-    assert_eq!(
-        claim_funds_err,
-        distribution::ContractError::GrantNotFound {}
-    );
+    todo!(); // instead of claiming funds, we receive the funds from L1 with every block
 
     assert_eq!(
         app.wrap()
             .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
             .unwrap(),
         vec![]
-    );
-    assert_eq!(
-        app.wrap()
-            .query_all_balances(contracts.distribution.addr().clone())
-            .unwrap(),
-        coins(DISTRIBUTION_INIT_BALANCE, "ujmes")
     );
 }

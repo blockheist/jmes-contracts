@@ -36,7 +36,6 @@ pub enum ExecuteMsg {
         id: u64,
     },
     SetContract {
-        distribution: String,
         artist_curator: String,
         identityservice: String,
     },
