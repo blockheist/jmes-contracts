@@ -4,7 +4,7 @@ use cosmwasm_std::{Addr, CosmosMsg, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::state::{ProposalStatus, ProposalType, SlotVoteResult, VoteOption};
+use crate::state::{Funding, ProposalStatus, ProposalType, SlotVoteResult, VoteOption};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -65,31 +65,30 @@ pub enum ProposalMsg {
     TextProposal {
         title: String,
         description: String,
+        funding: Option<Funding>,
     },
     RequestFeature {
         title: String,
         description: String,
+        funding: Option<Funding>,
         feature: Feature,
-    },
-    Funding {
-        title: String,
-        description: String,
-        duration: u64,
-        amount: Uint128,
     },
     Improvement {
         title: String,
         description: String,
+        funding: Option<Funding>,
         msgs: Vec<CosmosMsg>,
     },
     CoreSlot {
         title: String,
         description: String,
+        funding: Option<Funding>,
         slot: CoreSlot,
     },
     RevokeCoreSlot {
         title: String,
         description: String,
+        funding: Option<Funding>,
         revoke_slot: RevokeCoreSlot,
     },
 }

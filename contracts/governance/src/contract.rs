@@ -83,13 +83,7 @@ pub fn execute(
         SetContract {
             artist_curator,
             identityservice,
-        } => exec::set_contract(
-            deps,
-            env,
-            info,
-            artist_curator,
-            identityservice,
-        ),
+        } => exec::set_contract(deps, env, info, artist_curator, identityservice),
     }
 }
 
@@ -105,12 +99,12 @@ mod exec {
         AddGrant, AddGrantMsg, CoreSlot, Feature, PeriodInfoResponse, ProposalPeriod,
         RevokeCoreSlot,
     };
+    use crate::state::{Funding, ProposalStatus, SlotVoteResult, CORE_SLOTS};
     use crate::state::{
         Proposal, ProposalType,
         VoteOption::{self, *},
         PROPOSALS,
     };
-    use crate::state::{ProposalStatus, SlotVoteResult, CORE_SLOTS};
 
     pub fn proposal(
         deps: DepsMut,
@@ -126,7 +120,6 @@ mod exec {
                 start_epoch: config.period_start_epoch,
             });
         }
-        let period_info = period_info(deps.as_ref(), env.clone())?;
 
         // Only DAO identities are allowed to post proposals
         let maybe_identity_resp: GetIdentityByOwnerResponse = deps.querier.query_wasm_smart(
@@ -143,6 +136,8 @@ mod exec {
         }
 
         // Only during a posting period can new proposals be posted
+        let period_info = period_info(deps.as_ref(), env.clone())?;
+
         if period_info.current_period != ProposalPeriod::Posting {
             return Err(ContractError::NotPostingPeriod {});
         }
@@ -169,6 +164,7 @@ mod exec {
                 deposit_amount,
                 title,
                 description,
+                funding,
             ),
             ProposalMsg::RequestFeature {
                 title,
@@ -183,25 +179,10 @@ mod exec {
                 deposit_amount,
                 title,
                 description,
+                funding,
                 feature,
             ),
-            ProposalMsg::Funding {
-                title,
-                description,
-                duration,
-                amount,
-            } => funding(
-                deps,
-                info,
-                env,
-                config,
-                period_info,
-                deposit_amount,
-                title,
-                description,
-                duration,
-                amount,
-            ),
+
             ProposalMsg::Improvement {
                 title,
                 description,
@@ -215,6 +196,7 @@ mod exec {
                 deposit_amount,
                 title,
                 description,
+                funding,
                 msgs,
             ),
             ProposalMsg::CoreSlot {
@@ -230,6 +212,7 @@ mod exec {
                 deposit_amount,
                 title,
                 description,
+                funding,
                 slot,
             ),
             ProposalMsg::RevokeCoreSlot {
@@ -277,6 +260,7 @@ mod exec {
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
             concluded: false,
+            funding,
             msgs: None,
         };
 
@@ -296,6 +280,7 @@ mod exec {
         deposit_amount: Uint128,
         title: String,
         description: String,
+        funding: Option<Funding>,
         feature: Feature,
     ) -> Result<Response, ContractError> {
         let msg = match feature {
@@ -327,6 +312,7 @@ mod exec {
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
             concluded: false,
+            funding,
             msgs: Some(vec![msg]),
         };
 
@@ -337,7 +323,6 @@ mod exec {
         Ok(Response::new())
     }
 
-    
     pub fn improvement(
         deps: DepsMut,
         info: MessageInfo,
@@ -347,6 +332,7 @@ mod exec {
         deposit_amount: Uint128,
         title: String,
         description: String,
+        funding: Option<Funding>,
         msgs: Vec<CosmosMsg>,
     ) -> Result<Response, ContractError> {
         let core_slots = CORE_SLOTS.load(deps.storage)?;
@@ -375,6 +361,7 @@ mod exec {
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
             concluded: false,
+            funding,
             msgs: Some(msgs),
         };
 
@@ -394,6 +381,7 @@ mod exec {
         deposit_amount: Uint128,
         title: String,
         description: String,
+        funding: Option<Funding>,
         slot: CoreSlot,
     ) -> Result<Response, ContractError> {
         let dao = info.sender.clone();
@@ -415,6 +403,7 @@ mod exec {
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
             concluded: false,
+            funding,
             msgs: Some(vec![CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
                 msg: to_binary(&ExecuteMsg::SetCoreSlot { proposal_id: id })?,
@@ -518,10 +507,9 @@ mod exec {
             && proposal.msgs.is_some()
         {
             msgs.extend(proposal.msgs.unwrap());
-            
-            todo!(); // If proposal type is funding, add funding to the funders vector
 
-        } 
+            todo!(); // If proposal type is funding, add funding to the funders vector
+        }
         Ok(Response::new().add_messages(msgs))
     }
 

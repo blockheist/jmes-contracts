@@ -203,5 +203,4 @@ pub enum VoteOption {
 pub struct Funding {
     pub amount: Uint128,
     pub duration: Duration,
-    pub dao: Addr,
 }
