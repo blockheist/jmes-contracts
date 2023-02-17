@@ -337,61 +337,7 @@ mod exec {
         Ok(Response::new())
     }
 
-    pub fn funding(
-        deps: DepsMut,
-        info: MessageInfo,
-        env: Env,
-        config: Config,
-        period_info: PeriodInfoResponse,
-        deposit_amount: Uint128,
-        title: String,
-        description: String,
-        duration: u64,
-        amount: Uint128,
-    ) -> Result<Response, ContractError> {
-        // Only the submitting dao address can receive the grant funding
-        let dao = info.sender.clone();
-
-        todo!() // add vec of payouts
-        // let msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        //     contract_addr: config.distribution_addr.unwrap().to_string(),
-        //     msg: to_binary(&AddGrantMsg {
-        //         add_grant: AddGrant {
-        //             dao: dao.clone(),
-        //             duration,
-        //             amount,
-        //         },
-        //     })?,
-        //     funds: vec![],
-        // });
-
-        let id = Proposal::next_id(deps.storage)?;
-        let proposal = Proposal {
-            id,
-            dao,
-            title,
-            description,
-            prop_type: ProposalType::Funding {},
-            coins_no: Uint128::zero(),
-            coins_yes: Uint128::zero(),
-            yes_voters: Vec::new(),
-            no_voters: Vec::new(),
-            deposit_amount,
-            start_block: env.block.height, // used for voting coin lookup
-            posting_start: period_info.current_posting_start,
-            voting_start: period_info.current_voting_start,
-            voting_end: period_info.current_voting_end,
-            concluded: false,
-            msgs: Some(vec![msg]),
-        };
-
-        proposal.validate()?;
-
-        PROPOSALS.save(deps.storage, id, &proposal)?;
-
-        Ok(Response::new())
-    }
-
+    
     pub fn improvement(
         deps: DepsMut,
         info: MessageInfo,
