@@ -80,6 +80,7 @@ pub struct Proposal {
     pub voting_start: u64,
     pub voting_end: u64,
     pub concluded: bool,
+    pub funding: Option<Funding>,
     pub msgs: Option<Vec<CosmosMsg>>,
 }
 
