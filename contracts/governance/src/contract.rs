@@ -1,11 +1,19 @@
+use std::ops::Add;
+
 use crate::error::ContractError;
 // use crate::msg::Feature::ArtistCurator;
 use crate::msg::{ExecuteMsg, InstantiateMsg, ProposalMsg, QueryMsg};
-use crate::state::{Config, CoreSlots, CONFIG, CORE_SLOTS, PROPOSAL_COUNT, WINNING_GRANTS};
+use crate::state::{
+    Config, CoreSlots, WinningGrant, CONFIG, CORE_SLOTS, PROPOSAL_COUNT, WINNING_GRANTS,
+};
 use artist_curator::msg::ExecuteMsg::ApproveCurator;
 use bjmes_token::msg::QueryMsg as BjmesQueryMsg;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{
+    to_binary, Addr, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    Timestamp, Uint128,
+};
 use cw2::set_contract_version;
+use cw_utils::Expiration;
 use identityservice::msg::QueryMsg::GetIdentityByOwner;
 use identityservice::state::IdType::Dao;
 
@@ -48,6 +56,32 @@ pub fn instantiate(
             creative: None,
         },
     )?;
+
+    // TODO Remove mock winning grants
+    // START MOCK WINNING GRANTS
+    let mut mock_winning_grants: Vec<WinningGrant> = vec![];
+
+    mock_winning_grants.push(WinningGrant {
+        dao: Addr::unchecked("jmes1lzs0l3h9q7003ugspe8x8ueug9j6n4hau5pyha"),
+        amount: Uint128::from(100u128),
+        expiration: Expiration::AtTime(Timestamp::from_seconds(1679044423)),
+        yes_ratio: Decimal::percent(85),
+    });
+
+    mock_winning_grants.push(WinningGrant {
+        dao: Addr::unchecked("jmes1cs0sav8qwsdzqt8ep2wfp5h830c6heq84pxmjq"),
+        amount: Uint128::from(200u128),
+        expiration: Expiration::AtTime(Timestamp::from_seconds(1679130823)),
+        yes_ratio: Decimal::percent(90),
+    });
+
+    mock_winning_grants.push(WinningGrant {
+        dao: Addr::unchecked("jmes1wcf03kqs6klcggkf55nynueggjn8hxw47gtzra"),
+        amount: Uint128::from(300u128),
+        expiration: Expiration::AtTime(Timestamp::from_seconds(1679217223)),
+        yes_ratio: Decimal::percent(95),
+    });
+    // END MOCK WINNING GRANTS
 
     WINNING_GRANTS.save(deps.storage, &vec![])?;
 
