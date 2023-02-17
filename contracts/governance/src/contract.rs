@@ -99,7 +99,9 @@ mod exec {
         AddGrant, AddGrantMsg, CoreSlot, Feature, PeriodInfoResponse, ProposalPeriod,
         RevokeCoreSlot,
     };
-    use crate::state::{Funding, ProposalStatus, SlotVoteResult, CORE_SLOTS};
+    use crate::state::{
+        Funding, ProposalStatus, SlotVoteResult, WinningGrant, CORE_SLOTS, WINNING_GRANTS,
+    };
     use crate::state::{
         Proposal, ProposalType,
         VoteOption::{self, *},
@@ -482,7 +484,7 @@ mod exec {
         }
     }
 
-    // Refund deposit_amount and execute msgs
+    // Process funding requests and Execute attached msgs
     pub fn conclude(deps: DepsMut, env: Env, id: u64) -> Result<Response, ContractError> {
         let mut proposal = PROPOSALS.load(deps.storage, id)?;
         let config = CONFIG.load(deps.storage)?;
@@ -501,15 +503,32 @@ mod exec {
 
         let mut msgs: Vec<CosmosMsg> = vec![];
 
-        // Only execute proposal msgs on success
+        // Do some housekeeping and remove expired funding grants
+        let mut winning_grants = WINNING_GRANTS.load(deps.storage)?;
+
+        // Remove expired grants from winning grants
+        winning_grants.retain(|grant| grant.expiration > env.block.time);
+
+        // On proposal success, add process funding proposal and execute attached msgs
         if proposal.status(env, config.proposal_required_percentage)
             == ProposalStatus::SuccessConcluded
-            && proposal.msgs.is_some()
         {
-            msgs.extend(proposal.msgs.unwrap());
+            if proposal.msgs.is_some() {
+                msgs.extend(proposal.msgs.unwrap());
+            }
 
-            todo!(); // If proposal type is funding, add funding to the funders vector
+            if proposal.funding.is_some() {
+                winning_grants.push(WinningGrant {
+                    dao: proposal.dao.clone(),
+                    amount: proposal.funding.unwrap().amount,
+                    expiration: proposal.funding.unwrap().duration.after(env.block.time),
+                });
+            }
         }
+
+        // Finally save winning grants after housekeeping and adding the new funding grant
+        WINNING_GRANTS.save(deps.storage, &funders)?;
+
         Ok(Response::new().add_messages(msgs))
     }
 

@@ -4,7 +4,7 @@ use crate::{
 };
 use cosmwasm_std::{Addr, CosmosMsg, Decimal, Env, StdResult, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
-use cw_utils::Duration;
+use cw_utils::{Duration, Expiration};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -25,11 +25,76 @@ pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
 
 pub const PROPOSALS: Map<u64, Proposal> = Map::new("proposals");
 
-// This is a map, we read it by proposal id and on conclude copy it to winning grants on success or delete it on failure
-pub const PROPOSED_GRANTS: Map<u64, Grant> = Map::new("proposed_grants");
-
 // This is an item of type vec that gets updated on every conclude and old grants are deleted
-pub const WINNING_GRANTS: Item<Vec<WinningGrants>> = Item::new("winning_grants");
+pub const WINNING_GRANTS: Item<Vec<WinningGrant>> = Item::new("winning_grants");
+
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct WinningGrant {
+    pub dao: Addr,
+    pub amount: Uint128,
+    pub expiration: Expiration,
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ProposalType {
+    TextProposal,
+    RequestFeature,
+    Improvement,
+    CoreSlot,
+    RevokeCoreSlot,
+    AddGrant,
+}
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Proposal {
+    pub id: u64,
+    pub dao: Addr,
+    pub title: String,
+    pub description: String,
+    pub prop_type: ProposalType,
+    pub coins_yes: Uint128,
+    pub coins_no: Uint128,
+    pub yes_voters: Vec<Addr>,
+    pub no_voters: Vec<Addr>,
+    pub voting_end: u64,
+    pub proposal_voting_end: u64,
+    pub proposal_status: ProposalStatus,
+    pub funding: Option<Funding>,
+    pub msgs: Option<Vec<CosmosMsg>>,
+    pub feature: Option<Feature>,
+    pub slot: Option<CoreSlot>,
+    pub revoke_slot: Option<RevokeCoreSlot>,
+}
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ProposalStatus {
+    Pending,
+    Accepted,
+    Rejected,
+    Expired,
+}
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Funding {
+    pub amount: Uint128,
+    pub duration: u64,
+}
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Config {
+    pub owner: Option<Addr>,
+    pub bjmes_token_addr: Addr,
+    pub artist_curator_addr: Option<Addr>,
+    pub identityservice_addr: Option<Addr>,
+    pub proposal_required_deposit: Uint128,
+    // Required percentage for a proposal to pass, e.g. 51
+    pub proposal_required_percentage: u64,
+    // Epoch when the 1st posting period starts, e.g. 1660000000
+    pub period_start_epoch: u64
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
