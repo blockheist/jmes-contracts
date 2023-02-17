@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 // use crate::msg::Feature::ArtistCurator;
 use crate::msg::{ExecuteMsg, InstantiateMsg, ProposalMsg, QueryMsg};
-use crate::state::{Config, CoreSlots, CONFIG, CORE_SLOTS, PROPOSAL_COUNT};
+use crate::state::{Config, CoreSlots, CONFIG, CORE_SLOTS, PROPOSAL_COUNT, WINNING_GRANTS};
 use artist_curator::msg::ExecuteMsg::ApproveCurator;
 use bjmes_token::msg::QueryMsg as BjmesQueryMsg;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
@@ -48,6 +48,8 @@ pub fn instantiate(
             creative: None,
         },
     )?;
+
+    WINNING_GRANTS.save(deps.storage, &vec![])?;
 
     PROPOSAL_COUNT.save(deps.storage, &(0 as u64))?;
     Ok(Response::new())
@@ -145,7 +147,7 @@ mod exec {
         }
 
         // A proposal fee must be paid when posting a proposal
-        todo!(); // The fee must be burned (should be attached msg to burning address)
+        // TODO The fee must be burned (should be attached msg to burning address)
         let deposit_amount = info
             .funds
             .iter()
@@ -157,7 +159,11 @@ mod exec {
         }
 
         match proposal_msg {
-            ProposalMsg::TextProposal { title, description } => text_proposal(
+            ProposalMsg::TextProposal {
+                title,
+                description,
+                funding,
+            } => text_proposal(
                 deps,
                 info,
                 env,
@@ -171,6 +177,7 @@ mod exec {
             ProposalMsg::RequestFeature {
                 title,
                 description,
+                funding,
                 feature,
             } => request_feature(
                 deps,
@@ -188,6 +195,7 @@ mod exec {
             ProposalMsg::Improvement {
                 title,
                 description,
+                funding,
                 msgs,
             } => improvement(
                 deps,
@@ -204,6 +212,7 @@ mod exec {
             ProposalMsg::CoreSlot {
                 title,
                 description,
+                funding,
                 slot,
             } => core_slot(
                 deps,
@@ -220,6 +229,7 @@ mod exec {
             ProposalMsg::RevokeCoreSlot {
                 title,
                 description,
+                funding,
                 revoke_slot,
             } => revoke_core_slot(
                 deps,
@@ -230,6 +240,7 @@ mod exec {
                 deposit_amount,
                 title,
                 description,
+                funding,
                 revoke_slot,
             ),
         }
@@ -244,6 +255,7 @@ mod exec {
         deposit_amount: Uint128,
         title: String,
         description: String,
+        funding: Option<Funding>,
     ) -> Result<Response, ContractError> {
         let id = Proposal::next_id(deps.storage)?;
         let proposal = Proposal {
@@ -507,10 +519,10 @@ mod exec {
         let mut winning_grants = WINNING_GRANTS.load(deps.storage)?;
 
         // Remove expired grants from winning grants
-        winning_grants.retain(|grant| grant.expiration > env.block.time);
+        winning_grants.retain(|grant| !grant.expiration.is_expired(&env.clone().block));
 
         // On proposal success, add process funding proposal and execute attached msgs
-        if proposal.status(env, config.proposal_required_percentage)
+        if proposal.status(env.clone(), config.proposal_required_percentage)
             == ProposalStatus::SuccessConcluded
         {
             if proposal.msgs.is_some() {
@@ -520,8 +532,8 @@ mod exec {
             if proposal.funding.is_some() {
                 winning_grants.push(WinningGrant {
                     dao: proposal.dao.clone(),
-                    amount: proposal.funding.unwrap().amount,
-                    expiration: proposal.funding.unwrap().duration.after(env.block.time),
+                    amount: proposal.funding.clone().unwrap().amount,
+                    expiration: proposal.funding.clone().unwrap().duration.after(&env.block),
                 });
             }
         }
@@ -580,6 +592,7 @@ mod exec {
         deposit_amount: Uint128,
         title: String,
         description: String,
+        funding: Option<Funding>,
         revoke_slot: RevokeCoreSlot,
     ) -> Result<Response, ContractError> {
         let dao = info.sender.clone();
@@ -601,6 +614,7 @@ mod exec {
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
             concluded: false,
+            funding,
             msgs: Some(vec![CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
                 msg: to_binary(&ExecuteMsg::UnsetCoreSlot { proposal_id: id })?,

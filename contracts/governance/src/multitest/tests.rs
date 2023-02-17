@@ -207,11 +207,11 @@ fn create_dao(app: &mut App, contracts: Contracts, user1: Addr, user2: Addr) -> 
     let my_dao_addr = from_binary::<dao_multisig::msg::InstantiateResponse>(&my_dao.data.unwrap())
         .unwrap()
         .dao_multisig_addr;
-    assert_eq!(my_dao_addr, "contract5");
+    assert_eq!(my_dao_addr, "contract4");
 
     // Fund dao addr with JMES so it can send the deposit
     app.send_tokens(
-        contracts..addr().clone(),
+        contracts.governance.addr().clone(),
         Addr::unchecked(my_dao_addr.clone()),
         &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
     )
@@ -345,6 +345,7 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
+        funding: None,
         slot: CoreSlot::Brand {},
     });
 
@@ -382,6 +383,7 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::RevokeCoreSlot {
         title: "Remove Brand Dao".into(),
         description: "Leave it vacant".into(),
+        funding: None,
         revoke_slot: RevokeCoreSlot {
             slot: CoreSlot::Brand {},
             dao: my_dao_addr.clone().to_string(),
@@ -547,6 +549,7 @@ fn set_core_slot_creative_and_fail_setting_a_second_slot_for_the_same_dao() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
+        funding: None,
         slot: CoreSlot::Creative {},
     });
 
@@ -586,6 +589,7 @@ fn set_core_slot_creative_and_fail_setting_a_second_slot_for_the_same_dao() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
+        funding: None,
         slot: CoreSlot::Brand {},
     });
 
@@ -646,6 +650,7 @@ fn set_core_slot_tech_and_resign() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
+        funding: None,
         slot: CoreSlot::CoreTech {},
     });
 
@@ -761,6 +766,7 @@ fn improvement_bankmsg() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
+        funding: None,
         slot: CoreSlot::CoreTech {},
     });
 
@@ -797,6 +803,7 @@ fn improvement_bankmsg() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::Improvement {
         title: "Send funds".into(),
         description: "BankMsg".into(),
+        funding: None,
         msgs: vec![CosmosMsg::Bank(BankMsg::Send {
             to_address: user1.clone().into(),
             amount: vec![Coin {
@@ -879,6 +886,7 @@ fn improvement_bankmsg_failing() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
+        funding: None,
         slot: CoreSlot::CoreTech {},
     });
 
@@ -915,6 +923,7 @@ fn improvement_bankmsg_failing() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::Improvement {
         title: "Send funds".into(),
         description: "BankMsg".into(),
+        funding: None,
         msgs: vec![CosmosMsg::Bank(BankMsg::Send {
             to_address: user1.clone().into(),
             amount: vec![Coin {
@@ -985,338 +994,341 @@ fn improvement_bankmsg_failing() {
     println!("\n\n final_proposal {:#?}", final_proposal);
     assert_eq!(final_proposal.status, ProposalStatus::ExpiredConcluded);
 }
-#[test]
-fn governance_funding_proposal_passing() {
-    let mut app = mock_app();
 
-    let owner = Addr::unchecked("owner");
-    let user1 = Addr::unchecked("user1");
-    let user2 = Addr::unchecked("user2");
+// TODO test as text proposal funding attachment
+// #[test]
+// fn governance_funding_proposal_passing() {
+//     let mut app = mock_app();
 
-    let contracts = instantiate_contracts(&mut app, user1.clone(), user2.clone(), owner.clone());
+//     let owner = Addr::unchecked("owner");
+//     let user1 = Addr::unchecked("user1");
+//     let user2 = Addr::unchecked("user2");
 
-    // Register user identity with valid name
-    contracts
-        .identityservice
-        .register_user(&mut app, &user1, "user1_id".to_string())
-        .unwrap();
+//     let contracts = instantiate_contracts(&mut app, user1.clone(), user2.clone(), owner.clone());
 
-    // Create the flex-multisig dao
-    let my_dao_addr = create_dao(&mut app, contracts.clone(), user1.clone(), user2.clone());
+//     // Register user identity with valid name
+//     contracts
+//         .identityservice
+//         .register_user(&mut app, &user1, "user1_id".to_string())
+//         .unwrap();
 
-    // Governance Proposal Msg
-    let proposal_msg = ExecuteMsg::Propose(ProposalMsg::Funding {
-        title: "Funding".to_string(),
-        description: "Give me money".to_string(),
-        duration: FUNDING_DURATION,
-        amount: Uint128::from(FUNDING_AMOUNT),
-    });
+//     // Create the flex-multisig dao
+//     let my_dao_addr = create_dao(&mut app, contracts.clone(), user1.clone(), user2.clone());
 
-    // Create, vote on and execute the dao proposal
-    DaoMultisigContract::gov_proposal_helper(
-        &mut app,
-        my_dao_addr.clone(),
-        &contracts.governance.addr().clone(),
-        user1.clone(),
-        user2.clone(),
-        to_binary(&proposal_msg),
-        PROPOSAL_REQUIRED_DEPOSIT,
-    )
-    .unwrap();
+//     // Governance Proposal Msg
+//     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::Funding {
+//         title: "Funding".to_string(),
+//         description: "Give me money".to_string(),
+//         duration: FUNDING_DURATION,
+//         amount: Uint128::from(FUNDING_AMOUNT),
+//     });
 
-    // Test after proposal execution the deposit is sent to the governance contract
-    assert_eq!(
-        app.wrap()
-            .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
-            .unwrap(),
-        vec![]
-    );
+//     // Create, vote on and execute the dao proposal
+//     DaoMultisigContract::gov_proposal_helper(
+//         &mut app,
+//         my_dao_addr.clone(),
+//         &contracts.governance.addr().clone(),
+//         user1.clone(),
+//         user2.clone(),
+//         to_binary(&proposal_msg),
+//         PROPOSAL_REQUIRED_DEPOSIT,
+//     )
+//     .unwrap();
 
-    let period_info_posting = contracts.governance.query_period_info(&mut app).unwrap();
-    println!("\n\n period_info_posting {:?}", period_info_posting);
-    assert_eq!(period_info_posting.current_period, ProposalPeriod::Posting);
+//     // Test after proposal execution the deposit is sent to the governance contract
+//     assert_eq!(
+//         app.wrap()
+//             .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
+//             .unwrap(),
+//         vec![]
+//     );
 
-    // Skip period from Posting to Voting
-    app.update_block(|mut block| {
-        block.time = block
-            .time
-            .plus_seconds(period_info_posting.posting_period_length);
-        block.height += period_info_posting.posting_period_length / SECONDS_PER_BLOCK;
-    });
+//     let period_info_posting = contracts.governance.query_period_info(&mut app).unwrap();
+//     println!("\n\n period_info_posting {:?}", period_info_posting);
+//     assert_eq!(period_info_posting.current_period, ProposalPeriod::Posting);
 
-    assert_eq!(
-        app.wrap()
-            .query_all_balances(contracts.governance.addr().clone())
-            .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
-    );
+//     // Skip period from Posting to Voting
+//     app.update_block(|mut block| {
+//         block.time = block
+//             .time
+//             .plus_seconds(period_info_posting.posting_period_length);
+//         block.height += period_info_posting.posting_period_length / SECONDS_PER_BLOCK;
+//     });
 
-    let period_info_voting = contracts.governance.query_period_info(&mut app).unwrap();
-    println!("\n\n period_info_voting{:?}", period_info_voting);
+//     assert_eq!(
+//         app.wrap()
+//             .query_all_balances(contracts.governance.addr().clone())
+//             .unwrap(),
+//         coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "uluna")
+//     );
 
-    assert_eq!(
-        period_info_voting,
-        PeriodInfoResponse {
-            current_block: 12355,
-            current_period: ProposalPeriod::Voting,
-            current_time_in_cycle: 60,
-            current_posting_start: 1660000000,
-            current_voting_start: 1660000040,
-            current_voting_end: 1660000080,
-            next_posting_start: 1660000080,
-            next_voting_start: 1660000120,
-            posting_period_length: 40,
-            voting_period_length: 40,
-            cycle_length: 80
-        }
-    );
+//     let period_info_voting = contracts.governance.query_period_info(&mut app).unwrap();
+//     println!("\n\n period_info_voting{:?}", period_info_voting);
 
-    // User1 votes yes to on the governance proposal to pass it
+//     assert_eq!(
+//         period_info_voting,
+//         PeriodInfoResponse {
+//             current_block: 12355,
+//             current_period: ProposalPeriod::Voting,
+//             current_time_in_cycle: 60,
+//             current_posting_start: 1660000000,
+//             current_voting_start: 1660000040,
+//             current_voting_end: 1660000080,
+//             next_posting_start: 1660000080,
+//             next_voting_start: 1660000120,
+//             posting_period_length: 40,
+//             voting_period_length: 40,
+//             cycle_length: 80
+//         }
+//     );
 
-    let fund_proposal_vote = contracts
-        .governance
-        .vote(&mut app, &user1, 1, VoteOption::Yes)
-        .unwrap();
-    println!("\n\n fund_proposal_vote {:?}", fund_proposal_vote);
+//     // User1 votes yes to on the governance proposal to pass it
 
-    let proposal_result = contracts.governance.query_proposal(&mut app, 1).unwrap();
-    println!("\n\n proposal_result {:?}", proposal_result);
+//     let fund_proposal_vote = contracts
+//         .governance
+//         .vote(&mut app, &user1, 1, VoteOption::Yes)
+//         .unwrap();
+//     println!("\n\n fund_proposal_vote {:?}", fund_proposal_vote);
 
-    // Test that you can't conclude a proposal in the voting period
-    let voting_not_ended_err = contracts
-        .governance
-        .conclude(&mut app, &user1, 1)
-        .unwrap_err();
-    assert_eq!(voting_not_ended_err, ContractError::VotingPeriodNotEnded {});
+//     let proposal_result = contracts.governance.query_proposal(&mut app, 1).unwrap();
+//     println!("\n\n proposal_result {:?}", proposal_result);
 
-    // Skip period from Voting to Posting so we can conclude the prBLOoKSECNDS
-    app.update_block(|mut block| {
-        block.time = block
-            .time
-            .plus_seconds(period_info_posting.voting_period_length);
-        block.height += period_info_posting.voting_period_length / SECONDS_PER_BLOCK;
-    });
+//     // Test that you can't conclude a proposal in the voting period
+//     let voting_not_ended_err = contracts
+//         .governance
+//         .conclude(&mut app, &user1, 1)
+//         .unwrap_err();
+//     assert_eq!(voting_not_ended_err, ContractError::VotingPeriodNotEnded {});
 
-    let period_info_posting2 = contracts.governance.query_period_info(&mut app).unwrap();
-    println!("\n\n period_info_posting2 {:?}", period_info_posting2);
+//     // Skip period from Voting to Posting so we can conclude the prBLOoKSECNDS
+//     app.update_block(|mut block| {
+//         block.time = block
+//             .time
+//             .plus_seconds(period_info_posting.voting_period_length);
+//         block.height += period_info_posting.voting_period_length / SECONDS_PER_BLOCK;
+//     });
 
-    let conclude_proposal_result = contracts.governance.conclude(&mut app, &user1, 1).unwrap();
-    println!(
-        "\n\n conclude_proposal_result {:?}",
-        conclude_proposal_result
-    );
+//     let period_info_posting2 = contracts.governance.query_period_info(&mut app).unwrap();
+//     println!("\n\n period_info_posting2 {:?}", period_info_posting2);
 
-    // Test that you can't conclude a proposal (and execute its msgs) a second time
-    let conclude2_proposal_result = contracts
-        .governance
-        .conclude(&mut app, &user1, 1)
-        .unwrap_err();
-    assert_eq!(
-        conclude2_proposal_result,
-        ContractError::ProposalAlreadyConcluded {}
-    );
-    println!(
-        "\n\n conclude2_proposal_result {:?}",
-        conclude2_proposal_result
-    );
+//     let conclude_proposal_result = contracts.governance.conclude(&mut app, &user1, 1).unwrap();
+//     println!(
+//         "\n\n conclude_proposal_result {:?}",
+//         conclude_proposal_result
+//     );
 
-    // Skip half the grant duration time to allow us to claim funds
-    app.update_block(|mut block| {
-        block.time = block.time.plus_seconds(FUNDING_DURATION / 2);
-        block.height += FUNDING_DURATION / 2 / SECONDS_PER_BLOCK;
-    });
+//     // Test that you can't conclude a proposal (and execute its msgs) a second time
+//     let conclude2_proposal_result = contracts
+//         .governance
+//         .conclude(&mut app, &user1, 1)
+//         .unwrap_err();
+//     assert_eq!(
+//         conclude2_proposal_result,
+//         ContractError::ProposalAlreadyConcluded {}
+//     );
+//     println!(
+//         "\n\n conclude2_proposal_result {:?}",
+//         conclude2_proposal_result
+//     );
 
-    todo!(); // instead of claiming funds, we receive the funds from L1 with every block
+//     // Skip half the grant duration time to allow us to claim funds
+//     app.update_block(|mut block| {
+//         block.time = block.time.plus_seconds(FUNDING_DURATION / 2);
+//         block.height += FUNDING_DURATION / 2 / SECONDS_PER_BLOCK;
+//     });
 
-    assert_eq!(
-        app.wrap()
-            .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
-            .unwrap(),
-        coins(FUNDING_AMOUNT / 2 + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
-    );
+//     // TODO instead of claiming funds, we receive the funds from L1 with every block
 
-    // Skip double the grant duration time to claim 100% of the funds
-    app.update_block(|mut block| {
-        block.time = block.time.plus_seconds(FUNDING_DURATION * 2);
-        block.height += FUNDING_DURATION * 2 / SECONDS_PER_BLOCK;
-    });
+//     assert_eq!(
+//         app.wrap()
+//             .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
+//             .unwrap(),
+//         coins(FUNDING_AMOUNT / 2 + PROPOSAL_REQUIRED_DEPOSIT, "uluna")
+//     );
 
-    todo!(); // instead of claiming funds, we receive the funds from L1 with every block
+//     // Skip double the grant duration time to claim 100% of the funds
+//     app.update_block(|mut block| {
+//         block.time = block.time.plus_seconds(FUNDING_DURATION * 2);
+//         block.height += FUNDING_DURATION * 2 / SECONDS_PER_BLOCK;
+//     });
 
-    // let claim_funds_result = contracts
-    //     .distribution
-    //     .claim(&mut app, &Addr::unchecked(my_dao_addr.clone()), 1)
-    //     .unwrap();
-    // println!("\n\n claim_funds_result {:?}", claim_funds_result);
+//     todo!(); // instead of claiming funds, we receive the funds from L1 with every block
 
-    assert_eq!(
-        app.wrap()
-            .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
-            .unwrap(),
-        coins(FUNDING_AMOUNT + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
-    );
+//     // let claim_funds_result = contracts
+//     //     .distribution
+//     //     .claim(&mut app, &Addr::unchecked(my_dao_addr.clone()), 1)
+//     //     .unwrap();
+//     // println!("\n\n claim_funds_result {:?}", claim_funds_result);
 
-    // Skip period from Posting to VotingBLOKSECNDS
-    app.update_block(|mut block| {
-        block.time = block
-            .time
-            .plus_seconds(period_info_posting.posting_period_length);
-        block.height += period_info_posting.posting_period_length / SECONDS_PER_BLOCK;
-    });
+//     assert_eq!(
+//         app.wrap()
+//             .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
+//             .unwrap(),
+//         coins(FUNDING_AMOUNT + PROPOSAL_REQUIRED_DEPOSIT, "uluna")
+//     );
 
-    let period_info_voting = contracts.governance.query_period_info(&mut app).unwrap();
-    println!("\n\n period_info_voting{:?}", period_info_voting);
+//     // Skip period from Posting to VotingBLOKSECNDS
+//     app.update_block(|mut block| {
+//         block.time = block
+//             .time
+//             .plus_seconds(period_info_posting.posting_period_length);
+//         block.height += period_info_posting.posting_period_length / SECONDS_PER_BLOCK;
+//     });
 
-    // Test that after conclusion, user2 can no longer vote on the proposal
-    let post_conclusion_vote = contracts
-        .governance
-        .vote(&mut app, &user2, 1, VoteOption::No)
-        .unwrap_err();
-    println!("\n\n post_conclusion_vote {:?}", post_conclusion_vote);
+//     let period_info_voting = contracts.governance.query_period_info(&mut app).unwrap();
+//     println!("\n\n period_info_voting{:?}", period_info_voting);
 
-    assert_eq!(
-        post_conclusion_vote,
-        ContractError::ProposalAlreadyConcluded {}.into()
-    );
+//     // Test that after conclusion, user2 can no longer vote on the proposal
+//     let post_conclusion_vote = contracts
+//         .governance
+//         .vote(&mut app, &user2, 1, VoteOption::No)
+//         .unwrap_err();
+//     println!("\n\n post_conclusion_vote {:?}", post_conclusion_vote);
 
-    let post_conclusion_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
-    assert_eq!(post_conclusion_proposal.coins_no, Uint128::zero());
+//     assert_eq!(
+//         post_conclusion_vote,
+//         ContractError::ProposalAlreadyConcluded {}.into()
+//     );
 
-    todo!() // Test that a failing proposal never executes the msgs
-}
+//     let post_conclusion_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
+//     assert_eq!(post_conclusion_proposal.coins_no, Uint128::zero());
 
-#[test]
-fn governance_funding_proposal_failing() {
-    let mut app = mock_app();
+//     todo!() // Test that a failing proposal never executes the msgs
+// }
 
-    let owner = Addr::unchecked("owner");
-    let user1 = Addr::unchecked("user1");
-    let user2 = Addr::unchecked("user2");
+// TODO Test failing funding proposal as a textmessage funding attachment
+// #[test]
+// fn governance_funding_proposal_failing() {
+//     let mut app = mock_app();
 
-    let contracts = instantiate_contracts(&mut app, user1.clone(), user2.clone(), owner.clone());
+//     let owner = Addr::unchecked("owner");
+//     let user1 = Addr::unchecked("user1");
+//     let user2 = Addr::unchecked("user2");
 
-    // Register user identity with valid name
-    contracts
-        .identityservice
-        .register_user(&mut app, &user1, "user1_id".to_string())
-        .unwrap();
+//     let contracts = instantiate_contracts(&mut app, user1.clone(), user2.clone(), owner.clone());
 
-    // Create the flex-multisig dao
-    let my_dao_addr = create_dao(&mut app, contracts.clone(), user1.clone(), user2.clone());
+//     // Register user identity with valid name
+//     contracts
+//         .identityservice
+//         .register_user(&mut app, &user1, "user1_id".to_string())
+//         .unwrap();
 
-    // Governance Proposal Msg
-    let proposal_msg = ExecuteMsg::Propose(ProposalMsg::Funding {
-        title: "Funding".to_string(),
-        description: "Give me money".to_string(),
-        duration: FUNDING_DURATION,
-        amount: Uint128::from(FUNDING_AMOUNT),
-    });
+//     // Create the flex-multisig dao
+//     let my_dao_addr = create_dao(&mut app, contracts.clone(), user1.clone(), user2.clone());
 
-    // Create, vote on and execute the dao proposal
-    DaoMultisigContract::gov_proposal_helper(
-        &mut app,
-        my_dao_addr.clone(),
-        &contracts.governance.addr().clone(),
-        user1.clone(),
-        user2.clone(),
-        to_binary(&proposal_msg),
-        PROPOSAL_REQUIRED_DEPOSIT,
-    )
-    .unwrap();
+//     // Governance Proposal Msg
+//     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::Funding {
+//         title: "Funding".to_string(),
+//         description: "Give me money".to_string(),
+//         duration: FUNDING_DURATION,
+//         amount: Uint128::from(FUNDING_AMOUNT),
+//     });
 
-    let period_info_posting = contracts.governance.query_period_info(&mut app).unwrap();
-    println!("\n\n period_info_posting {:?}", period_info_posting);
-    assert_eq!(period_info_posting.current_period, ProposalPeriod::Posting);
+//     // Create, vote on and execute the dao proposal
+//     DaoMultisigContract::gov_proposal_helper(
+//         &mut app,
+//         my_dao_addr.clone(),
+//         &contracts.governance.addr().clone(),
+//         user1.clone(),
+//         user2.clone(),
+//         to_binary(&proposal_msg),
+//         PROPOSAL_REQUIRED_DEPOSIT,
+//     )
+//     .unwrap();
 
-    // Skip period from Posting to VotingBLOKSECNDS
-    app.update_block(|mut block| {
-        block.time = block
-            .time
-            .plus_seconds(period_info_posting.posting_period_length);
-        block.height += period_info_posting.posting_period_length / SECONDS_PER_BLOCK;
-    });
+//     let period_info_posting = contracts.governance.query_period_info(&mut app).unwrap();
+//     println!("\n\n period_info_posting {:?}", period_info_posting);
+//     assert_eq!(period_info_posting.current_period, ProposalPeriod::Posting);
 
-    let period_info_voting = contracts.governance.query_period_info(&mut app).unwrap();
-    println!("\n\n period_info_voting{:#?}", period_info_voting);
+//     // Skip period from Posting to VotingBLOKSECNDS
+//     app.update_block(|mut block| {
+//         block.time = block
+//             .time
+//             .plus_seconds(period_info_posting.posting_period_length);
+//         block.height += period_info_posting.posting_period_length / SECONDS_PER_BLOCK;
+//     });
 
-    assert_eq!(
-        period_info_voting,
-        PeriodInfoResponse {
-            current_block: 12355,
-            current_period: ProposalPeriod::Voting,
-            current_time_in_cycle: 60,
-            current_posting_start: 1660000000,
-            current_voting_start: 1660000040,
-            current_voting_end: 1660000080,
-            next_posting_start: 1660000080,
-            next_voting_start: 1660000120,
-            posting_period_length: 40,
-            voting_period_length: 40,
-            cycle_length: 80
-        }
-    );
+//     let period_info_voting = contracts.governance.query_period_info(&mut app).unwrap();
+//     println!("\n\n period_info_voting{:#?}", period_info_voting);
 
-    // User1 votes no on the governance proposal to fail it
+//     assert_eq!(
+//         period_info_voting,
+//         PeriodInfoResponse {
+//             current_block: 12355,
+//             current_period: ProposalPeriod::Voting,
+//             current_time_in_cycle: 60,
+//             current_posting_start: 1660000000,
+//             current_voting_start: 1660000040,
+//             current_voting_end: 1660000080,
+//             next_posting_start: 1660000080,
+//             next_voting_start: 1660000120,
+//             posting_period_length: 40,
+//             voting_period_length: 40,
+//             cycle_length: 80
+//         }
+//     );
 
-    let fund_proposal_vote = contracts
-        .governance
-        .vote(&mut app, &user1, 1, VoteOption::No)
-        .unwrap();
-    println!("\n\n fund_proposal_vote {:?}", fund_proposal_vote);
+//     // User1 votes no on the governance proposal to fail it
 
-    let proposal_result = contracts.governance.query_proposal(&mut app, 1).unwrap();
-    println!("\n\n proposal_result {:?}", proposal_result);
+//     let fund_proposal_vote = contracts
+//         .governance
+//         .vote(&mut app, &user1, 1, VoteOption::No)
+//         .unwrap();
+//     println!("\n\n fund_proposal_vote {:?}", fund_proposal_vote);
 
-    // Test that you can't conclude a proposal in the voting period
-    let voting_not_ended_err = contracts
-        .governance
-        .conclude(&mut app, &user1, 1)
-        .unwrap_err();
-    assert_eq!(voting_not_ended_err, ContractError::VotingPeriodNotEnded {});
+//     let proposal_result = contracts.governance.query_proposal(&mut app, 1).unwrap();
+//     println!("\n\n proposal_result {:?}", proposal_result);
 
-    // Skip period from Voting to Posting so we can conclude the prBLOoKSECNDS
-    app.update_block(|mut block| {
-        block.time = block
-            .time
-            .plus_seconds(period_info_posting.voting_period_length);
-        block.height += period_info_posting.voting_period_length / SECONDS_PER_BLOCK;
-    });
+//     // Test that you can't conclude a proposal in the voting period
+//     let voting_not_ended_err = contracts
+//         .governance
+//         .conclude(&mut app, &user1, 1)
+//         .unwrap_err();
+//     assert_eq!(voting_not_ended_err, ContractError::VotingPeriodNotEnded {});
 
-    let period_info_posting2 = contracts.governance.query_period_info(&mut app).unwrap();
-    println!("\n\n period_info_posting2 {:?}", period_info_posting2);
+//     // Skip period from Voting to Posting so we can conclude the prBLOoKSECNDS
+//     app.update_block(|mut block| {
+//         block.time = block
+//             .time
+//             .plus_seconds(period_info_posting.voting_period_length);
+//         block.height += period_info_posting.voting_period_length / SECONDS_PER_BLOCK;
+//     });
 
-    let conclude_proposal_result = contracts.governance.conclude(&mut app, &user1, 1).unwrap();
-    println!(
-        "\n\n conclude_proposal_result {:?}",
-        conclude_proposal_result
-    );
+//     let period_info_posting2 = contracts.governance.query_period_info(&mut app).unwrap();
+//     println!("\n\n period_info_posting2 {:?}", period_info_posting2);
 
-    // Test that you can't conclude a proposal (and execute its msgs) a second time
-    let conclude2_proposal_result = contracts
-        .governance
-        .conclude(&mut app, &user1, 1)
-        .unwrap_err();
-    assert_eq!(
-        conclude2_proposal_result,
-        ContractError::ProposalAlreadyConcluded {}
-    );
-    println!(
-        "\n\n conclude2_proposal_result {:?}",
-        conclude2_proposal_result
-    );
+//     let conclude_proposal_result = contracts.governance.conclude(&mut app, &user1, 1).unwrap();
+//     println!(
+//         "\n\n conclude_proposal_result {:?}",
+//         conclude_proposal_result
+//     );
 
-    // Skip half the grant duration time to allow us to test if the failing proposal lets us claim funds
-    app.update_block(|mut block| {
-        block.time = block.time.plus_seconds(FUNDING_DURATION / 2);
-        block.height += FUNDING_DURATION / 2 / SECONDS_PER_BLOCK;
-    });
+//     // Test that you can't conclude a proposal (and execute its msgs) a second time
+//     let conclude2_proposal_result = contracts
+//         .governance
+//         .conclude(&mut app, &user1, 1)
+//         .unwrap_err();
+//     assert_eq!(
+//         conclude2_proposal_result,
+//         ContractError::ProposalAlreadyConcluded {}
+//     );
+//     println!(
+//         "\n\n conclude2_proposal_result {:?}",
+//         conclude2_proposal_result
+//     );
 
-    todo!(); // instead of claiming funds, we receive the funds from L1 with every block
+//     // Skip half the grant duration time to allow us to test if the failing proposal lets us claim funds
+//     app.update_block(|mut block| {
+//         block.time = block.time.plus_seconds(FUNDING_DURATION / 2);
+//         block.height += FUNDING_DURATION / 2 / SECONDS_PER_BLOCK;
+//     });
 
-    assert_eq!(
-        app.wrap()
-            .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
-            .unwrap(),
-        vec![]
-    );
-}
+//     todo!(); // instead of claiming funds, we receive the funds from L1 with every block
+
+//     assert_eq!(
+//         app.wrap()
+//             .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
+//             .unwrap(),
+//         vec![]
+//     );
+// }
