@@ -81,9 +81,12 @@ pub fn instantiate(
         expiration: Expiration::AtTime(Timestamp::from_seconds(1679217223)),
         yes_ratio: Decimal::percent(95),
     });
+
+    WINNING_GRANTS.save(deps.storage, &mock_winning_grants)?;
+
     // END MOCK WINNING GRANTS
 
-    WINNING_GRANTS.save(deps.storage, &vec![])?;
+    // WINNING_GRANTS.save(deps.storage, &vec![])?; // TODO enable for production when MOCK WINNING GRANTS are removed
 
     PROPOSAL_COUNT.save(deps.storage, &(0 as u64))?;
     Ok(Response::new())
