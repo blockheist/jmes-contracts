@@ -101,6 +101,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         Proposal { id } => to_binary(&query::proposal(deps, env, id)?),
         Proposals { start, limit } => to_binary(&query::proposals(deps, env, start, limit)?),
         CoreSlots {} => to_binary(&query::core_slots(deps, env)?),
+        WinningGrants {} => to_binary(&query::winning_grants(deps, env)?),
     }
 }
 
@@ -936,6 +937,11 @@ mod query {
             creative: core_slots.creative,
             core_tech: core_slots.core_tech,
         })
+    }
+
+    pub fn winning_grants(deps: Deps, _env: Env) -> StdResult<Vec<WinningGrant>> {
+        let winning_grants = WINNING_GRANTS.load(deps.storage)?;
+        Ok(winning_grants)
     }
 
     pub fn proposal(deps: Deps, env: Env, id: u64) -> StdResult<ProposalResponse> {

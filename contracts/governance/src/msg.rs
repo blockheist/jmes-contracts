@@ -149,6 +149,7 @@ pub enum QueryMsg {
         limit: Option<u32>,
     },
     CoreSlots {},
+    WinningGrants {},
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
