@@ -21,4 +21,5 @@ fn main() {
     export_schema(&schema_for!(ProposalsResponse), &out_dir);
     export_schema(&schema_for!(ProposalMsg), &out_dir);
     export_schema(&schema_for!(CoreSlotsResponse), &out_dir);
+    export_schema(&schema_for!(WinningGrantsResponse), &out_dir);
 }

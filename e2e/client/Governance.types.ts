@@ -45,7 +45,6 @@ export type ExecuteMsg = {
 } | {
   set_contract: {
     artist_curator: string;
-    distribution: string;
     identityservice: string;
     [k: string]: unknown;
   };
@@ -69,6 +68,7 @@ export type ExecuteMsg = {
 export type ProposalMsg = {
   text_proposal: {
     description: string;
+    funding?: Funding | null;
     title: string;
     [k: string]: unknown;
   };
@@ -76,20 +76,14 @@ export type ProposalMsg = {
   request_feature: {
     description: string;
     feature: Feature;
-    title: string;
-    [k: string]: unknown;
-  };
-} | {
-  funding: {
-    amount: Uint128;
-    description: string;
-    duration: number;
+    funding?: Funding | null;
     title: string;
     [k: string]: unknown;
   };
 } | {
   improvement: {
     description: string;
+    funding?: Funding | null;
     msgs: CosmosMsgForEmpty[];
     title: string;
     [k: string]: unknown;
@@ -97,6 +91,7 @@ export type ProposalMsg = {
 } | {
   core_slot: {
     description: string;
+    funding?: Funding | null;
     slot: CoreSlot;
     title: string;
     [k: string]: unknown;
@@ -104,10 +99,16 @@ export type ProposalMsg = {
 } | {
   revoke_core_slot: {
     description: string;
+    funding?: Funding | null;
     revoke_slot: RevokeCoreSlot;
     title: string;
     [k: string]: unknown;
   };
+};
+export type Duration = {
+  height: number;
+} | {
+  time: number;
 };
 export type Feature = {
   artist_curator: {
@@ -220,6 +221,11 @@ export type CoreSlot = {
   };
 };
 export type VoteOption = "yes" | "no";
+export interface Funding {
+  amount: Uint128;
+  duration: Duration;
+  [k: string]: unknown;
+}
 export interface Coin {
   amount: Uint128;
   denom: string;
@@ -265,10 +271,6 @@ export type ProposalType = {
   };
 } | {
   feature_request: Feature;
-} | {
-  funding: {
-    [k: string]: unknown;
-  };
 } | {
   improvement: {
     [k: string]: unknown;
@@ -326,4 +328,28 @@ export type QueryMsg = {
   core_slots: {
     [k: string]: unknown;
   };
+} | {
+  winning_grants: {
+    [k: string]: unknown;
+  };
 };
+export type Expiration = {
+  at_height: number;
+} | {
+  at_time: Timestamp;
+} | {
+  never: {};
+};
+export type Timestamp = Uint64;
+export type Uint64 = string;
+export interface WinningGrantsResponse {
+  winning_grants: WinningGrant[];
+  [k: string]: unknown;
+}
+export interface WinningGrant {
+  amount: Uint128;
+  dao: Addr;
+  expiration: Expiration;
+  yes_ratio: Decimal;
+  [k: string]: unknown;
+}

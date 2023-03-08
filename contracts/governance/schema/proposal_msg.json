@@ -19,6 +19,16 @@
             "description": {
               "type": "string"
             },
+            "funding": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Funding"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "title": {
               "type": "string"
             }
@@ -47,39 +57,15 @@
             "feature": {
               "$ref": "#/definitions/Feature"
             },
-            "title": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "funding"
-      ],
-      "properties": {
-        "funding": {
-          "type": "object",
-          "required": [
-            "amount",
-            "description",
-            "duration",
-            "title"
-          ],
-          "properties": {
-            "amount": {
-              "$ref": "#/definitions/Uint128"
-            },
-            "description": {
-              "type": "string"
-            },
-            "duration": {
-              "type": "integer",
-              "format": "uint64",
-              "minimum": 0.0
+            "funding": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Funding"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "title": {
               "type": "string"
@@ -105,6 +91,16 @@
           "properties": {
             "description": {
               "type": "string"
+            },
+            "funding": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Funding"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "msgs": {
               "type": "array",
@@ -137,6 +133,16 @@
             "description": {
               "type": "string"
             },
+            "funding": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Funding"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "slot": {
               "$ref": "#/definitions/CoreSlot"
             },
@@ -164,6 +170,16 @@
           "properties": {
             "description": {
               "type": "string"
+            },
+            "funding": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Funding"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "revoke_slot": {
               "$ref": "#/definitions/RevokeCoreSlot"
@@ -407,6 +423,40 @@
         }
       ]
     },
+    "Duration": {
+      "description": "Duration is a delta of time. You can add it to a BlockInfo or Expiration to move that further in the future. Note that an height-based Duration and a time-based Expiration cannot be combined",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "height"
+          ],
+          "properties": {
+            "height": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "description": "Time in seconds",
+          "type": "object",
+          "required": [
+            "time"
+          ],
+          "properties": {
+            "time": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "Empty": {
       "description": "An empty struct that serves as a placeholder in different places, such as contracts that don't set a custom message.\n\nIt is designed to be expressable in correct JSON and JSON Schema but contains no meaningful data. Previously we used enums without cases, but those cannot represented as valid JSON Schema (https://github.com/CosmWasm/cosmwasm/issues/451)",
       "type": "object"
@@ -442,6 +492,21 @@
           "additionalProperties": false
         }
       ]
+    },
+    "Funding": {
+      "type": "object",
+      "required": [
+        "amount",
+        "duration"
+      ],
+      "properties": {
+        "amount": {
+          "$ref": "#/definitions/Uint128"
+        },
+        "duration": {
+          "$ref": "#/definitions/Duration"
+        }
+      }
     },
     "RevokeCoreSlot": {
       "type": "object",

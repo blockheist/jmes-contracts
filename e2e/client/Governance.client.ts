@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, Uint128, ConfigResponse, Decimal, CoreSlotsResponse, SlotVoteResult, ExecuteMsg, ProposalMsg, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, WasmMsg, Binary, CoreSlot, VoteOption, Coin, Empty, RevokeCoreSlot, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg } from "./Governance.types";
+import { Addr, Uint128, ConfigResponse, Decimal, CoreSlotsResponse, SlotVoteResult, ExecuteMsg, ProposalMsg, Duration, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, WasmMsg, Binary, CoreSlot, VoteOption, Funding, Coin, Empty, RevokeCoreSlot, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg, Expiration, Timestamp, Uint64, WinningGrantsResponse, WinningGrant } from "./Governance.types";
 export interface GovernanceReadOnlyInterface {
   contractAddress: string;
   config: () => Promise<ConfigResponse>;
@@ -24,6 +24,7 @@ export interface GovernanceReadOnlyInterface {
     start?: number;
   }) => Promise<ProposalsResponse>;
   coreSlots: () => Promise<CoreSlotsResponse>;
+  winningGrants: () => Promise<WinningGrantsResponse>;
 }
 export class GovernanceQueryClient implements GovernanceReadOnlyInterface {
   client: CosmWasmClient;
@@ -37,6 +38,7 @@ export class GovernanceQueryClient implements GovernanceReadOnlyInterface {
     this.proposal = this.proposal.bind(this);
     this.proposals = this.proposals.bind(this);
     this.coreSlots = this.coreSlots.bind(this);
+    this.winningGrants = this.winningGrants.bind(this);
   }
 
   config = async (): Promise<ConfigResponse> => {
@@ -79,6 +81,11 @@ export class GovernanceQueryClient implements GovernanceReadOnlyInterface {
       core_slots: {}
     });
   };
+  winningGrants = async (): Promise<WinningGrantsResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      winning_grants: {}
+    });
+  };
 }
 export interface GovernanceInterface extends GovernanceReadOnlyInterface {
   contractAddress: string;
@@ -98,11 +105,9 @@ export interface GovernanceInterface extends GovernanceReadOnlyInterface {
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   setContract: ({
     artistCurator,
-    distribution,
     identityservice
   }: {
     artistCurator: string;
-    distribution: string;
     identityservice: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   setCoreSlot: ({
@@ -174,17 +179,14 @@ export class GovernanceClient extends GovernanceQueryClient implements Governanc
   };
   setContract = async ({
     artistCurator,
-    distribution,
     identityservice
   }: {
     artistCurator: string;
-    distribution: string;
     identityservice: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       set_contract: {
         artist_curator: artistCurator,
-        distribution,
         identityservice
       }
     }, fee, memo, funds);

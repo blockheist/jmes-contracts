@@ -4,7 +4,9 @@ use cosmwasm_std::{Addr, CosmosMsg, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::state::{Funding, ProposalStatus, ProposalType, SlotVoteResult, VoteOption};
+use crate::state::{
+    Funding, ProposalStatus, ProposalType, SlotVoteResult, VoteOption, WinningGrant,
+};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -181,6 +183,12 @@ pub struct CoreSlotsResponse {
     pub brand: Option<SlotVoteResult>,
     pub creative: Option<SlotVoteResult>,
     pub core_tech: Option<SlotVoteResult>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct WinningGrantsResponse {
+    pub winning_grants: Vec<WinningGrant>,
 }
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

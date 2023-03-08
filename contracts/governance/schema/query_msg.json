@@ -89,6 +89,18 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "winning_grants"
+      ],
+      "properties": {
+        "winning_grants": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
     }
   ]
 }

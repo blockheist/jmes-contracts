@@ -28,10 +28,6 @@ codegen
         dir: "../contracts/dao-multisig/schema",
       },
       {
-        name: "distribution",
-        dir: "../contracts/distribution/schema",
-      },
-      {
         name: "governance",
         dir: "../contracts/governance/schema",
       },

@@ -203,18 +203,6 @@
         {
           "type": "object",
           "required": [
-            "funding"
-          ],
-          "properties": {
-            "funding": {
-              "type": "object"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
             "improvement"
           ],
           "properties": {

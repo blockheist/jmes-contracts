@@ -883,6 +883,7 @@ mod query {
 
     use crate::msg::{
         CoreSlotsResponse, PeriodInfoResponse, ProposalPeriod, ProposalResponse, ProposalsResponse,
+        WinningGrantsResponse,
     };
     use crate::state::{PROPOSALS, PROPOSAL_COUNT};
 
@@ -939,9 +940,9 @@ mod query {
         })
     }
 
-    pub fn winning_grants(deps: Deps, _env: Env) -> StdResult<Vec<WinningGrant>> {
+    pub fn winning_grants(deps: Deps, _env: Env) -> StdResult<WinningGrantsResponse> {
         let winning_grants = WINNING_GRANTS.load(deps.storage)?;
-        Ok(winning_grants)
+        Ok(WinningGrantsResponse { winning_grants })
     }
 
     pub fn proposal(deps: Deps, env: Env, id: u64) -> StdResult<ProposalResponse> {
