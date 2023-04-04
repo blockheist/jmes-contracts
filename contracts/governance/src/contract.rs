@@ -64,21 +64,21 @@ pub fn instantiate(
     mock_winning_grants.push(WinningGrant {
         dao: Addr::unchecked("jmes1lzs0l3h9q7003ugspe8x8ueug9j6n4hau5pyha"),
         amount: Uint128::from(100u128),
-        expire_at_height: 6010,
+        expire_at_height: 260010,
         yes_ratio: Decimal::percent(85),
     });
 
     mock_winning_grants.push(WinningGrant {
         dao: Addr::unchecked("jmes1cs0sav8qwsdzqt8ep2wfp5h830c6heq84pxmjq"),
         amount: Uint128::from(200u128),
-        expire_at_height: 6020,
+        expire_at_height: 260020,
         yes_ratio: Decimal::percent(90),
     });
 
     mock_winning_grants.push(WinningGrant {
         dao: Addr::unchecked("jmes1wcf03kqs6klcggkf55nynueggjn8hxw47gtzra"),
         amount: Uint128::from(300u128),
-        expire_at_height: 6000,
+        expire_at_height: 260000,
         yes_ratio: Decimal::percent(95),
     });
 
