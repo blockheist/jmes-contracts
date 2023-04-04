@@ -33,9 +33,11 @@ pub const WINNING_GRANTS: Item<Vec<WinningGrant>> = Item::new("winning_grants");
 pub struct WinningGrant {
     pub dao: Addr,
     pub amount: Uint128,
-    pub expiration: Expiration,
+    pub expire_at_height: u64,
     pub yes_ratio: Decimal,
 }
+
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -209,5 +211,5 @@ pub enum VoteOption {
 #[serde(rename_all = "snake_case")]
 pub struct Funding {
     pub amount: Uint128,
-    pub duration: Duration,
+    pub duration_in_blocks: u64,
 }

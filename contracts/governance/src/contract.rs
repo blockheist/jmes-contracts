@@ -64,21 +64,21 @@ pub fn instantiate(
     mock_winning_grants.push(WinningGrant {
         dao: Addr::unchecked("jmes1lzs0l3h9q7003ugspe8x8ueug9j6n4hau5pyha"),
         amount: Uint128::from(100u128),
-        expiration: Expiration::AtTime(Timestamp::from_seconds(1679044423)),
+        expire_at_height: 6010,
         yes_ratio: Decimal::percent(85),
     });
 
     mock_winning_grants.push(WinningGrant {
         dao: Addr::unchecked("jmes1cs0sav8qwsdzqt8ep2wfp5h830c6heq84pxmjq"),
         amount: Uint128::from(200u128),
-        expiration: Expiration::AtTime(Timestamp::from_seconds(1679130823)),
+        expire_at_height: 6020,
         yes_ratio: Decimal::percent(90),
     });
 
     mock_winning_grants.push(WinningGrant {
         dao: Addr::unchecked("jmes1wcf03kqs6klcggkf55nynueggjn8hxw47gtzra"),
         amount: Uint128::from(300u128),
-        expiration: Expiration::AtTime(Timestamp::from_seconds(1679217223)),
+        expire_at_height: 6000,
         yes_ratio: Decimal::percent(95),
     });
 
@@ -557,7 +557,7 @@ mod exec {
         let mut winning_grants = WINNING_GRANTS.load(deps.storage)?;
 
         // Remove expired grants from winning grants
-        winning_grants.retain(|grant| !grant.expiration.is_expired(&env.clone().block));
+        winning_grants.retain(|grant| grant.expire_at_height >= env.clone().block.height);
 
         // On proposal success, add process funding proposal and execute attached msgs
         if proposal.status(env.clone(), config.proposal_required_percentage)
@@ -571,7 +571,8 @@ mod exec {
                 winning_grants.push(WinningGrant {
                     dao: proposal.dao.clone(),
                     amount: proposal.funding.clone().unwrap().amount,
-                    expiration: proposal.funding.clone().unwrap().duration.after(&env.block),
+                    expire_at_height: proposal.funding.clone().unwrap().duration_in_blocks
+                        + &env.block.height,
                     yes_ratio: Decimal::from_ratio(
                         proposal.coins_yes,
                         proposal.coins_yes + proposal.coins_no,
