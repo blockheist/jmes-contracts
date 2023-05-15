@@ -4,12 +4,9 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "local": "NETWORK_ENV=localterra mocha './tests/e2e.spec.ts' ",
-    "pisco1": "NETWORK_ENV=pisco1 mocha './tests/e2e.spec.ts' ",
-    "jmes-888": "NETWORK_ENV=jmes-888 mocha './tests/e2e.spec.ts' ",
     "local:identityservice": "NETWORK_ENV=localterra mocha './tests/identityservice.spec.ts' ",
-    "pisco1:identityservice": "NETWORK_ENV=pisco1 mocha './tests/identityservice.spec.ts' ",
-    "local:distribution": "NETWORK_ENV=localterra mocha './tests/distribution.spec.ts' ",
-    "pisco1:distribution": "NETWORK_ENV=pisco1 mocha './tests/distribution.spec.ts' "
+    "jmes-888": "NETWORK_ENV=jmes-888 mocha './tests/e2e.spec.ts' ",
+    "jmes-888:identityservice": "NETWORK_ENV=jmes-888 mocha './tests/identityservice.spec.ts' "
   },
   "dependencies": {
     "@cosmjs/amino": "^0.28.13",
