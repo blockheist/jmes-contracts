@@ -81,7 +81,6 @@ async function instantiateContracts(client, user, options = {}) {
       governance: {
         owner: process.env.OWNER, // only used once for set_contract
         bjmes_token_addr: "__bjmes_token", // __ gets hydrated with astro_assembly contract addr
-        distribution: undefined,
         artist_curator_addr: undefined,
         identity_service: undefined,
         proposal_required_deposit: "1000",
@@ -96,12 +95,6 @@ async function instantiateContracts(client, user, options = {}) {
         owner: "__governance", // __ gets hydrated with governance contract addr
         dao_members_code_id: codeIds["dao_members"],
         dao_multisig_code_id: codeIds["dao_multisig"],
-      },
-    },
-    {
-      distribution: {
-        owner: "__governance", // __ gets hydrated with governance contract addr
-        identityservice_contract: "__identityservice", // __ gets hydrated with identityservice contract addr
       },
     },
     {
@@ -146,7 +139,6 @@ async function instantiateContracts(client, user, options = {}) {
     contractAddrs.governance,
     {
       set_contract: {
-        distribution: contractAddrs.distribution,
         artist_curator: contractAddrs.artist_curator,
         identityservice: contractAddrs.identityservice,
       },
