@@ -128,17 +128,14 @@ pub fn execute(
 }
 
 mod exec {
-    use cosmwasm_std::{coins, BankMsg, CosmosMsg, Decimal, Uint128, WasmMsg};
+    use cosmwasm_std::{CosmosMsg, Decimal, Uint128, WasmMsg};
     use cw20::BalanceResponse;
     use identityservice::msg::GetIdentityByOwnerResponse;
 
     use super::*;
 
     use crate::contract::query::period_info;
-    use crate::msg::{
-        AddGrant, AddGrantMsg, CoreSlot, Feature, PeriodInfoResponse, ProposalPeriod,
-        RevokeCoreSlot,
-    };
+    use crate::msg::{CoreSlot, Feature, PeriodInfoResponse, ProposalPeriod, RevokeCoreSlot};
     use crate::state::{
         Funding, ProposalStatus, SlotVoteResult, WinningGrant, CORE_SLOTS, WINNING_GRANTS,
     };
@@ -189,7 +186,7 @@ mod exec {
         let deposit_amount = info
             .funds
             .iter()
-            .find(|coin| coin.denom == "uluna")
+            .find(|coin| coin.denom == "ujmes")
             .unwrap()
             .amount;
         if deposit_amount < Uint128::from(config.proposal_required_deposit) {
