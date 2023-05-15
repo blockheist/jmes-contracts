@@ -8,6 +8,13 @@ import { createUser } from "../lib/createUser.js";
 import { readContractAddrs } from "../lib/readContractAddrs.js";
 import { IdentityserviceClient, IdentityserviceQueryClient } from "../client/Identityservice.client.js";
 
+
+import { getOfflineSignerProto } from "cosmjs-utils";
+import { SigningCosmWasmClient, CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { GasPrice } from "@cosmjs/stargate";
+
+
+
 const client = (await createClient()) as any;
 
 const user1 = createUser(process.env.USER1_MNEMONIC);
@@ -21,13 +28,40 @@ const user3_name = process.env.USER3_NAME;
 
 global.liveAddrs = {};
 
-let queryClient: IdentityserviceQueryClient;
+let identityQueryClient: IdentityserviceQueryClient;
+let identityClient: IdentityserviceClient;
+
 
 describe("User Identity", function () {
   before(async function () {
     global.addrs = await readContractAddrs();
-    queryClient = new IdentityserviceQueryClient(client, global.addrs.identityservice);
+
+    // Example to create a signing Client
+    const signer = await getOfflineSignerProto({
+      mnemonic: process.env.USER1_MNEMONIC,
+      chain: {
+        bech32_prefix: "jmes",
+        slip44: 6280,
+      },
+    });
+
+    const signingClient = await SigningCosmWasmClient.connectWithSigner(
+      process.env.RPCURL,
+      signer,
+      { gasPrice: GasPrice.fromString("0.3ujmes") }
+    );
+
+    identityClient = new IdentityserviceClient(
+      signingClient,
+      (await signer.getAccounts())[0].address,
+      global.addrs.identityservice
+    )
+
+    // Example to create a query Client
+    const cosmClient = await CosmWasmClient.connect(process.env.RPCURL);
+    identityQueryClient = new IdentityserviceQueryClient(cosmClient, global.addrs.identityservice);
   });
+
   it("should register a user identity with valid name", async function () {
     const contract_addr = global.addrs.identityservice;
     const msg: ExecuteMsg = { register_user: { name: user1_name } };
@@ -62,7 +96,7 @@ describe("User Identity", function () {
       },
     };
 
-    const result = await queryClient.getIdentityByOwner(query.get_identity_by_owner);
+    const result = await identityQueryClient.getIdentityByOwner(query.get_identity_by_owner);
 
     expect(result.identity.name).to.equal(user1_name);
     expect(result.identity.owner).to.equal(user1.address);
@@ -77,7 +111,7 @@ describe("User Identity", function () {
       },
     };
 
-    const result = await queryClient.getIdentityByName(query.get_identity_by_name);
+    const result = await identityQueryClient.getIdentityByName(query.get_identity_by_name);
 
     expect(result.identity.name).to.equal(user1_name);
     expect(result.identity.id_type).to.equal("user");
@@ -93,7 +127,7 @@ describe("User Identity", function () {
       },
     };
 
-    const result = await queryClient.getIdentityByOwner(query.get_identity_by_owner);
+    const result = await identityQueryClient.getIdentityByOwner(query.get_identity_by_owner);
 
     expect(result.identity).to.equal(null);
 
@@ -107,7 +141,7 @@ describe("User Identity", function () {
       },
     };
 
-    const result = await queryClient.getIdentityByName(query.get_identity_by_name);
+    const result = await identityQueryClient.getIdentityByName(query.get_identity_by_name);
 
     expect(result.identity).to.equal(null);
 
@@ -179,11 +213,11 @@ describe("User Identity", function () {
 
   });
   it("should list the daos descending", async function () {
-    const result = await queryClient.daos({ order: 'descending' });
+    const result = await identityQueryClient.daos({ order: 'descending' });
     expect(result['daos'][0][0]).to.equal(2);
   })
   it("should list the daos with pagination", async function () {
-    const result = await queryClient.daos({ startAfter: 1 });
+    const result = await identityQueryClient.daos({ startAfter: 1 });
     expect(result['daos'][0][0]).to.equal(2);
   })
 });

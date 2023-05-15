@@ -105,11 +105,6 @@ export type ProposalMsg = {
     [k: string]: unknown;
   };
 };
-export type Duration = {
-  height: number;
-} | {
-  time: number;
-};
 export type Feature = {
   artist_curator: {
     approved: number;
@@ -223,7 +218,7 @@ export type CoreSlot = {
 export type VoteOption = "yes" | "no";
 export interface Funding {
   amount: Uint128;
-  duration: Duration;
+  duration_in_blocks: number;
   [k: string]: unknown;
 }
 export interface Coin {
@@ -333,15 +328,6 @@ export type QueryMsg = {
     [k: string]: unknown;
   };
 };
-export type Expiration = {
-  at_height: number;
-} | {
-  at_time: Timestamp;
-} | {
-  never: {};
-};
-export type Timestamp = Uint64;
-export type Uint64 = string;
 export interface WinningGrantsResponse {
   winning_grants: WinningGrant[];
   [k: string]: unknown;
@@ -349,7 +335,7 @@ export interface WinningGrantsResponse {
 export interface WinningGrant {
   amount: Uint128;
   dao: Addr;
-  expiration: Expiration;
+  expire_at_height: number;
   yes_ratio: Decimal;
   [k: string]: unknown;
 }
