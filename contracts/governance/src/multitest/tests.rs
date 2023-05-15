@@ -15,8 +15,8 @@ use jmes::test_utils::get_attribute;
 use crate::{
     error::ContractError,
     msg::{
-        CoreSlot, ExecuteMsg, PeriodInfoResponse, ProposalMsg, ProposalPeriod, ProposalResponse,
-        QueryMsg, RevokeCoreSlot,
+        CoreSlot, ExecuteMsg, ProposalMsg, ProposalPeriod, ProposalResponse, QueryMsg,
+        RevokeCoreSlot,
     },
     state::{ProposalStatus, SlotVoteResult, VoteOption},
 };
@@ -27,9 +27,6 @@ use bjmes_token::multitest::contract::BjmesTokenContract;
 const SECONDS_PER_BLOCK: u64 = 5;
 const PROPOSAL_REQUIRED_DEPOSIT: u128 = 1000;
 const EPOCH_START: u64 = 1_660_000_010;
-
-const FUNDING_DURATION: u64 = 1000000u64;
-const FUNDING_AMOUNT: u128 = 1000000u128;
 
 const USER1_VOTING_COINS: u128 = 2000;
 const USER2_VOTING_COINS: u128 = 3000;
@@ -380,6 +377,14 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
 
     // Failing Revoke Proposal
 
+    // Fund dao so we can send the send proposal deposit
+    app.send_tokens(
+        contracts.governance.addr().clone(),
+        Addr::unchecked(my_dao_addr.clone()),
+        &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
+    )
+    .unwrap();
+
     // Create, vote on and execute the dao proposal
     DaoMultisigContract::gov_proposal_helper(
         &mut app,
@@ -581,6 +586,13 @@ fn set_core_slot_creative_and_fail_setting_a_second_slot_for_the_same_dao() {
         slot: CoreSlot::Brand {},
     });
 
+    // Fund dao so we can send the send proposal deposit
+    app.send_tokens(
+        contracts.governance.addr().clone(),
+        Addr::unchecked(my_dao_addr.clone()),
+        &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
+    )
+    .unwrap();
     // Create, vote on and execute the dao proposal
     DaoMultisigContract::gov_proposal_helper(
         &mut app,
@@ -677,6 +689,17 @@ fn set_core_slot_tech_and_resign() {
         slot: CoreSlot::CoreTech {},
         note: "Good bye!".into(),
     };
+
+    // Fund dao so we can send the send proposal deposit
+    app.send_tokens(
+        contracts.governance.addr().clone(),
+        Addr::unchecked(my_dao_addr.clone()),
+        &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
+    )
+    .unwrap();
+
+    // TODO resigning a core slot does not require a second proposal deposit ...
+    // TODO Create, vote on and execute the dao proposal without the helper to avoid having to send a second proposal deposit
 
     // Create, vote on and execute the dao proposal
     DaoMultisigContract::gov_proposal_helper(
@@ -783,7 +806,7 @@ fn improvement_bankmsg() {
 
     // Check that my_dao_addr now has the CoreTech slot
     let core_slots = contracts.governance.query_core_slots(&mut app).unwrap();
-    assert_eq!(core_slots.core_tech.unwrap().dao, my_dao_addr);
+    assert_eq!(core_slots.core_tech.unwrap().dao, my_dao_addr.clone());
 
     // Now create the Improvement proposal to send funds
 
@@ -801,10 +824,18 @@ fn improvement_bankmsg() {
         })],
     });
 
+    // Fund dao so we can send the send proposal deposit
+    app.send_tokens(
+        contracts.governance.addr().clone(),
+        Addr::unchecked(my_dao_addr.clone()),
+        &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
+    )
+    .unwrap();
+
     // Create, vote on and execute the dao proposal
     DaoMultisigContract::gov_proposal_helper(
         &mut app,
-        my_dao_addr,
+        my_dao_addr.clone(),
         &contracts.governance.addr().clone(),
         user1.clone(),
         user2.clone(),
@@ -821,7 +852,7 @@ fn improvement_bankmsg() {
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
+        coins(GOVERNANCE_INIT_BALANCE, "ujmes")
     );
 
     // Vote on and execute the governance proposal
@@ -921,6 +952,14 @@ fn improvement_bankmsg_failing() {
         })],
     });
 
+    // Fund dao so we can send the send proposal deposit
+    app.send_tokens(
+        contracts.governance.addr().clone(),
+        Addr::unchecked(my_dao_addr.clone()),
+        &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
+    )
+    .unwrap();
+
     // Create, vote on and execute the dao proposal
     DaoMultisigContract::gov_proposal_helper(
         &mut app,
@@ -941,7 +980,7 @@ fn improvement_bankmsg_failing() {
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
+        coins(GOVERNANCE_INIT_BALANCE, "ujmes")
     );
 
     // Vote on and execute the governance proposal
@@ -972,7 +1011,7 @@ fn improvement_bankmsg_failing() {
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE, "uluna")
+        coins(GOVERNANCE_INIT_BALANCE, "ujmes")
     );
 
     let final_proposal: ProposalResponse = app
