@@ -1,5 +1,3 @@
-use std::ops::Add;
-
 use crate::error::ContractError;
 // use crate::msg::Feature::ArtistCurator;
 use crate::msg::{ExecuteMsg, InstantiateMsg, ProposalMsg, QueryMsg};
@@ -9,11 +7,10 @@ use crate::state::{
 use artist_curator::msg::ExecuteMsg::ApproveCurator;
 use bjmes_token::msg::QueryMsg as BjmesQueryMsg;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    Timestamp, Uint128,
+    to_binary, Addr, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use cw2::set_contract_version;
-use cw_utils::Expiration;
+
 use identityservice::msg::QueryMsg::GetIdentityByOwner;
 use identityservice::state::IdType::Dao;
 

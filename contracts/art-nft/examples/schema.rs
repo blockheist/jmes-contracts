@@ -1,13 +1,12 @@
 use std::env::current_dir;
 use std::fs::create_dir_all;
 
-use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
-use cosmwasm_std::Empty;
+use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use bjmes_token::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use bjmes_token::msg::InstantiateMsg;
 use cw721::{
-    AllNftInfoResponse, ApprovalResponse, ApprovalsResponse, ContractInfoResponse, NftInfoResponse,
-    NumTokensResponse, OperatorsResponse, OwnerOfResponse, TokensResponse,
+    ApprovalResponse, ApprovalsResponse, ContractInfoResponse, NumTokensResponse,
+    OperatorsResponse, OwnerOfResponse, TokensResponse,
 };
 
 fn main() {

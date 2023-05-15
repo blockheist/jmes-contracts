@@ -4,7 +4,7 @@ use crate::{
 };
 use cosmwasm_std::{Addr, CosmosMsg, Decimal, Env, StdResult, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
-use cw_utils::{Duration, Expiration};
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -36,8 +36,6 @@ pub struct WinningGrant {
     pub expire_at_height: u64,
     pub yes_ratio: Decimal,
 }
-
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

@@ -123,18 +123,6 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
             .bank
             .init_balance(
                 storage,
-                distribution_contract.addr(),
-                vec![Coin {
-                    denom: "ujmes".to_string(),
-                    amount: Uint128::from(DISTRIBUTION_INIT_BALANCE),
-                }],
-            )
-            .unwrap();
-
-        router
-            .bank
-            .init_balance(
-                storage,
                 governance_contract.addr(),
                 vec![Coin {
                     denom: "ujmes".to_string(),
