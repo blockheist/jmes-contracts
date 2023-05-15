@@ -7,7 +7,6 @@
   "scripts": {
     "generate": "node generate.js",
     "optimize": "./optimize.sh",
-    "deploy:pisco1": "NETWORK_ENV=pisco1 node deploy.js && cp ./configs/*pisco1.json ../e2e/configs",
     "deploy:local": "NETWORK_ENV=localterra node deploy.js  && cp ./configs/*localterra.json ../e2e/configs",
     "deploy:jmes-888": "NETWORK_ENV=jmes-888 node deploy.js  && cp ./configs/*jmes-888.json ../e2e/configs"
   },
