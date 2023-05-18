@@ -83,7 +83,7 @@ async function instantiateContracts(client, user, options = {}) {
         bjmes_token_addr: "__bjmes_token", // __ gets hydrated with astro_assembly contract addr
         artist_curator_addr: undefined,
         identity_service: undefined,
-        proposal_required_deposit: "1000",
+        proposal_required_deposit: "10000000",
         proposal_required_percentage: 51,
         period_start_epoch: Math.floor(Date.now() / 1000), //1660000000,
         posting_period_length: 70,
