@@ -25,11 +25,11 @@ use super::contract::GovernanceContract;
 use bjmes_token::multitest::contract::BjmesTokenContract;
 
 const SECONDS_PER_BLOCK: u64 = 5;
-const PROPOSAL_REQUIRED_DEPOSIT: u128 = 1000;
+const PROPOSAL_REQUIRED_DEPOSIT: u128 = 10_000;
 const EPOCH_START: u64 = 1_660_000_010;
 
-const USER1_VOTING_COINS: u128 = 2000;
-const USER2_VOTING_COINS: u128 = 3000;
+const USER1_VOTING_COINS: u128 = 2000_000_000;
+const USER2_VOTING_COINS: u128 = 3000_000_000;
 
 const GOVERNANCE_INIT_BALANCE: u128 = 100_000; // To test improvement proposal: BankMsg
 
@@ -423,10 +423,10 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
                 dao: my_dao_addr.clone().into(),
             }),
             coins_yes: Uint128::from(0u128),
-            coins_no: Uint128::from(2000u128),
+            coins_no: Uint128::from(2000_000_000u128),
             yes_voters: vec![],
             no_voters: vec![user1.clone()],
-            deposit_amount: Uint128::from(1000u128),
+            deposit_amount: Uint128::from(10_000u128),
             start_block: 12363,
             posting_start: 1660000080,
             voting_start: 1660000120,
@@ -496,11 +496,11 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
                 slot: CoreSlot::Brand {},
                 dao: my_dao_addr.clone().into(),
             }),
-            coins_yes: Uint128::from(2000u128),
+            coins_yes: Uint128::from(2000_000_000u128),
             coins_no: Uint128::from(0u128),
             yes_voters: vec![user1.clone()],
             no_voters: vec![],
-            deposit_amount: Uint128::from(1000u128),
+            deposit_amount: Uint128::from(10_000u128),
             start_block: 12379,
             posting_start: 1660000160,
             voting_start: 1660000200,
@@ -1086,7 +1086,7 @@ fn improvement_bankmsg_failing() {
 //         app.wrap()
 //             .query_all_balances(contracts.governance.addr().clone())
 //             .unwrap(),
-//         coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "uluna")
+//         coins(GOVERNANCE_INIT_BALANCE + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
 //     );
 
 //     let period_info_voting = contracts.governance.query_period_info(&mut app).unwrap();
@@ -1170,7 +1170,7 @@ fn improvement_bankmsg_failing() {
 //         app.wrap()
 //             .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
 //             .unwrap(),
-//         coins(FUNDING_AMOUNT / 2 + PROPOSAL_REQUIRED_DEPOSIT, "uluna")
+//         coins(FUNDING_AMOUNT / 2 + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
 //     );
 
 //     // Skip double the grant duration time to claim 100% of the funds
@@ -1191,7 +1191,7 @@ fn improvement_bankmsg_failing() {
 //         app.wrap()
 //             .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
 //             .unwrap(),
-//         coins(FUNDING_AMOUNT + PROPOSAL_REQUIRED_DEPOSIT, "uluna")
+//         coins(FUNDING_AMOUNT + PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
 //     );
 
 //     // Skip period from Posting to VotingBLOKSECNDS
