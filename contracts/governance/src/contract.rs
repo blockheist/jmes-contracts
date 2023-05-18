@@ -511,6 +511,10 @@ mod exec {
                 return Err(ContractError::NoVoteCoins {});
             }
 
+            if vote_coins < Uint128::from(10000000u128) {
+                return Err(ContractError::InsufficientVoteCoins {});
+            }
+
             match vote {
                 Yes {} => {
                     proposal.coins_yes = proposal.coins_yes.checked_add(vote_coins)?;

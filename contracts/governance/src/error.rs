@@ -9,8 +9,10 @@ pub enum ContractError {
     Unauthorized {},
     #[error("Insufficient token deposit!")]
     InsufficientDeposit {},
-    #[error("NoVoteCoins!")]
+    #[error("NoVoteCoins (1000 bJMES required to vote)!")]
     NoVoteCoins {},
+    #[error("InsufficientVoteCoins (1000 bJMES required to vote)!")]
+    InsufficientVoteCoins {},
     #[error("User already voted!")]
     UserAlreadyVoted {},
     #[error("ProposalNotActive")]
