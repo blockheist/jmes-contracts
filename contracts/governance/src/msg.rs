@@ -27,6 +27,10 @@ pub struct InstantiateMsg {
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub struct MigrateMsg {}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     /// Receive a message of type [`Cw20ReceiveMsg`]
     Propose(ProposalMsg),
