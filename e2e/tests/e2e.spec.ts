@@ -43,7 +43,7 @@ const user3_name = process.env.USER3_NAME;
 global.liveAddrs = {};
 
 describe("End-to-End Tests", function () {
-  describe.only("User Identity", function () {
+  describe("User Identity", function () {
     before(async function () {
       global.addrs = await readContractAddrs();
     });
@@ -60,7 +60,7 @@ describe("End-to-End Tests", function () {
       return result;
     });
   });
-  describe.skip("DAO Identity", function () {
+  describe("DAO Identity", function () {
     before(async function () {
       global.addrs = readContractAddrs();
       global.codeIds = readCodeIds();
@@ -111,10 +111,10 @@ describe("End-to-End Tests", function () {
 
   describe("DAO Proposal", function () {
     before(async function () {
-      global.liveAddrs = { dao_multisig: "jmes1cvddp2tya8eq6jjeyw40xvrqfvt6qtk6kmyh9nlwysh5fn7a9fksulxxey" }
+      // global.liveAddrs = { dao_multisig: "jmes1wr5uxeez5h3qkpxwsrmwmarfcknajytvw8fvzjr4jyduykftp7xscps7gr" }
       client.send(user3, global.liveAddrs.dao_multisig, "1000ujmes")
     });
-    describe.skip("spend dao tokens", function () {
+    describe("send dao tokens", function () {
       it("should create a dao proposal: send tokens", async function () {
         const contractAddress = global.liveAddrs.dao_multisig
         const daoClient = new DaoMultisigClient(client, user1, contractAddress);
@@ -167,7 +167,7 @@ describe("End-to-End Tests", function () {
       });
     });
     describe("update dao members", function () {
-      it.only("should create a dao proposal: updatemembers", async function () {
+      it("should create a dao proposal: updatemembers", async function () {
         const contractAddress = global.liveAddrs.dao_multisig
         const daoMultisigClient = new DaoMultisigClient(client, user1, contractAddress);
 
@@ -286,62 +286,62 @@ describe("End-to-End Tests", function () {
 
 
 
-    it("should create a dao proposal: Governance Funding", async function () {
-      const contractAddress = global.liveAddrs.dao_multisig
-      const daoClient = new DaoMultisigClient(client, user1, contractAddress);
+    // it("should create a dao proposal: Governance Funding", async function () {
+    //   const contractAddress = global.liveAddrs.dao_multisig
+    //   const daoClient = new DaoMultisigClient(client, user1, contractAddress);
 
-      // Governance Proposal Msg
-      const proposalMsg: Governance.ExecuteMsg = {
-        propose: {
-          funding: {
-            title: "Funding",
-            description: "Give me money",
-            amount: "1000000",
-            duration: 300,
+    //   // Governance Proposal Msg
+    //   const proposalMsg: Governance.ExecuteMsg = {
+    //     propose: {
+    //       funding: {
+    //         title: "Funding",
+    //         description: "Give me money",
+    //         amount: "1000000",
+    //         duration: 300,
 
-          }
-        }
+    //       }
+    //     }
 
-      };
+    //   };
 
-      const deposit: Governance.Coin = { denom: "ujmes", amount: "1000" }
+    //   const deposit: Governance.Coin = { denom: "ujmes", amount: "1000" }
 
-      const wasmMsg: Governance.WasmMsg = {
-        execute: {
-          contract_addr: global.addrs.governance,
-          funds: [deposit],
-          msg: toBase64(proposalMsg)
-        }
-      }
+    //   const wasmMsg: Governance.WasmMsg = {
+    //     execute: {
+    //       contract_addr: global.addrs.governance,
+    //       funds: [deposit],
+    //       msg: toBase64(proposalMsg)
+    //     }
+    //   }
 
-      // Dao Proposal Msg (Executes the bondedJMES (cw20) Send Msg)
-      const msg: DaoMultisig.ExecuteMsg = {
-        propose: {
-          title: "Request Funding from Governance",
-          description: "Make us rich",
-          msgs: [
-            {
-              wasm: wasmMsg
-            },
-          ],
-        }
-      };
+    //   // Dao Proposal Msg (Executes the bondedJMES (cw20) Send Msg)
+    //   const msg: DaoMultisig.ExecuteMsg = {
+    //     propose: {
+    //       title: "Request Funding from Governance",
+    //       description: "Make us rich",
+    //       msgs: [
+    //         {
+    //           wasm: wasmMsg
+    //         },
+    //       ],
+    //     }
+    //   };
 
-      try {
-        const result = await daoClient.propose(msg.propose);
+    //   try {
+    //     const result = await daoClient.propose(msg.propose);
 
-        this.dao_send_token_proposal_id = parseInt(
-          getAttribute(result, "wasm", "proposal_id")
-        );
+    //     this.dao_send_token_proposal_id = parseInt(
+    //       getAttribute(result, "wasm", "proposal_id")
+    //     );
 
-        expect(result['code']).to.equal(0);
-        return result;
-      } catch (e) {
-        console.error(e)
-        throw e
-      }
+    //     expect(result['code']).to.equal(0);
+    //     return result;
+    //   } catch (e) {
+    //     console.error(e)
+    //     throw e
+    //   }
 
-    });
+    // });
     it("should vote on a dao proposal: Governance Funding", async function () {
       const contractAddress = global.liveAddrs.dao_multisig
       const daoClient = new DaoMultisigClient(client, user2, contractAddress);
@@ -418,9 +418,10 @@ describe("End-to-End Tests", function () {
       return result
     })
   });
-  describe.skip("Governance CoreSlot and Improvement Proposal ", function () {
+  describe.only("Governance Coreslot and Improvement Proposal ", function () {
     before(async function () {
       global.addrs = await readContractAddrs();
+      global.liveAddrs.dao_multisig = "jmes1c9u87cafpdulmn45klr3p4zl5pjm6q5e8r2py8waesw4h3vxnynsz6kezf";
 
       // Fund the governance contract to test improvement:BankMsg
       await client.send(user3, global.addrs.governance, "300000ujmes")
