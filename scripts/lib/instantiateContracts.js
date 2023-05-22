@@ -41,7 +41,7 @@ async function instantiateContract(
 
   const instantiateContractMsg = new MsgInstantiateContract(
     user.address,
-    user.address,
+    process.env.ADMIN,
     codeId,
     initMsg,
     {},
