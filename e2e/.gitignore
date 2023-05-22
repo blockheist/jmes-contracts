@@ -1,5 +1,5 @@
 node_modules
 *.env
-!.localterra.env
+!.local.env
 *.log
 log

@@ -15,11 +15,9 @@ npm i
 2. Run
 
 ```js
-npm run local // Using LocalTerra
+npm run local // Using local jmesd
 
-npm run pisco1 // Using Terra testnet
+npm run local:identityservice // Using local jmesd
 
-npm run local:identityservice // Using LocalTerra
-
-npm run pisco1:identityservice // Using Terra testnet
+npm run jmes-888:identityservice // Using jmes testnet
 ```

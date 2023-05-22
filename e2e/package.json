@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "scripts": {
     "lint": "eslint . --ext .ts",
-    "local": "NETWORK_ENV=localterra mocha './tests/e2e.spec.ts' ",
-    "local:identityservice": "NETWORK_ENV=localterra mocha './tests/identityservice.spec.ts' ",
+    "local": "NETWORK_ENV=local mocha './tests/e2e.spec.ts' ",
+    "local:identityservice": "NETWORK_ENV=local mocha './tests/identityservice.spec.ts' ",
     "jmes-888": "NETWORK_ENV=jmes-888 mocha './tests/e2e.spec.ts' ",
     "jmes-888:identityservice": "NETWORK_ENV=jmes-888 mocha './tests/identityservice.spec.ts' "
   },

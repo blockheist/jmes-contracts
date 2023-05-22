@@ -7,7 +7,7 @@
   "scripts": {
     "generate": "node generate.js",
     "optimize": "./optimize.sh",
-    "deploy:local": "NETWORK_ENV=localterra node deploy.js  && cp ./configs/*localterra.json ../e2e/configs",
+    "deploy:local": "NETWORK_ENV=local node deploy.js  && cp ./configs/*local.json ../e2e/configs",
     "deploy:jmes-888": "NETWORK_ENV=jmes-888 node deploy.js  && cp ./configs/*jmes-888.json ../e2e/configs"
   },
   "author": "",
