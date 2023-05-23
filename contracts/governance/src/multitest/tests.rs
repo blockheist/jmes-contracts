@@ -24,6 +24,9 @@ use crate::{
 use super::contract::GovernanceContract;
 use bjmes_token::multitest::contract::BjmesTokenContract;
 
+// Address for burning the proposal fee
+const BURN_ADDRESS: &str = "jmes1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqf5laz2";
+
 const SECONDS_PER_BLOCK: u64 = 5;
 const PROPOSAL_REQUIRED_DEPOSIT: u128 = 10_000;
 const EPOCH_START: u64 = 1_660_000_010;
@@ -363,6 +366,10 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
     // Check that my_dao_addr now has the CoreTech slot
     let core_slots = contracts.governance.query_core_slots(&mut app).unwrap();
     assert_eq!(core_slots.brand.unwrap().dao, my_dao_addr.clone());
+    assert_eq!(
+        app.wrap().query_all_balances(BURN_ADDRESS).unwrap(),
+        coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
+    );
 
     // Create a dao proposal to revoke from the DAO from the Brand slot
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::RevokeCoreSlot {
@@ -819,7 +826,7 @@ fn improvement_bankmsg() {
             to_address: user1.clone().into(),
             amount: vec![Coin {
                 denom: "ujmes".to_string(),
-                amount: Uint128::from(GOVERNANCE_INIT_BALANCE),
+                amount: Uint128::from(GOVERNANCE_INIT_BALANCE - 2 * PROPOSAL_REQUIRED_DEPOSIT),
             }],
         })],
     });
@@ -852,7 +859,10 @@ fn improvement_bankmsg() {
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE, "ujmes")
+        coins(
+            GOVERNANCE_INIT_BALANCE - 2 * PROPOSAL_REQUIRED_DEPOSIT,
+            "ujmes"
+        )
     );
 
     // Vote on and execute the governance proposal
@@ -869,13 +879,21 @@ fn improvement_bankmsg() {
     // Test that the funds were sent from governance to user1
     assert_eq!(
         app.wrap().query_all_balances(user1.clone()).unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE, "ujmes")
+        coins(
+            GOVERNANCE_INIT_BALANCE - 2 * PROPOSAL_REQUIRED_DEPOSIT,
+            "ujmes"
+        )
     );
     assert_eq!(
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
         vec![]
+    );
+
+    assert_eq!(
+        app.wrap().query_all_balances(BURN_ADDRESS).unwrap(),
+        coins(2 * PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
     );
 }
 
@@ -980,7 +998,10 @@ fn improvement_bankmsg_failing() {
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE, "ujmes")
+        coins(
+            GOVERNANCE_INIT_BALANCE - 2 * PROPOSAL_REQUIRED_DEPOSIT,
+            "ujmes"
+        )
     );
 
     // Vote on and execute the governance proposal
@@ -1005,13 +1026,19 @@ fn improvement_bankmsg_failing() {
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE, "ujmes")
+        coins(
+            GOVERNANCE_INIT_BALANCE - 2 * PROPOSAL_REQUIRED_DEPOSIT,
+            "ujmes"
+        )
     );
     assert_eq!(
         app.wrap()
             .query_all_balances(contracts.governance.addr().clone())
             .unwrap(),
-        coins(GOVERNANCE_INIT_BALANCE, "ujmes")
+        coins(
+            GOVERNANCE_INIT_BALANCE - 2 * PROPOSAL_REQUIRED_DEPOSIT,
+            "ujmes"
+        )
     );
 
     let final_proposal: ProposalResponse = app
@@ -1020,6 +1047,10 @@ fn improvement_bankmsg_failing() {
         .unwrap();
     println!("\n\n final_proposal {:#?}", final_proposal);
     assert_eq!(final_proposal.status, ProposalStatus::ExpiredConcluded);
+    assert_eq!(
+        app.wrap().query_all_balances(BURN_ADDRESS).unwrap(),
+        coins(2 * PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
+    );
 }
 
 // TODO test as text proposal funding attachment

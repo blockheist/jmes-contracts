@@ -14,6 +14,9 @@ use cw2::set_contract_version;
 use identityservice::msg::QueryMsg::GetIdentityByOwner;
 use identityservice::state::IdType::Dao;
 
+// Address for burning the proposal fee
+const BURN_ADDRESS: &str = "jmes1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqf5laz2";
+
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -125,7 +128,7 @@ pub fn execute(
 }
 
 mod exec {
-    use cosmwasm_std::{CosmosMsg, Decimal, Uint128, WasmMsg};
+    use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Decimal, Uint128, WasmMsg};
     use cw20::BalanceResponse;
     use identityservice::msg::GetIdentityByOwnerResponse;
 
@@ -314,7 +317,17 @@ mod exec {
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
 
-        Ok(Response::new())
+        // Attach bank message to send the deposit amount to the burn address
+        let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
+        let burn_msg = BankMsg::Send {
+            to_address: burn_address.to_string(),
+            amount: vec![Coin {
+                denom: "ujmes".to_string(),
+                amount: deposit_amount,
+            }],
+        };
+
+        Ok(Response::new().add_message(burn_msg))
     }
 
     pub fn request_feature(
@@ -366,7 +379,17 @@ mod exec {
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
 
-        Ok(Response::new())
+        // Attach bank message to send the deposit amount to the burn address
+        let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
+        let burn_msg = BankMsg::Send {
+            to_address: burn_address.to_string(),
+            amount: vec![Coin {
+                denom: "ujmes".to_string(),
+                amount: deposit_amount,
+            }],
+        };
+
+        Ok(Response::new().add_message(burn_msg))
     }
 
     pub fn improvement(
@@ -415,7 +438,17 @@ mod exec {
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
 
-        Ok(Response::new())
+        // Attach bank message to send the deposit amount to the burn address
+        let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
+        let burn_msg = BankMsg::Send {
+            to_address: burn_address.to_string(),
+            amount: vec![Coin {
+                denom: "ujmes".to_string(),
+                amount: deposit_amount,
+            }],
+        };
+
+        Ok(Response::new().add_message(burn_msg))
     }
 
     pub fn core_slot(
@@ -461,7 +494,17 @@ mod exec {
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
 
-        Ok(Response::new())
+        // Attach bank message to send the deposit amount to the burn address
+        let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
+        let burn_msg = BankMsg::Send {
+            to_address: burn_address.to_string(),
+            amount: vec![Coin {
+                denom: "ujmes".to_string(),
+                amount: deposit_amount,
+            }],
+        };
+
+        Ok(Response::new().add_message(burn_msg))
     }
 
     pub fn vote(
@@ -669,7 +712,17 @@ mod exec {
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
 
-        Ok(Response::new())
+        // Attach bank message to send the deposit amount to the burn address
+        let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
+        let burn_msg = BankMsg::Send {
+            to_address: burn_address.to_string(),
+            amount: vec![Coin {
+                denom: "ujmes".to_string(),
+                amount: deposit_amount,
+            }],
+        };
+
+        Ok(Response::new().add_message(burn_msg))
     }
 
     pub fn unset_core_slot(
