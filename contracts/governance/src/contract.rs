@@ -5,7 +5,6 @@ use crate::state::{
     Config, CoreSlots, WinningGrant, CONFIG, CORE_SLOTS, PROPOSAL_COUNT, WINNING_GRANTS,
 };
 use artist_curator::msg::ExecuteMsg::ApproveCurator;
-use bjmes_token::msg::QueryMsg as BjmesQueryMsg;
 use cosmwasm_std::{
     to_binary, Addr, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
@@ -36,7 +35,6 @@ pub fn instantiate(
 
     let config = Config {
         owner: Some(owner_addr),
-        bjmes_token_addr: deps.api.addr_validate(&msg.bjmes_token_addr)?,
         artist_curator_addr: None,
         identityservice_addr: None,
         proposal_required_deposit: msg.proposal_required_deposit,
@@ -128,8 +126,7 @@ pub fn execute(
 }
 
 mod exec {
-    use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Decimal, Uint128, WasmMsg};
-    use cw20::BalanceResponse;
+    use cosmwasm_std::{BalanceResponse, BankMsg, Coin, CosmosMsg, Decimal, Uint128, WasmMsg};
     use identityservice::msg::GetIdentityByOwnerResponse;
 
     use super::*;
@@ -540,15 +537,12 @@ mod exec {
                 return Err(ContractError::UserAlreadyVoted {});
             }
 
-            let bjmes_amount: BalanceResponse = deps.querier.query_wasm_smart(
-                config.bjmes_token_addr,
-                &BjmesQueryMsg::BalanceAt {
-                    address: info.sender.to_string(),
-                    block: proposal.start_block,
-                },
-            )?;
+            // Check users bjmes balance (voting coins)
+            let bjmes_amount = deps
+                .querier
+                .query_balance(info.sender.to_string(), "ubjmes")?;
 
-            let vote_coins = bjmes_amount.balance;
+            let vote_coins = bjmes_amount.amount;
 
             if vote_coins.is_zero() {
                 return Err(ContractError::NoVoteCoins {});
