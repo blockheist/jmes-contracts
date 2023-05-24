@@ -12,7 +12,6 @@ use crate::state::{
 #[serde(rename_all = "snake_case")]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub bjmes_token_addr: String,
     pub artist_curator_addr: Option<String>,
     pub proposal_required_deposit: Uint128,
     // Required percentage for a proposal to pass, e.g. 51
@@ -224,7 +223,6 @@ pub struct ProposalsResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub bjmes_token_addr: Addr,
     pub artist_curator_addr: Option<Addr>,
     pub proposal_required_deposit: Uint128,
     // Required percentage for a proposal to pass, e.g. 51

@@ -22,7 +22,6 @@ use crate::{
 };
 
 use super::contract::GovernanceContract;
-use bjmes_token::multitest::contract::BjmesTokenContract;
 
 // Address for burning the proposal fee
 const BURN_ADDRESS: &str = "jmes1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqf5laz2";
@@ -54,17 +53,11 @@ fn mock_app() -> App {
 #[derive(Debug, Clone)]
 struct Contracts {
     governance: GovernanceContract,
-    _bjmes_token: BjmesTokenContract,
     identityservice: IdentityserviceContract,
 }
 
 fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -> Contracts {
     // Instantiate needed contracts
-
-    let bjmes_code_id = BjmesTokenContract::store_code(app);
-    let bjmes_contract =
-        BjmesTokenContract::instantiate(app, bjmes_code_id, &user1, "bonded JMES Contract")
-            .unwrap();
 
     let governance_code_id = GovernanceContract::store_code(app);
     let governance_contract = GovernanceContract::instantiate(
@@ -73,7 +66,6 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
         &user1,
         "Governance Contract",
         owner.clone().into(),
-        bjmes_contract.addr().into(),
         None,
         Uint128::from(PROPOSAL_REQUIRED_DEPOSIT),
         51,
@@ -100,7 +92,6 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
     )
     .unwrap();
 
-    println!("\n\nbjmes_contract {:?}", bjmes_contract);
     println!("\n\ngovernance_contract {:?}", governance_contract);
     println!(
         "\n\nidentityservice_contract {:?}",
@@ -130,31 +121,33 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
                 }],
             )
             .unwrap();
+
+        // Mint bjmes tokens to user1 so it can vote
+        router
+            .bank
+            .init_balance(
+                storage,
+                &user1.clone(),
+                vec![Coin {
+                    denom: "ubjmes".to_string(),
+                    amount: Uint128::from(USER1_VOTING_COINS),
+                }],
+            )
+            .unwrap();
+
+        // Mint bjmes tokens to user2 so it can vote
+        router
+            .bank
+            .init_balance(
+                storage,
+                &user2.clone(),
+                vec![Coin {
+                    denom: "ubjmes".to_string(),
+                    amount: Uint128::from(USER2_VOTING_COINS),
+                }],
+            )
+            .unwrap();
     });
-
-    // Mint bjmes tokens to user1 so it can vote
-    let mint3 = bjmes_contract
-        .mint(
-            app,
-            &user1,
-            user1.clone().into(),
-            Uint128::from(USER1_VOTING_COINS),
-        )
-        .unwrap();
-
-    println!("\n\nmint3 {:?}", mint3);
-
-    // Mint bjmes tokens to user2 so it can vote
-    let mint3 = bjmes_contract
-        .mint(
-            app,
-            &user2,
-            user2.clone().into(),
-            Uint128::from(USER2_VOTING_COINS),
-        )
-        .unwrap();
-
-    println!("\n\nmint3 {:?}", mint3);
 
     // Produce a block to mine balances (used by BalanceAt)
     app.update_block(|mut block| {
@@ -164,7 +157,6 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
 
     Contracts {
         governance: governance_contract,
-        _bjmes_token: bjmes_contract,
         identityservice: identityservice_contract,
     }
 }

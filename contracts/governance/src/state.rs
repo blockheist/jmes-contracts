@@ -55,7 +55,6 @@ pub struct CoreSlots {
 #[serde(rename_all = "snake_case")]
 pub struct Config {
     pub owner: Option<Addr>,
-    pub bjmes_token_addr: Addr,
     pub artist_curator_addr: Option<Addr>,
     pub identityservice_addr: Option<Addr>,
     pub proposal_required_deposit: Uint128,

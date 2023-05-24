@@ -18,8 +18,6 @@ import * as DaoMultisig from "../client/DaoMultisig.types";
 import * as DaoMembers from "../client/DaoMembers.types";
 import { GovernanceClient, GovernanceQueryClient } from "../client/Governance.client.js";
 import * as Governance from "../client/Governance.types.js";
-import * as BjmesToken from "../client/BjmesToken.types.js";
-import { BjmesTokenClient } from "../client/BjmesToken.client.js";
 import { Core } from "jmes";
 import { WasmMsg } from "jmes/src/Client/providers/LCDClient/core/wasm/msgs";
 import { coin, coins } from "@cosmjs/amino";
@@ -280,8 +278,8 @@ describe("End-to-End Tests", function () {
       await client.send(user3, global.liveAddrs.dao_multisig, "2000ujmes")
 
       // Mint bondedJMES token so we can vote
-      const bjmesTokenClient = new BjmesTokenClient(client, user1, global.addrs.bjmes_token)
-      await bjmesTokenClient.mint({ amount: "4000", recipient: user1.address }) // Token for voting
+      // TODO use native ubjmes 
+      // await bjmesTokenClient.mint({ amount: "4000", recipient: user1.address }) // Token for voting
     });
 
 
