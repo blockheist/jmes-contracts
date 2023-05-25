@@ -2,7 +2,9 @@ use crate::{
     error::ContractError,
     msg::{CoreSlot, Feature, RevokeCoreSlot},
 };
-use cosmwasm_std::{Addr, CosmosMsg, Decimal, Env, StdResult, Storage, Uint128};
+use cosmwasm_std::{
+    Addr, CosmosMsg, Decimal, Deps, DepsMut, Env, QuerierWrapper, StdResult, Storage, Uint128,
+};
 use cw_storage_plus::{Item, Map};
 
 use schemars::JsonSchema;
@@ -58,7 +60,7 @@ pub struct Config {
     pub artist_curator_addr: Option<Addr>,
     pub identityservice_addr: Option<Addr>,
     pub proposal_required_deposit: Uint128,
-    // Required percentage for a proposal to pass, e.g. 51
+    // Required net yes vote percentage required for a proposal to pass, e.g. 10
     pub proposal_required_percentage: u64,
     // Epoch when the 1st posting period starts, e.g. 1660000000
     pub period_start_epoch: u64,
@@ -96,7 +98,12 @@ impl Proposal {
         Ok(id)
     }
 
-    pub fn status(&self, env: Env, proposal_required_percentage: u64) -> ProposalStatus {
+    pub fn status(
+        &self,
+        &querier: &QuerierWrapper,
+        env: Env,
+        proposal_required_percentage: u64,
+    ) -> ProposalStatus {
         let mut status = ProposalStatus::Posted;
 
         if env.block.time.seconds() > self.voting_start {
@@ -106,6 +113,11 @@ impl Proposal {
         if env.block.time.seconds() > self.voting_end {
             let coins_yes = self.coins_yes;
             let coins_no = self.coins_no;
+
+            // TODO upgrade to cosmwasm 1.1 to enable total supply query
+            // let coins_total = &querier.query_supply("ubjmes")?
+
+            // TODO: remove this once we have total supply query
             let coins_total = coins_yes + coins_no;
 
             let mut yes_ratio: Decimal = Decimal::zero();

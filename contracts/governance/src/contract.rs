@@ -16,6 +16,8 @@ use identityservice::state::IdType::Dao;
 // Address for burning the proposal fee
 const BURN_ADDRESS: &str = "jmes1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqf5laz2";
 
+const MIN_VOTE_COINS: u128 = 1000_000_000u128; // 1.000 bJMES
+
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -126,6 +128,8 @@ pub fn execute(
 }
 
 mod exec {
+    use std::f32::MIN;
+
     use cosmwasm_std::{BalanceResponse, BankMsg, Coin, CosmosMsg, Decimal, Uint128, WasmMsg};
     use identityservice::msg::GetIdentityByOwnerResponse;
 
@@ -512,8 +516,6 @@ mod exec {
         vote: VoteOption,
     ) -> Result<Response, ContractError> {
         {
-            let config = CONFIG.load(deps.storage)?;
-
             let period_info = period_info(deps.as_ref(), env.clone())?;
 
             if period_info.current_period != ProposalPeriod::Voting {
@@ -540,7 +542,7 @@ mod exec {
             // Check users bjmes balance (voting coins)
             let bjmes_amount = deps
                 .querier
-                .query_balance(info.sender.to_string(), "ubjmes")?;
+                .query_balance(info.sender.to_string(), "bujmes")?;
 
             let vote_coins = bjmes_amount.amount;
 
@@ -548,7 +550,7 @@ mod exec {
                 return Err(ContractError::NoVoteCoins {});
             }
 
-            if vote_coins < Uint128::from(10000000u128) {
+            if vote_coins < Uint128::from(MIN_VOTE_COINS) {
                 return Err(ContractError::InsufficientVoteCoins {});
             }
 
@@ -588,15 +590,17 @@ mod exec {
 
         let mut msgs: Vec<CosmosMsg> = vec![];
 
-        // Do some housekeeping and remove expired funding grants
         let mut winning_grants = WINNING_GRANTS.load(deps.storage)?;
 
         // Remove expired grants from winning grants
         winning_grants.retain(|grant| grant.expire_at_height >= env.clone().block.height);
 
-        // On proposal success, add process funding proposal and execute attached msgs
-        if proposal.status(env.clone(), config.proposal_required_percentage)
-            == ProposalStatus::SuccessConcluded
+        // On proposal success, add winning_grant, process funding proposal and execute attached msgs
+        if proposal.status(
+            &deps.querier,
+            env.clone(),
+            config.proposal_required_percentage,
+        ) == ProposalStatus::SuccessConcluded
         {
             if proposal.msgs.is_some() {
                 msgs.extend(proposal.msgs.unwrap());
@@ -1011,7 +1015,11 @@ mod query {
             voting_start: proposal.voting_start,
             voting_end: proposal.voting_end,
             concluded: proposal.concluded,
-            status: proposal.status(env.clone(), config.proposal_required_percentage),
+            status: proposal.status(
+                &deps.querier,
+                env.clone(),
+                config.proposal_required_percentage,
+            ),
         })
     }
 
@@ -1048,7 +1056,11 @@ mod query {
                     voting_start: proposal.voting_start,
                     voting_end: proposal.voting_end,
                     concluded: proposal.concluded,
-                    status: proposal.status(env.clone(), config.proposal_required_percentage),
+                    status: proposal.status(
+                        &deps.querier,
+                        env.clone(),
+                        config.proposal_required_percentage,
+                    ),
                 })
             })
             .collect::<StdResult<Vec<_>>>()?;
