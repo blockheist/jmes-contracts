@@ -129,7 +129,7 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
                 storage,
                 &user1.clone(),
                 vec![Coin {
-                    denom: "ubjmes".to_string(),
+                    denom: "bujmes".to_string(),
                     amount: Uint128::from(USER1_VOTING_COINS),
                 }],
             )
@@ -142,7 +142,7 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
                 storage,
                 &user2.clone(),
                 vec![Coin {
-                    denom: "ubjmes".to_string(),
+                    denom: "bujmes".to_string(),
                     amount: Uint128::from(USER2_VOTING_COINS),
                 }],
             )

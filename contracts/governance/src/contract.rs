@@ -128,9 +128,7 @@ pub fn execute(
 }
 
 mod exec {
-    use std::f32::MIN;
-
-    use cosmwasm_std::{BalanceResponse, BankMsg, Coin, CosmosMsg, Decimal, Uint128, WasmMsg};
+    use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Decimal, Uint128, WasmMsg};
     use identityservice::msg::GetIdentityByOwnerResponse;
 
     use super::*;
