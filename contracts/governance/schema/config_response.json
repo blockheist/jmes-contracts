@@ -3,7 +3,6 @@
   "title": "ConfigResponse",
   "type": "object",
   "required": [
-    "bjmes_token_addr",
     "period_start_epoch",
     "posting_period_length",
     "proposal_required_deposit",
@@ -20,9 +19,6 @@
           "type": "null"
         }
       ]
-    },
-    "bjmes_token_addr": {
-      "$ref": "#/definitions/Addr"
     },
     "period_start_epoch": {
       "type": "integer",
