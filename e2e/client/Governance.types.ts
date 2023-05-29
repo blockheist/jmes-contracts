@@ -8,7 +8,6 @@ export type Addr = string;
 export type Uint128 = string;
 export interface ConfigResponse {
   artist_curator_addr?: Addr | null;
-  bjmes_token_addr: Addr;
   period_start_epoch: number;
   posting_period_length: number;
   proposal_required_deposit: Uint128;
@@ -236,7 +235,6 @@ export interface RevokeCoreSlot {
 }
 export interface InstantiateMsg {
   artist_curator_addr?: string | null;
-  bjmes_token_addr: string;
   owner: string;
   period_start_epoch: number;
   posting_period_length: number;

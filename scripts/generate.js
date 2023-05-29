@@ -16,10 +16,6 @@ codegen
         dir: "../contracts/artist-nft/schema",
       },
       {
-        name: "bjmes-token",
-        dir: "../contracts/bjmes-token/schema",
-      },
-      {
         name: "dao-members",
         dir: "../contracts/dao-members/schema",
       },

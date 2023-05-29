@@ -114,12 +114,13 @@ impl Proposal {
 
             let coins_net_yes = coins_yes.checked_sub(coins_no).unwrap_or_default();
 
-            let coins_total = &querier.query_supply("bujmes").unwrap().amount;
+            // let coins_total = &querier.query_supply("bujmes").unwrap().amount;
+            let coins_total = coins_yes + coins_no; // TODO temp hack to get around query_supply not available in testnet with wasmvm 1.0.0
 
             let mut yes_ratio: Decimal = Decimal::zero();
 
             if !coins_total.is_zero() {
-                yes_ratio = Decimal::from_ratio(coins_net_yes, *coins_total);
+                yes_ratio = Decimal::from_ratio(coins_net_yes, coins_total);
             }
 
             let required_yes_ratio = Decimal::from_ratio(proposal_required_percentage, 100u64);

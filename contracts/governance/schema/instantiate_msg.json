@@ -3,7 +3,6 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "bjmes_token_addr",
     "owner",
     "period_start_epoch",
     "posting_period_length",
@@ -17,9 +16,6 @@
         "string",
         "null"
       ]
-    },
-    "bjmes_token_addr": {
-      "type": "string"
     },
     "owner": {
       "type": "string"
