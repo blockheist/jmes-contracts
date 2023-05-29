@@ -40,7 +40,7 @@ pub fn instantiate(
         artist_curator_addr: None,
         identityservice_addr: None,
         proposal_required_deposit: msg.proposal_required_deposit,
-        proposal_required_percentage: msg.proposal_required_percentage, // 51
+        proposal_required_percentage: msg.proposal_required_percentage, // 10
         period_start_epoch: msg.period_start_epoch,                     // 1660000000,
         posting_period_length: msg.posting_period_length,               // 300000,
         voting_period_length: msg.voting_period_length,                 // 606864,
@@ -833,7 +833,7 @@ mod exec {
                     (Some(current_slot), result)
                 }
             } else {
-                // new_slot.proposal_voting_end < current_slot.proposal_voting_end
+                // the remaining arm of the condition: new_slot.proposal_voting_end < current_slot.proposal_voting_end
                 result = "error: proposal is older than current slot vote result".to_string();
                 (Some(current_slot), result)
             }
