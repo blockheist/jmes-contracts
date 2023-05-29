@@ -1,6 +1,7 @@
 import {
   MsgExecuteContract,
   MsgInstantiateContract,
+  MsgUpdateContractAdmin,
 } from "jmes/build/Client/providers/LCDClient/core/index.js";
 import { writeFileSync } from "fs";
 import { executeMsg } from "./executeMsg.js";
@@ -39,9 +40,19 @@ async function instantiateContract(
 
   // console.log("initMsg:>> ", initMsg);
 
+  // The governance contract is instantiated with a temporary admin address (and set to its own contract address later)
+  // This will be superseded with MsgInstantiate2 in cosmwasm 1.2
+  // All other contracts are instantiated with the governance contract address as admin
+  const admin_address =
+    contractName === "governance"
+      ? process.env.ADMIN
+      : readContractAddrs()["governance"];
+
+  console.log("admin_address :>> ", admin_address);
+
   const instantiateContractMsg = new MsgInstantiateContract(
     user.address,
-    process.env.ADMIN,
+    admin_address,
     codeId,
     initMsg,
     {},
@@ -60,6 +71,28 @@ async function instantiateContract(
   const contractAddr = getAttribute(result, "instantiate", "_contract_address");
   console.log(`-> Instantiated ${contractName}:`, contractAddr);
 
+  // Set the governance admin address to its own contract address
+  if (contractName === "governance") {
+    const updateContractAdminMsg = new MsgUpdateContractAdmin(
+      // @ts-ignore
+      process.env.ADMIN,
+      contractAddr,
+      contractAddr
+    );
+    let updateAdminResult;
+    try {
+      updateAdminResult = await executeMsg(
+        client,
+        updateContractAdminMsg,
+        user.wallet
+      );
+      console.log("updateAdminResult :>> ", updateAdminResult);
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  }
+
   if (options.cache) storeContractAddr(contractName, contractAddr);
 
   return result;
@@ -70,17 +103,8 @@ async function instantiateContracts(client, user, options = {}) {
 
   const instantiateMsgs = [
     {
-      bjmes_token: {
-        name: "bJMES Token",
-        symbol: "bjmes",
-        decimals: 10,
-        initial_balances: [],
-      },
-    },
-    {
       governance: {
         owner: process.env.OWNER, // only used once for set_contract
-        bjmes_token_addr: "__bjmes_token", // __ gets hydrated with astro_assembly contract addr
         artist_curator_addr: undefined,
         identity_service: undefined,
         proposal_required_deposit: "10000000",
