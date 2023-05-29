@@ -46,26 +46,29 @@ async function uploadContracts(client, user) {
     const storeMsg = createStoreMsg(path, user);
 
     console.log(`-> Storing ${path}*`);
+
+    let result;
+
     try {
-      const result = await executeMsg(client, storeMsg, user.wallet);
+      result = await executeMsg(client, storeMsg, user.wallet);
 
-      // update contract checksum cache so we don't need to upload it again if another contract upload times out
-      cachedContractChecksums[contract] = checksum;
-      writeCachedContractChecksums(cachedContractChecksums);
-
-      // update codeIds
+      // update codeIds - this will throw an error if e.g. the fee is too low
       codeIds[getContractNameFromPath(path)] = getCodeIdFromResult(result);
       fs.writeFileSync(
         `configs/codeIds_${process.env.NETWORK_ENV}.json`,
         JSON.stringify(codeIds),
         "utf8"
       );
-
-      await sleep(5000); // Wait for blockchain propagation to avoid exiting with error
     } catch (err) {
       console.error(err.message);
       throw err;
     }
+
+    // update successfully uploaded contract's checksum cache so we don't need to upload it again if another contract upload times out
+    cachedContractChecksums[contract] = checksum;
+    writeCachedContractChecksums(cachedContractChecksums);
+
+    await sleep(5000); // Wait for blockchain propagation to avoid exiting with error
   }
 
   console.log(
