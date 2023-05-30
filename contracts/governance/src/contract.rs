@@ -152,13 +152,6 @@ mod exec {
     ) -> Result<Response, ContractError> {
         let config = CONFIG.load(deps.storage)?;
 
-        // Check if governance is already enabled (ensures fair distribution of coins for proposal deposit)
-        if env.block.time.seconds() <= config.period_start_epoch {
-            return Err(ContractError::TooEarly {
-                start_epoch: config.period_start_epoch,
-            });
-        }
-
         // Only DAO identities are allowed to post proposals
         let maybe_identity_resp: GetIdentityByOwnerResponse = deps.querier.query_wasm_smart(
             config.clone().identityservice_addr.unwrap().clone(),
