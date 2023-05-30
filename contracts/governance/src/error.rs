@@ -31,8 +31,6 @@ pub enum ContractError {
     ProposalVotingEnded {},
     #[error("InvalidProposalType")]
     InvalidProposalType {},
-    #[error("TooEarly: Proposal submission starts {start_epoch} ")]
-    TooEarly { start_epoch: u64 },
     #[error("WrongDao")]
     WrongDao {},
     #[error("AlreadyHoldingCoreSlot")]
