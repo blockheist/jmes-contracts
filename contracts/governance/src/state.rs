@@ -35,6 +35,7 @@ pub struct WinningGrant {
     pub amount: Uint128,
     pub expire_at_height: u64,
     pub yes_ratio: Decimal,
+    pub proposal_id: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -43,6 +44,8 @@ pub struct SlotVoteResult {
     pub dao: Addr,
     pub yes_ratio: Decimal,
     pub proposal_voting_end: u64,
+    pub proposal_funding_end: u64,
+    pub proposal_id: u64,
 }
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -84,7 +87,7 @@ pub struct Proposal {
     pub posting_start: u64,
     pub voting_start: u64,
     pub voting_end: u64,
-    pub concluded: bool,
+    pub concluded: Option<u64>,
     pub funding: Option<Funding>,
     pub msgs: Option<Vec<CosmosMsg>>,
 }
@@ -126,13 +129,13 @@ impl Proposal {
             let required_yes_ratio = Decimal::from_ratio(proposal_required_percentage, 100u64);
 
             status = if yes_ratio >= required_yes_ratio {
-                if self.concluded {
+                if self.concluded.is_some() {
                     ProposalStatus::SuccessConcluded
                 } else {
                     ProposalStatus::Success
                 }
             } else {
-                if self.concluded {
+                if self.concluded.is_some() {
                     ProposalStatus::ExpiredConcluded
                 } else {
                     ProposalStatus::Expired

@@ -75,25 +75,23 @@ pub enum ProposalMsg {
     RequestFeature {
         title: String,
         description: String,
-        funding: Option<Funding>,
+        funding: Funding,
         feature: Feature,
     },
     Improvement {
         title: String,
         description: String,
-        funding: Option<Funding>,
         msgs: Vec<CosmosMsg>,
     },
     CoreSlot {
         title: String,
         description: String,
-        funding: Option<Funding>,
+        funding: Funding,
         slot: CoreSlot,
     },
     RevokeCoreSlot {
         title: String,
         description: String,
-        funding: Option<Funding>,
         revoke_slot: RevokeCoreSlot,
     },
 }
@@ -210,7 +208,7 @@ pub struct ProposalResponse {
     pub posting_start: u64,
     pub voting_start: u64,
     pub voting_end: u64,
-    pub concluded: bool,
+    pub concluded: Option<u64>,
     pub status: ProposalStatus,
 }
 
