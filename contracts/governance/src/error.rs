@@ -8,6 +8,8 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
     #[error("Insufficient token deposit!")]
+    InsufficientProposalFee {},
+    #[error("InsufficientProposalFee (10 JMES fee required to post a proposal)!")]
     InsufficientDeposit {},
     #[error("NoVoteCoins (1000 bJMES required to vote)!")]
     NoVoteCoins {},

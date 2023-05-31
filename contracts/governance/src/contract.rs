@@ -66,6 +66,7 @@ pub fn instantiate(
         amount: Uint128::from(100u128),
         expire_at_height: 260010,
         yes_ratio: Decimal::percent(85),
+        proposal_id: 991,
     });
 
     mock_winning_grants.push(WinningGrant {
@@ -73,6 +74,7 @@ pub fn instantiate(
         amount: Uint128::from(200u128),
         expire_at_height: 260020,
         yes_ratio: Decimal::percent(90),
+        proposal_id: 992,
     });
 
     mock_winning_grants.push(WinningGrant {
@@ -80,6 +82,7 @@ pub fn instantiate(
         amount: Uint128::from(300u128),
         expire_at_height: 260000,
         yes_ratio: Decimal::percent(95),
+        proposal_id: 993,
     });
 
     WINNING_GRANTS.save(deps.storage, &mock_winning_grants)?;
@@ -174,7 +177,6 @@ mod exec {
         }
 
         // A proposal fee must be paid when posting a proposal
-        // TODO The fee must be burned (should be attached msg to burning address)
         let deposit_amount = info
             .funds
             .iter()
@@ -182,7 +184,7 @@ mod exec {
             .unwrap()
             .amount;
         if deposit_amount < Uint128::from(config.proposal_required_deposit) {
-            return Err(ContractError::InsufficientDeposit {});
+            return Err(ContractError::InsufficientProposalFee {});
         }
 
         match proposal_msg {
@@ -222,7 +224,6 @@ mod exec {
             ProposalMsg::Improvement {
                 title,
                 description,
-                funding,
                 msgs,
             } => improvement(
                 deps,
@@ -233,7 +234,6 @@ mod exec {
                 deposit_amount,
                 title,
                 description,
-                funding,
                 msgs,
             ),
             ProposalMsg::CoreSlot {
@@ -256,7 +256,6 @@ mod exec {
             ProposalMsg::RevokeCoreSlot {
                 title,
                 description,
-                funding,
                 revoke_slot,
             } => revoke_core_slot(
                 deps,
@@ -267,7 +266,6 @@ mod exec {
                 deposit_amount,
                 title,
                 description,
-                funding,
                 revoke_slot,
             ),
         }
@@ -300,7 +298,7 @@ mod exec {
             posting_start: period_info.current_posting_start,
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
-            concluded: false,
+            concluded: None,
             funding,
             msgs: None,
         };
@@ -331,7 +329,7 @@ mod exec {
         deposit_amount: Uint128,
         title: String,
         description: String,
-        funding: Option<Funding>,
+        funding: Funding,
         feature: Feature,
     ) -> Result<Response, ContractError> {
         let msg = match feature {
@@ -362,8 +360,8 @@ mod exec {
             posting_start: period_info.current_posting_start,
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
-            concluded: false,
-            funding,
+            concluded: None,
+            funding: Some(funding),
             msgs: Some(vec![msg]),
         };
 
@@ -393,7 +391,6 @@ mod exec {
         deposit_amount: Uint128,
         title: String,
         description: String,
-        funding: Option<Funding>,
         msgs: Vec<CosmosMsg>,
     ) -> Result<Response, ContractError> {
         let core_slots = CORE_SLOTS.load(deps.storage)?;
@@ -421,8 +418,8 @@ mod exec {
             posting_start: period_info.current_posting_start,
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
-            concluded: false,
-            funding,
+            concluded: None,
+            funding: None,
             msgs: Some(msgs),
         };
 
@@ -452,7 +449,7 @@ mod exec {
         deposit_amount: Uint128,
         title: String,
         description: String,
-        funding: Option<Funding>,
+        funding: Funding,
         slot: CoreSlot,
     ) -> Result<Response, ContractError> {
         let dao = info.sender.clone();
@@ -473,8 +470,8 @@ mod exec {
             posting_start: period_info.current_posting_start,
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
-            concluded: false,
-            funding,
+            concluded: None,
+            funding: Some(funding),
             msgs: Some(vec![CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
                 msg: to_binary(&ExecuteMsg::SetCoreSlot { proposal_id: id })?,
@@ -516,7 +513,7 @@ mod exec {
             let mut proposal = PROPOSALS.load(deps.storage, id)?;
 
             println!("\n\n proposal {:?}", proposal);
-            if proposal.concluded {
+            if proposal.concluded.is_some() {
                 return Err(ContractError::ProposalAlreadyConcluded {});
             }
 
@@ -571,11 +568,12 @@ mod exec {
             return Err(ContractError::VotingPeriodNotEnded {});
         }
 
-        if proposal.concluded {
+        if proposal.concluded.is_some() {
             return Err(ContractError::ProposalAlreadyConcluded {});
         }
 
-        proposal.concluded = true;
+        proposal.concluded =
+            Some(proposal.funding.clone().unwrap().duration_in_blocks + &env.block.height);
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
 
@@ -599,10 +597,11 @@ mod exec {
 
             if proposal.funding.is_some() {
                 winning_grants.push(WinningGrant {
+                    proposal_id: proposal.id,
                     dao: proposal.dao.clone(),
                     amount: proposal.funding.clone().unwrap().amount,
-                    expire_at_height: proposal.funding.clone().unwrap().duration_in_blocks
-                        + &env.block.height,
+                    expire_at_height: proposal.concluded.unwrap()
+                        + proposal.funding.unwrap().duration_in_blocks,
                     yes_ratio: Decimal::from_ratio(
                         proposal.coins_yes,
                         proposal.coins_yes + proposal.coins_no,
@@ -665,7 +664,6 @@ mod exec {
         deposit_amount: Uint128,
         title: String,
         description: String,
-        funding: Option<Funding>,
         revoke_slot: RevokeCoreSlot,
     ) -> Result<Response, ContractError> {
         let dao = info.sender.clone();
@@ -686,8 +684,8 @@ mod exec {
             posting_start: period_info.current_posting_start,
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
-            concluded: false,
-            funding,
+            concluded: None,
+            funding: None,
             msgs: Some(vec![CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
                 msg: to_binary(&ExecuteMsg::UnsetCoreSlot { proposal_id: id })?,
@@ -787,6 +785,9 @@ mod exec {
             dao: dao.clone(),
             yes_ratio,
             proposal_voting_end,
+            proposal_funding_end: proposal.concluded.unwrap()
+                + proposal.funding.unwrap().duration_in_blocks, // We know core slot proposals are required to have funding.
+            proposal_id: proposal.id,
         });
 
         let mut core_slots = CORE_SLOTS.load(deps.storage)?;
@@ -972,12 +973,48 @@ mod query {
         })
     }
 
-    pub fn core_slots(deps: Deps, _env: Env) -> StdResult<CoreSlotsResponse> {
+    pub fn core_slots(deps: Deps, env: Env) -> StdResult<CoreSlotsResponse> {
         let core_slots = CORE_SLOTS.load(deps.storage)?;
+
+        // Set core slots to None if their proposal funding period has expired
+
+        let brand = match core_slots.brand {
+            Some(brand) => {
+                if brand.proposal_funding_end >= env.block.height {
+                    Some(brand)
+                } else {
+                    None
+                }
+            }
+            None => None,
+        };
+
+        let creative = match core_slots.creative {
+            Some(creative) => {
+                if creative.proposal_funding_end >= env.block.height {
+                    Some(creative)
+                } else {
+                    None
+                }
+            }
+            None => None,
+        };
+
+        let core_tech: Option<crate::state::SlotVoteResult> = match core_slots.core_tech {
+            Some(core_tech) => {
+                if core_tech.proposal_funding_end >= env.block.height {
+                    Some(core_tech)
+                } else {
+                    None
+                }
+            }
+            None => None,
+        };
+
         Ok(CoreSlotsResponse {
-            brand: core_slots.brand,
-            creative: core_slots.creative,
-            core_tech: core_slots.core_tech,
+            brand,
+            creative,
+            core_tech,
         })
     }
 
