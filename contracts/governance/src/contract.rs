@@ -422,6 +422,9 @@ mod exec {
     ) -> Result<Response, ContractError> {
         let dao = info.sender.clone();
 
+        // Query the members of the dao
+        // let members = query_members(deps.as_ref(), dao.clone())?;
+
         let id = Proposal::next_id(deps.storage)?;
         let proposal = Proposal {
             id,

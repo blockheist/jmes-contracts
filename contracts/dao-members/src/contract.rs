@@ -1,3 +1,5 @@
+use std::char::MAX;
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -20,6 +22,9 @@ use crate::state::{Config, ADMIN, CONFIG, HOOKS, MEMBERS, TOTAL};
 // version info for migration info
 const CONTRACT_NAME: &str = "dao-members";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+// Currently a maximum of 9 members are allowed
+const MAX_MEMBERS: usize = 9;
 
 // Note, you can use StdResult in some functions where you do not
 // make use of the custom errors
@@ -59,6 +64,14 @@ pub fn create(
     height: u64,
 ) -> Result<(), ContractError> {
     validate_unique_members(&mut members)?;
+
+    if members.len() > MAX_MEMBERS {
+        return Err(ContractError::TooManyMembers {
+            max: MAX_MEMBERS,
+            actual: members.len(),
+        });
+    }
+
     let members = members; // let go of mutability
     let admin_addr = admin
         .map(|admin| deps.api.addr_validate(&admin))
@@ -139,6 +152,7 @@ pub fn update_members(
     to_remove: Vec<String>,
 ) -> Result<MemberChangedHookMsg, ContractError> {
     validate_unique_members(&mut to_add)?;
+
     let to_add = to_add; // let go of mutability
 
     ADMIN.assert_admin(deps.as_ref(), &sender)?;
@@ -166,6 +180,18 @@ pub fn update_members(
             total = total.checked_sub(Uint64::from(weight))?;
             MEMBERS.remove(deps.storage, &remove_addr, height)?;
         }
+    }
+
+    let members: Vec<_> = MEMBERS
+        .range(deps.storage, None, None, Order::Ascending)
+        .take(MAX_MEMBERS + 1)
+        .collect();
+
+    if members.len() > MAX_MEMBERS {
+        return Err(ContractError::TooManyMembers {
+            max: MAX_MEMBERS,
+            actual: members.len(),
+        });
     }
 
     TOTAL.save(deps.storage, &total.u64(), height)?;

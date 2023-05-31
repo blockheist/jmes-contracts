@@ -22,4 +22,7 @@ pub enum ContractError {
 
     #[error("Message contained duplicate member: {member}")]
     DuplicateMember { member: String },
+
+    #[error("A maximum of {max} members are allowed, actual: {actual}")]
+    TooManyMembers { max: usize, actual: usize },
 }
