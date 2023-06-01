@@ -7,14 +7,14 @@ pub enum ContractError {
     StdError(#[from] StdError),
     #[error("Unauthorized")]
     Unauthorized {},
-    #[error("Insufficient token deposit!")]
-    InsufficientProposalFee {},
-    #[error("InsufficientProposalFee (10 JMES fee required to post a proposal)!")]
-    InsufficientDeposit {},
-    #[error("NoVoteCoins (1000 bJMES required to vote)!")]
-    NoVoteCoins {},
-    #[error("InsufficientVoteCoins (1000 bJMES required to vote)!")]
-    InsufficientVoteCoins {},
+    #[error("WrongMemberCount (Core Team must have between {min} and {max} members)!")]
+    WrongCoreTeamMemberCount { min: usize, max: usize },
+    #[error("InsufficientProposalFee ({proposal_fee} JMES fee required to post a proposal)!")]
+    InsufficientProposalFee { proposal_fee: u128 },
+    #[error("NoVoteCoins ({min_vote_coins}  bJMES required to vote)!")]
+    NoVoteCoins { min_vote_coins: u128 },
+    #[error("InsufficientVoteCoins ({min_vote_coins} bJMES required to vote)!")]
+    InsufficientVoteCoins { min_vote_coins: u128 },
     #[error("User already voted!")]
     UserAlreadyVoted {},
     #[error("ProposalNotActive")]

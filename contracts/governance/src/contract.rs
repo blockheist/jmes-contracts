@@ -1,22 +1,17 @@
 use crate::error::ContractError;
 // use crate::msg::Feature::ArtistCurator;
 use crate::msg::{ExecuteMsg, InstantiateMsg, ProposalMsg, QueryMsg};
-use crate::state::{
-    Config, CoreSlots, WinningGrant, CONFIG, CORE_SLOTS, PROPOSAL_COUNT, WINNING_GRANTS,
-};
+use crate::state::{Config, CoreSlots, CONFIG, CORE_SLOTS, PROPOSAL_COUNT, WINNING_GRANTS};
 use artist_curator::msg::ExecuteMsg::ApproveCurator;
-use cosmwasm_std::{
-    to_binary, Addr, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
-};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
+use dao_members::msg::QueryMsg::ListMembers as ListDaoMembers;
 
 use identityservice::msg::QueryMsg::GetIdentityByOwner;
 use identityservice::state::IdType::Dao;
 
 // Address for burning the proposal fee
 const BURN_ADDRESS: &str = "jmes1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqf5laz2";
-
-const MIN_VOTE_COINS: u128 = 1000_000_000u128; // 1.000 bJMES
 
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -100,7 +95,10 @@ pub fn execute(
 
 mod exec {
     use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Decimal, Uint128, WasmMsg};
+    use cw4::MemberListResponse;
+    use dao_members::msg::ConfigResponse;
     use identityservice::msg::GetIdentityByOwnerResponse;
+    use jmes::constants::{MAX_DAO_MEMBERS, MIN_CORE_TEAM_MEMBERS, MIN_VOTE_COINS};
 
     use super::*;
 
@@ -152,7 +150,9 @@ mod exec {
             .unwrap()
             .amount;
         if deposit_amount < Uint128::from(config.proposal_required_deposit) {
-            return Err(ContractError::InsufficientProposalFee {});
+            return Err(ContractError::InsufficientProposalFee {
+                proposal_fee: config.proposal_required_deposit.u128(),
+            });
         }
 
         match proposal_msg {
@@ -422,8 +422,47 @@ mod exec {
     ) -> Result<Response, ContractError> {
         let dao = info.sender.clone();
 
-        // Query the members of the dao
-        // let members = query_members(deps.as_ref(), dao.clone())?;
+        // Enforce Core Slot Membership rules
+        // 1. A minimum of 3 members is required
+        // 2. A maximum of 9 members is allowed
+        // 3. The member with the largest weight must not reach the threshold
+
+        let members: MemberListResponse = deps.querier.query_wasm_smart(
+            dao.clone(),
+            &ListDaoMembers {
+                start_after: None,
+                limit: Some(MAX_DAO_MEMBERS as u32 + 1),
+            },
+        )?;
+
+        // The members must have between 3 and 9 members
+        if members.members.len() > MAX_DAO_MEMBERS || members.members.len() < MIN_CORE_TEAM_MEMBERS
+        {
+            return Err(ContractError::WrongCoreTeamMemberCount {
+                min: MIN_CORE_TEAM_MEMBERS,
+                max: MAX_DAO_MEMBERS,
+            });
+        }
+
+        // find the member with the largest weight
+        let max_weight = members
+            .members
+            .iter()
+            .map(|m| m.weight)
+            .max()
+            .unwrap_or_default();
+
+        // A single member weight is not allowed to reach the threshold
+        // so if the threshold validates for a single member without an error -> we throw an error
+        // TODO If in the future we use a different threshold for dao-members and dao-multisig,
+        // we have to check both thresholds here:
+        let config: ConfigResponse = deps
+            .querier
+            .query_wasm_smart(dao.clone(), &QueryMsg::Config {})?;
+
+        if config.threshold.validate(max_weight).is_ok() {
+            return Err(ContractError::Unauthorized {});
+        }
 
         let id = Proposal::next_id(deps.storage)?;
         let proposal = Proposal {
@@ -506,11 +545,15 @@ mod exec {
             let vote_coins = bjmes_amount.amount;
 
             if vote_coins.is_zero() {
-                return Err(ContractError::NoVoteCoins {});
+                return Err(ContractError::NoVoteCoins {
+                    min_vote_coins: MIN_VOTE_COINS,
+                });
             }
 
             if vote_coins < Uint128::from(MIN_VOTE_COINS) {
-                return Err(ContractError::InsufficientVoteCoins {});
+                return Err(ContractError::InsufficientVoteCoins {
+                    min_vote_coins: MIN_VOTE_COINS,
+                });
             }
 
             match vote {

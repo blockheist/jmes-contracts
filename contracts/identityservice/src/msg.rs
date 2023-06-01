@@ -15,6 +15,15 @@ pub struct InstantiateMsg {
     pub owner: Addr,
     pub dao_members_code_id: u64,
     pub dao_multisig_code_id: u64,
+    pub governance_addr: Addr,
+}
+
+#[cw_serde]
+pub struct RegisterDaoMsg {
+    pub members: Vec<Member>,
+    pub dao_name: String,
+    pub threshold_percentage: Decimal,
+    pub max_voting_period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

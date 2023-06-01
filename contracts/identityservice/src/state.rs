@@ -9,6 +9,7 @@ pub struct Config {
     pub owner: Addr,
     pub dao_members_code_id: u64,
     pub dao_multisig_code_id: u64,
+    pub governance_addr: Addr,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");

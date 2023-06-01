@@ -13,7 +13,7 @@ use dao_multisig::state::Executor;
 use crate::error::ContractError;
 use crate::msg::{
     DaosResponse, ExecuteMsg, GetIdentityByNameResponse, GetIdentityByOwnerResponse,
-    InstantiateMsg, Ordering, QueryMsg,
+    InstantiateMsg, Ordering, QueryMsg, RegisterDaoMsg,
 };
 use crate::state::{identities, next_dao_id, Config, IdType, Identity, CONFIG, DAOS};
 
@@ -44,6 +44,7 @@ pub fn instantiate(
         owner: msg.owner,
         dao_members_code_id: msg.dao_members_code_id,
         dao_multisig_code_id: msg.dao_multisig_code_id,
+        governance_addr: msg.governance_addr,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -106,9 +107,9 @@ pub fn execute_register_dao(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    dao_members_instantiate_msg: dao_members::msg::InstantiateMsg,
+    register_dao_msg: RegisterDaoMsg,
 ) -> Result<Response, ContractError> {
-    validate_name(&dao_members_instantiate_msg.dao_name)?;
+    validate_name(&register_dao_msg.dao_name)?;
 
     let config: Config = CONFIG.load(deps.storage)?;
 
@@ -116,27 +117,36 @@ pub fn execute_register_dao(
     let maybe_name_exists = identities()
         .idx
         .name
-        .item(deps.storage, dao_members_instantiate_msg.dao_name.clone());
+        .item(deps.storage, register_dao_msg.dao_name.clone());
 
     if maybe_name_exists?.is_some() {
         return Err(ContractError::NameTaken {
-            name: dao_members_instantiate_msg.dao_name,
+            name: register_dao_msg.dao_name,
         });
     }
 
+    // Add the governance contract addr to the instantiate msg
+    let instantiate_dao_members_msg = dao_members::msg::InstantiateMsg {
+        members: register_dao_msg.members,
+        dao_name: register_dao_msg.dao_name,
+        threshold_percentage: register_dao_msg.threshold_percentage,
+        max_voting_period: register_dao_msg.max_voting_period,
+        governance_addr: config.governance_addr,
+    };
+
     // Instantiate the DAO contract
-    let instantiate_dao_members_message: WasmMsg = WasmMsg::Instantiate {
+    let instantiate_dao_members_wasm_msg: WasmMsg = WasmMsg::Instantiate {
         label: "dao-members".to_string(),
         admin: None,
         code_id: config.dao_members_code_id,
-        msg: to_binary(&dao_members_instantiate_msg)?,
+        msg: to_binary(&instantiate_dao_members_msg)?,
         funds: vec![],
     };
 
     // Wrap DAO Instantiate Msg into a SubMsg
     let instantiate_dao_members_submsg: SubMsg = SubMsg {
         id: INSTANTIATE_DAO_MEMBERS_REPLY_ID,
-        msg: instantiate_dao_members_message.into(),
+        msg: instantiate_dao_members_wasm_msg.into(),
         gas_limit: None,
         reply_on: ReplyOn::Success,
     };

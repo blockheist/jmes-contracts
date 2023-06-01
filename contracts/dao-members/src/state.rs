@@ -31,4 +31,5 @@ pub struct Config {
     pub threshold: Threshold,
     pub max_voting_period: Duration,
     pub dao_name: String,
+    pub governance_addr: Addr,
 }

@@ -1,5 +1,3 @@
-use std::char::MAX;
-
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -18,13 +16,11 @@ use crate::error::ContractError;
 use crate::helpers::validate_unique_members;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{Config, ADMIN, CONFIG, HOOKS, MEMBERS, TOTAL};
+use jmes::constants::MAX_DAO_MEMBERS;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "dao-members";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-// Currently a maximum of 9 members are allowed
-const MAX_MEMBERS: usize = 9;
 
 // Note, you can use StdResult in some functions where you do not
 // make use of the custom errors
@@ -46,6 +42,7 @@ pub fn instantiate(
             },
             max_voting_period: msg.max_voting_period,
             dao_name: msg.dao_name,
+            governance_addr: msg.governance_addr,
         },
     )?;
 
@@ -65,9 +62,9 @@ pub fn create(
 ) -> Result<(), ContractError> {
     validate_unique_members(&mut members)?;
 
-    if members.len() > MAX_MEMBERS {
+    if members.len() > MAX_DAO_MEMBERS {
         return Err(ContractError::TooManyMembers {
-            max: MAX_MEMBERS,
+            max: MAX_DAO_MEMBERS,
             actual: members.len(),
         });
     }
@@ -182,14 +179,27 @@ pub fn update_members(
         }
     }
 
-    let members: Vec<_> = MEMBERS
+    let members: Vec<Member> = MEMBERS
         .range(deps.storage, None, None, Order::Ascending)
-        .take(MAX_MEMBERS + 1)
-        .collect();
+        .take(MAX_DAO_MEMBERS + 1)
+        .map(|item| {
+            item.map(|(addr, weight)| Member {
+                addr: addr.into(),
+                weight,
+            })
+        })
+        .collect::<StdResult<_>>()?;
 
-    if members.len() > MAX_MEMBERS {
+    // load the config and extract the governance contract address
+    let governance_addr = CONFIG.load(deps.storage)?.governance_addr;
+
+    let core_slots = deps
+        .querier
+        .query_wasm_smart(governance_addr, &governance::query::CoreSlots {});
+
+    if members.len() > MAX_DAO_MEMBERS {
         return Err(ContractError::TooManyMembers {
-            max: MAX_MEMBERS,
+            max: MAX_DAO_MEMBERS,
             actual: members.len(),
         });
     }
