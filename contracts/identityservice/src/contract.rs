@@ -62,8 +62,8 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::RegisterUser { name } => execute_register_user(deps, env, info, name),
-        ExecuteMsg::RegisterDao(dao_members_instantiate_msg) => {
-            execute_register_dao(deps, env, info, dao_members_instantiate_msg)
+        ExecuteMsg::RegisterDao(register_dao_msg) => {
+            execute_register_dao(deps, env, info, register_dao_msg)
         }
     }
 }

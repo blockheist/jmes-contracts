@@ -193,9 +193,10 @@ pub fn update_members(
     // load the config and extract the governance contract address
     let governance_addr = CONFIG.load(deps.storage)?.governance_addr;
 
-    let core_slots = deps
-        .querier
-        .query_wasm_smart(governance_addr, &governance::query::CoreSlots {});
+    let core_slots = deps.querier.query_wasm_smart(
+        governance_addr,
+        &jmes::msg::GovernanceQueryMsg::CoreSlots {},
+    )?;
 
     if members.len() > MAX_DAO_MEMBERS {
         return Err(ContractError::TooManyMembers {

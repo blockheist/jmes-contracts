@@ -1,11 +1,13 @@
 use crate::error::ContractError;
 // use crate::msg::Feature::ArtistCurator;
-use crate::msg::{ExecuteMsg, InstantiateMsg, ProposalMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, ProposalMsg};
 use crate::state::{Config, CoreSlots, CONFIG, CORE_SLOTS, PROPOSAL_COUNT, WINNING_GRANTS};
 use artist_curator::msg::ExecuteMsg::ApproveCurator;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 use dao_members::msg::QueryMsg::ListMembers as ListDaoMembers;
+use jmes::msg::GovernanceQueryMsg as QueryMsg;
+use jmes::msg::SlotVoteResult;
 
 use identityservice::msg::QueryMsg::GetIdentityByOwner;
 use identityservice::state::IdType::Dao;
@@ -59,7 +61,7 @@ pub fn instantiate(
 }
 
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    use QueryMsg::*;
+    use jmes::msg::GovernanceQueryMsg::*;
 
     match msg {
         Config {} => to_binary(&CONFIG.load(deps.storage)?),
@@ -104,14 +106,13 @@ mod exec {
 
     use crate::contract::query::period_info;
     use crate::msg::{CoreSlot, Feature, PeriodInfoResponse, ProposalPeriod, RevokeCoreSlot};
-    use crate::state::{
-        Funding, ProposalStatus, SlotVoteResult, WinningGrant, CORE_SLOTS, WINNING_GRANTS,
-    };
+    use crate::state::{Funding, ProposalStatus, WinningGrant, CORE_SLOTS, WINNING_GRANTS};
     use crate::state::{
         Proposal, ProposalType,
         VoteOption::{self, *},
         PROPOSALS,
     };
+    use jmes::msg::SlotVoteResult;
 
     pub fn proposal(
         deps: DepsMut,
@@ -938,10 +939,11 @@ mod query {
     use cw_storage_plus::Bound;
 
     use crate::msg::{
-        CoreSlotsResponse, PeriodInfoResponse, ProposalPeriod, ProposalResponse, ProposalsResponse,
+        PeriodInfoResponse, ProposalPeriod, ProposalResponse, ProposalsResponse,
         WinningGrantsResponse,
     };
     use crate::state::{PROPOSALS, PROPOSAL_COUNT};
+    use jmes::msg::GovernanceCoreSlotsResponse as CoreSlotsResponse;
 
     use super::*;
 
@@ -1014,7 +1016,7 @@ mod query {
             None => None,
         };
 
-        let core_tech: Option<crate::state::SlotVoteResult> = match core_slots.core_tech {
+        let core_tech: Option<SlotVoteResult> = match core_slots.core_tech {
             Some(core_tech) => {
                 if core_tech.proposal_funding_end >= env.block.height {
                     Some(core_tech)

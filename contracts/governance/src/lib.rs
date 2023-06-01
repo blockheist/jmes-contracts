@@ -1,6 +1,7 @@
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use error::ContractError;
-use msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use jmes::msg::GovernanceQueryMsg as QueryMsg;
+use msg::{ExecuteMsg, InstantiateMsg};
 
 pub mod contract;
 pub mod error;

@@ -1,5 +1,6 @@
-use cosmwasm_std::Addr;
-use dao_members::msg::InstantiateMsg as DaoInstantiateMsg;
+use cosmwasm_std::{Addr, Decimal};
+use cw4::Member;
+use cw_utils::Duration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +19,8 @@ pub struct InstantiateMsg {
     pub governance_addr: Addr,
 }
 
-#[cw_serde]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct RegisterDaoMsg {
     pub members: Vec<Member>,
     pub dao_name: String,
@@ -30,7 +32,7 @@ pub struct RegisterDaoMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     RegisterUser { name: String },
-    RegisterDao(DaoInstantiateMsg),
+    RegisterDao(RegisterDaoMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

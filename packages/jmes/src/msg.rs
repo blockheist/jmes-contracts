@@ -1,4 +1,5 @@
 use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{Addr, Decimal};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -16,4 +17,37 @@ pub struct DaoInstantiateMsg {
 pub struct Voter {
     pub addr: String,
     pub weight: u64,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum GovernanceQueryMsg {
+    Config {},
+    PeriodInfo {},
+    Proposal {
+        id: u64,
+    },
+    Proposals {
+        start: Option<u64>,
+        limit: Option<u32>,
+    },
+    CoreSlots {},
+    WinningGrants {},
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct GovernanceCoreSlotsResponse {
+    pub brand: Option<SlotVoteResult>,
+    pub creative: Option<SlotVoteResult>,
+    pub core_tech: Option<SlotVoteResult>,
+}
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct SlotVoteResult {
+    pub dao: Addr,
+    pub yes_ratio: Decimal,
+    pub proposal_voting_end: u64,
+    pub proposal_funding_end: u64,
+    pub proposal_id: u64,
 }

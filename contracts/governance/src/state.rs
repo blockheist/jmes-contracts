@@ -40,19 +40,10 @@ pub struct WinningGrant {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct SlotVoteResult {
-    pub dao: Addr,
-    pub yes_ratio: Decimal,
-    pub proposal_voting_end: u64,
-    pub proposal_funding_end: u64,
-    pub proposal_id: u64,
-}
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
 pub struct CoreSlots {
-    pub brand: Option<SlotVoteResult>,
-    pub creative: Option<SlotVoteResult>,
-    pub core_tech: Option<SlotVoteResult>,
+    pub brand: Option<jmes::msg::SlotVoteResult>,
+    pub creative: Option<jmes::msg::SlotVoteResult>,
+    pub core_tech: Option<jmes::msg::SlotVoteResult>,
 }
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

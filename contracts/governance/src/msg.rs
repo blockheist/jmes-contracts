@@ -4,9 +4,8 @@ use cosmwasm_std::{Addr, CosmosMsg, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::state::{
-    Funding, ProposalStatus, ProposalType, SlotVoteResult, VoteOption, WinningGrant,
-};
+use crate::state::{Funding, ProposalStatus, ProposalType, VoteOption, WinningGrant};
+use jmes::msg::SlotVoteResult;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -141,22 +140,6 @@ impl fmt::Display for CoreSlot {
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum QueryMsg {
-    Config {},
-    PeriodInfo {},
-    Proposal {
-        id: u64,
-    },
-    Proposals {
-        start: Option<u64>,
-        limit: Option<u32>,
-    },
-    CoreSlots {},
-    WinningGrants {},
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
-#[serde(rename_all = "snake_case")]
 pub enum ProposalPeriod {
     Posting,
     Voting,
@@ -176,14 +159,6 @@ pub struct PeriodInfoResponse {
     pub posting_period_length: u64,
     pub voting_period_length: u64,
     pub cycle_length: u64,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct CoreSlotsResponse {
-    pub brand: Option<SlotVoteResult>,
-    pub creative: Option<SlotVoteResult>,
-    pub core_tech: Option<SlotVoteResult>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
