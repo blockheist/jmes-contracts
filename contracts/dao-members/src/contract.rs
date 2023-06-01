@@ -9,14 +9,16 @@ use cw4::{
     Member, MemberChangedHookMsg, MemberDiff, MemberListResponse, MemberResponse,
     TotalWeightResponse,
 };
+use cw_controllers::Admin;
 use cw_storage_plus::Bound;
 use cw_utils::{maybe_addr, Threshold};
+use jmes::msg::GovernanceCoreSlotsResponse;
 
 use crate::error::ContractError;
 use crate::helpers::validate_unique_members;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{Config, ADMIN, CONFIG, HOOKS, MEMBERS, TOTAL};
-use jmes::constants::MAX_DAO_MEMBERS;
+use jmes::constants::{MAX_DAO_MEMBERS, MIN_CORE_TEAM_MEMBERS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "dao-members";
@@ -56,7 +58,7 @@ pub fn instantiate(
 // easily be imported in other contracts
 pub fn create(
     mut deps: DepsMut,
-    admin: Option<String>,
+    admin: Option<String>, // Eventually the admin is the dao-multisig address
     mut members: Vec<Member>,
     height: u64,
 ) -> Result<(), ContractError> {
@@ -190,19 +192,51 @@ pub fn update_members(
         })
         .collect::<StdResult<_>>()?;
 
-    // load the config and extract the governance contract address
     let governance_addr = CONFIG.load(deps.storage)?.governance_addr;
 
-    let core_slots = deps.querier.query_wasm_smart(
+    let dao_multisig_addr = ADMIN.get(deps.as_ref())?.unwrap(); // At his point the admin is guaranteed to be set
+
+    let core_slots: GovernanceCoreSlotsResponse = deps.querier.query_wasm_smart(
         governance_addr,
         &jmes::msg::GovernanceQueryMsg::CoreSlots {},
     )?;
 
-    if members.len() > MAX_DAO_MEMBERS {
-        return Err(ContractError::TooManyMembers {
-            max: MAX_DAO_MEMBERS,
-            actual: members.len(),
-        });
+    if Some(dao_multisig_addr.clone()) == core_slots.brand.as_ref().map(|s| s.dao.clone())
+        || Some(dao_multisig_addr.clone()) == core_slots.core_tech.as_ref().map(|s| s.dao.clone())
+        || Some(dao_multisig_addr.clone()) == core_slots.creative.as_ref().map(|s| s.dao.clone())
+    {
+        // Enforce Core Slot Membership rules
+        // 1. A minimum of 3 members is required
+        // 2. A maximum of 9 members is allowed
+        // 3. The member with the largest weight must not reach the threshold
+
+        if members.len() > MAX_DAO_MEMBERS || members.len() < MIN_CORE_TEAM_MEMBERS {
+            return Err(ContractError::WrongCoreTeamMemberCount {
+                min: MIN_CORE_TEAM_MEMBERS,
+                max: MAX_DAO_MEMBERS,
+            });
+        }
+
+        // find the member with the largest weight
+        let max_weight = members.iter().map(|m| m.weight).max().unwrap_or_default();
+
+        // TODO If in the future we use a different threshold for dao-members and dao-multisig,
+        // we have to check both thresholds here:
+        let config = CONFIG.load(deps.storage)?;
+
+        // A single member weight is not allowed to reach the threshold
+        // so if the threshold validates for a single member without an error -> we throw an error
+        if config.threshold.validate(max_weight).is_ok() {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        // We enforce Non-Core Slot Membership Rules
+        if members.len() > MAX_DAO_MEMBERS {
+            return Err(ContractError::TooManyMembers {
+                max: MAX_DAO_MEMBERS,
+                actual: members.len(),
+            });
+        }
     }
 
     TOTAL.save(deps.storage, &total.u64(), height)?;

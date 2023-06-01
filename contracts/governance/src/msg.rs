@@ -5,7 +5,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::state::{Funding, ProposalStatus, ProposalType, VoteOption, WinningGrant};
-use jmes::msg::SlotVoteResult;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]

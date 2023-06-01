@@ -453,14 +453,14 @@ mod exec {
             .max()
             .unwrap_or_default();
 
-        // A single member weight is not allowed to reach the threshold
-        // so if the threshold validates for a single member without an error -> we throw an error
         // TODO If in the future we use a different threshold for dao-members and dao-multisig,
         // we have to check both thresholds here:
         let config: ConfigResponse = deps
             .querier
             .query_wasm_smart(dao.clone(), &QueryMsg::Config {})?;
 
+        // A single member weight is not allowed to reach the threshold
+        // so if the threshold validates for a single member without an error -> we throw an error
         if config.threshold.validate(max_weight).is_ok() {
             return Err(ContractError::Unauthorized {});
         }
@@ -790,6 +790,48 @@ mod exec {
         let proposal = PROPOSALS.load(deps.storage, proposal_id)?;
 
         let dao = deps.api.addr_validate(&proposal.dao.to_string())?;
+
+        // Enforce Core Slot Membership rules
+        // 1. A minimum of 3 members is required
+        // 2. A maximum of 9 members is allowed
+        // 3. The member with the largest weight must not reach the threshold
+
+        let members: MemberListResponse = deps.querier.query_wasm_smart(
+            dao.clone(),
+            &ListDaoMembers {
+                start_after: None,
+                limit: Some(MAX_DAO_MEMBERS as u32 + 1),
+            },
+        )?;
+
+        // The members must have between 3 and 9 members
+        if members.members.len() > MAX_DAO_MEMBERS || members.members.len() < MIN_CORE_TEAM_MEMBERS
+        {
+            return Err(ContractError::WrongCoreTeamMemberCount {
+                min: MIN_CORE_TEAM_MEMBERS,
+                max: MAX_DAO_MEMBERS,
+            });
+        }
+
+        // find the member with the largest weight
+        let max_weight = members
+            .members
+            .iter()
+            .map(|m| m.weight)
+            .max()
+            .unwrap_or_default();
+
+        // TODO If in the future we use a different threshold for dao-members and dao-multisig,
+        // we have to check both thresholds here:
+        let config: ConfigResponse = deps
+            .querier
+            .query_wasm_smart(dao.clone(), &QueryMsg::Config {})?;
+
+        // A single member weight is not allowed to reach the threshold
+        // so if the threshold validates for a single member without an error -> we throw an error
+        if config.threshold.validate(max_weight).is_ok() {
+            return Err(ContractError::Unauthorized {});
+        }
 
         let yes_ratio =
             Decimal::from_ratio(proposal.coins_yes, proposal.coins_yes + proposal.coins_no);
