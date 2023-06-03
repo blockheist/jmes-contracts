@@ -32,6 +32,7 @@
         "amount",
         "dao",
         "expire_at_height",
+        "proposal_id",
         "yes_ratio"
       ],
       "properties": {
@@ -42,6 +43,11 @@
           "$ref": "#/definitions/Addr"
         },
         "expire_at_height": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "proposal_id": {
           "type": "integer",
           "format": "uint64",
           "minimum": 0.0

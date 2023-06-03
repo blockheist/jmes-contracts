@@ -773,6 +773,9 @@ mod exec {
         }
 
         CORE_SLOTS.save(deps.storage, &core_slots)?;
+        
+
+        
 
         Ok(Response::new())
     }

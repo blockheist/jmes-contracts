@@ -101,7 +101,6 @@
       "required": [
         "coins_no",
         "coins_yes",
-        "concluded",
         "dao",
         "deposit_amount",
         "description",
@@ -124,7 +123,12 @@
           "$ref": "#/definitions/Uint128"
         },
         "concluded": {
-          "type": "boolean"
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
         },
         "dao": {
           "$ref": "#/definitions/Addr"

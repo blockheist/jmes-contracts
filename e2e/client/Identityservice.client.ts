@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Addr, DaosResponse, ExecuteMsg, Duration, Decimal, DaoMembersInstantiateMsg, Member, IdType, GetIdentityByNameResponse, Identity, GetIdentityByOwnerResponse, InstantiateMsg, QueryMsg, Ordering } from "./Identityservice.types";
+import { Addr, DaosResponse, ExecuteMsg, Duration, Decimal, RegisterDaoMsg, Member, IdType, GetIdentityByNameResponse, Identity, GetIdentityByOwnerResponse, InstantiateMsg, QueryMsg, Ordering } from "./Identityservice.types";
 export interface IdentityserviceReadOnlyInterface {
   contractAddress: string;
   getIdentityByOwner: ({

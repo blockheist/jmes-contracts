@@ -30,6 +30,7 @@ impl DaoMembersContract {
         dao_name: String,
         max_voting_period: Duration,
         threshold_percentage: Decimal,
+        governance_addr: Addr,
     ) -> StdResult<Self> {
         app.instantiate_contract(
             code_id,
@@ -39,6 +40,7 @@ impl DaoMembersContract {
                 dao_name,
                 max_voting_period,
                 threshold_percentage,
+                governance_addr,
             },
             &[],
             label,

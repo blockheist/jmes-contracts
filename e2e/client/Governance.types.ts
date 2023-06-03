@@ -15,19 +15,6 @@ export interface ConfigResponse {
   voting_period_length: number;
   [k: string]: unknown;
 }
-export type Decimal = string;
-export interface CoreSlotsResponse {
-  brand?: SlotVoteResult | null;
-  core_tech?: SlotVoteResult | null;
-  creative?: SlotVoteResult | null;
-  [k: string]: unknown;
-}
-export interface SlotVoteResult {
-  dao: Addr;
-  proposal_voting_end: number;
-  yes_ratio: Decimal;
-  [k: string]: unknown;
-}
 export type ExecuteMsg = {
   propose: ProposalMsg;
 } | {
@@ -75,14 +62,13 @@ export type ProposalMsg = {
   request_feature: {
     description: string;
     feature: Feature;
-    funding?: Funding | null;
+    funding: Funding;
     title: string;
     [k: string]: unknown;
   };
 } | {
   improvement: {
     description: string;
-    funding?: Funding | null;
     msgs: CosmosMsgForEmpty[];
     title: string;
     [k: string]: unknown;
@@ -90,7 +76,7 @@ export type ProposalMsg = {
 } | {
   core_slot: {
     description: string;
-    funding?: Funding | null;
+    funding: Funding;
     slot: CoreSlot;
     title: string;
     [k: string]: unknown;
@@ -98,7 +84,6 @@ export type ProposalMsg = {
 } | {
   revoke_core_slot: {
     description: string;
-    funding?: Funding | null;
     revoke_slot: RevokeCoreSlot;
     title: string;
     [k: string]: unknown;
@@ -233,6 +218,21 @@ export interface RevokeCoreSlot {
   slot: CoreSlot;
   [k: string]: unknown;
 }
+export type Decimal = string;
+export interface GovernanceCoreSlotsResponse {
+  brand?: SlotVoteResult | null;
+  core_tech?: SlotVoteResult | null;
+  creative?: SlotVoteResult | null;
+  [k: string]: unknown;
+}
+export interface SlotVoteResult {
+  dao: Addr;
+  proposal_funding_end: number;
+  proposal_id: number;
+  proposal_voting_end: number;
+  yes_ratio: Decimal;
+  [k: string]: unknown;
+}
 export interface InstantiateMsg {
   artist_curator_addr?: string | null;
   owner: string;
@@ -277,7 +277,7 @@ export type ProposalStatus = "posted" | "voting" | "success" | "expired" | "succ
 export interface ProposalResponse {
   coins_no: Uint128;
   coins_yes: Uint128;
-  concluded: boolean;
+  concluded?: number | null;
   dao: Addr;
   deposit_amount: Uint128;
   description: string;
@@ -334,6 +334,7 @@ export interface WinningGrant {
   amount: Uint128;
   dao: Addr;
   expire_at_height: number;
+  proposal_id: number;
   yes_ratio: Decimal;
   [k: string]: unknown;
 }

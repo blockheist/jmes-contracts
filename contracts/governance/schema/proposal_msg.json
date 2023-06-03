@@ -48,6 +48,7 @@
           "required": [
             "description",
             "feature",
+            "funding",
             "title"
           ],
           "properties": {
@@ -58,14 +59,7 @@
               "$ref": "#/definitions/Feature"
             },
             "funding": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/Funding"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+              "$ref": "#/definitions/Funding"
             },
             "title": {
               "type": "string"
@@ -92,16 +86,6 @@
             "description": {
               "type": "string"
             },
-            "funding": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/Funding"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
             "msgs": {
               "type": "array",
               "items": {
@@ -126,6 +110,7 @@
           "type": "object",
           "required": [
             "description",
+            "funding",
             "slot",
             "title"
           ],
@@ -134,14 +119,7 @@
               "type": "string"
             },
             "funding": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/Funding"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+              "$ref": "#/definitions/Funding"
             },
             "slot": {
               "$ref": "#/definitions/CoreSlot"
@@ -170,16 +148,6 @@
           "properties": {
             "description": {
               "type": "string"
-            },
-            "funding": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/Funding"
-                },
-                {
-                  "type": "null"
-                }
-              ]
             },
             "revoke_slot": {
               "$ref": "#/definitions/RevokeCoreSlot"

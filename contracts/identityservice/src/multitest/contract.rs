@@ -5,7 +5,7 @@ use cw_utils::Duration;
 use crate::contract::{execute, instantiate, query, reply};
 use crate::msg::{
     DaosResponse, ExecuteMsg, GetIdentityByNameResponse, GetIdentityByOwnerResponse,
-    InstantiateMsg, Ordering, QueryMsg,
+    InstantiateMsg, Ordering, QueryMsg, RegisterDaoMsg,
 };
 use crate::ContractError;
 
@@ -32,14 +32,16 @@ impl IdentityserviceContract {
         governance_addr: Addr,
         dao_members_code_id: u64,
         dao_multisig_code_id: u64,
+        goveranance_addr: Addr,
     ) -> StdResult<Self> {
         app.instantiate_contract(
             code_id,
             sender.clone(),
             &InstantiateMsg {
-                owner: governance_addr,
+                owner: governance_addr.clone(),
                 dao_members_code_id,
                 dao_multisig_code_id,
+                governance_addr,
             },
             &[],
             label,
@@ -79,7 +81,7 @@ impl IdentityserviceContract {
         app.execute_contract(
             sender.clone(),
             self.0.clone(),
-            &ExecuteMsg::RegisterDao(dao_members::msg::InstantiateMsg {
+            &ExecuteMsg::RegisterDao(RegisterDaoMsg {
                 members,
                 dao_name,
                 max_voting_period,

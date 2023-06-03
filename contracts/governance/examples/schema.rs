@@ -5,6 +5,8 @@ use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, s
 // use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
 
 use governance::msg::*;
+use jmes::msg::GovernanceCoreSlotsResponse as CoreSlotsResponse;
+use jmes::msg::GovernanceQueryMsg as QueryMsg;
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

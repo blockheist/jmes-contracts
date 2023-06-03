@@ -5,6 +5,7 @@
   "required": [
     "dao_members_code_id",
     "dao_multisig_code_id",
+    "governance_addr",
     "owner"
   ],
   "properties": {
@@ -17,6 +18,9 @@
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0
+    },
+    "governance_addr": {
+      "$ref": "#/definitions/Addr"
     },
     "owner": {
       "$ref": "#/definitions/Addr"
