@@ -119,6 +119,7 @@ async function instantiateContracts(client, user, options = {}) {
         owner: "__governance", // __ gets hydrated with governance contract addr
         dao_members_code_id: codeIds["dao_members"],
         dao_multisig_code_id: codeIds["dao_multisig"],
+        governance_addr: "__governance", // __ gets hydrated with governance contract addr
       },
     },
     {
