@@ -87,10 +87,10 @@ pub enum ProposalMsg {
         funding: Funding,
         slot: CoreSlot,
     },
-    RevokeCoreSlot {
+    RevokeProposal {
         title: String,
         description: String,
-        revoke_slot: RevokeCoreSlot,
+        revoke_proposal_id: u64,
     },
 }
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
@@ -120,12 +120,6 @@ pub enum CoreSlot {
     CoreTech {},
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct RevokeCoreSlot {
-    pub slot: CoreSlot,
-    pub dao: String,
-}
 
 impl fmt::Display for CoreSlot {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

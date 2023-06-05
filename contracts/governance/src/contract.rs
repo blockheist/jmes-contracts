@@ -105,7 +105,7 @@ mod exec {
     use super::*;
 
     use crate::contract::query::period_info;
-    use crate::msg::{CoreSlot, Feature, PeriodInfoResponse, ProposalPeriod, RevokeCoreSlot};
+    use crate::msg::{CoreSlot, Feature, PeriodInfoResponse, ProposalPeriod};
     use crate::state::{Funding, ProposalStatus, WinningGrant, CORE_SLOTS, WINNING_GRANTS};
     use crate::state::{
         Proposal, ProposalType,
@@ -222,10 +222,10 @@ mod exec {
                 funding,
                 slot,
             ),
-            ProposalMsg::RevokeCoreSlot {
+            ProposalMsg::RevokeProposal {
                 title,
                 description,
-                revoke_slot,
+                revoke_proposal_id,
             } => revoke_core_slot(
                 deps,
                 info,
@@ -235,7 +235,7 @@ mod exec {
                 deposit_amount,
                 title,
                 description,
-                revoke_slot,
+                revoke_proposal_id,
             ),
         }
     }
@@ -679,7 +679,7 @@ mod exec {
         deposit_amount: Uint128,
         title: String,
         description: String,
-        revoke_slot: RevokeCoreSlot,
+        revoke_proposal_id: u64,
     ) -> Result<Response, ContractError> {
         let dao = info.sender.clone();
 
@@ -689,7 +689,7 @@ mod exec {
             dao: dao.clone(),
             title,
             description,
-            prop_type: ProposalType::RevokeCoreSlot(revoke_slot),
+            prop_type: ProposalType::RevokeProposal(revoke_proposal_id),
             coins_no: Uint128::zero(),
             coins_yes: Uint128::zero(),
             yes_voters: Vec::new(),
@@ -740,42 +740,53 @@ mod exec {
 
         let proposal = PROPOSALS.load(deps.storage, proposal_id)?;
 
-        let mut core_slots = CORE_SLOTS.load(deps.storage)?;
-
         match proposal.prop_type {
-            ProposalType::RevokeCoreSlot(revoke_slot) => match revoke_slot {
-                RevokeCoreSlot { slot, dao } => match slot {
-                    CoreSlot::CoreTech {} => {
-                        if core_slots.core_tech.unwrap().dao != dao {
-                            return Err(ContractError::WrongDao {});
+            ProposalType::RevokeProposal(revoke_proposal_id) => {
+                let proposal_to_revoke = PROPOSALS.load(deps.storage, revoke_proposal_id)?;
+
+                // Remove the proposal from the winning grants to end funding the revoked DAO
+                let mut winning_grants = WINNING_GRANTS.load(deps.storage)?;
+                winning_grants.retain(|grant| grant.proposal_id != revoke_proposal_id);
+                WINNING_GRANTS.save(deps.storage, &winning_grants)?;
+
+                let mut core_slots = CORE_SLOTS.load(deps.storage)?;
+
+                match proposal_to_revoke.prop_type {
+                    // Remove the DAO from the core slots
+                    ProposalType::CoreSlot(core_slot) => match core_slot {
+                        CoreSlot::Brand {} => {
+                            if core_slots.brand.unwrap().dao != proposal_to_revoke.dao {
+                                return Err(ContractError::WrongDao {});
+                            }
+                            core_slots.brand = None;
                         }
-                        core_slots.core_tech = None;
-                    }
-                    CoreSlot::Brand {} => {
-                        if core_slots.brand.unwrap().dao != dao {
-                            return Err(ContractError::WrongDao {});
+                        CoreSlot::CoreTech {} => {
+                            if core_slots.core_tech.unwrap().dao != proposal_to_revoke.dao {
+                                return Err(ContractError::WrongDao {});
+                            }
+                            core_slots.core_tech = None;
                         }
-                        core_slots.brand = None;
-                    }
-                    CoreSlot::Creative {} => {
-                        if core_slots.creative.unwrap().dao != dao {
-                            return Err(ContractError::WrongDao {});
+                        CoreSlot::Creative {} => {
+                            if core_slots.creative.unwrap().dao != proposal_to_revoke.dao {
+                                return Err(ContractError::WrongDao {});
+                            }
+                            core_slots.creative = None;
                         }
-                        core_slots.creative = None;
+                    },
+                    _ => {
+                        return Err(ContractError::ProposalNotValid {
+                            error: "Proposal to revoke is not a core proposal".to_string(),
+                        });
                     }
-                },
-            },
+                }
+                CORE_SLOTS.save(deps.storage, &core_slots)?;
+            }
             _ => {
                 return Err(ContractError::ProposalNotValid {
-                    error: "Invalid RevokeCoreSlot proposal".into(),
+                    error: "Proposal is not a revoke proposal".to_string(),
                 });
             }
         }
-
-        CORE_SLOTS.save(deps.storage, &core_slots)?;
-        
-
-        
 
         Ok(Response::new())
     }
