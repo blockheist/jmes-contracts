@@ -103,7 +103,7 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
         .set_contract(
             app,
             &owner,
-            "artist_curator".into(), // TODO instantiate artist_curator contract and use actual address
+            "art_dealer".into(), // TODO instantiate art_dealer contract and use actual address
             identityservice_contract.addr().into(),
         )
         .unwrap();

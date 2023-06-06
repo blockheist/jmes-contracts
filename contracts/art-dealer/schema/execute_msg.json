@@ -1,0 +1,191 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecuteMsg",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "mint_art"
+      ],
+      "properties": {
+        "mint_art": {
+          "type": "object",
+          "required": [
+            "owner",
+            "token_id"
+          ],
+          "properties": {
+            "metadata": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Metadata"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "owner": {
+              "description": "The owner of the newly minter NFT",
+              "type": "string"
+            },
+            "token_id": {
+              "type": "string"
+            },
+            "token_uri": {
+              "description": "Universal resource identifier for this NFT Should point to a JSON file that conforms to the ERC721 Metadata JSON Schema",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "approve_dealer"
+      ],
+      "properties": {
+        "approve_dealer": {
+          "type": "object",
+          "required": [
+            "approved",
+            "dao",
+            "duration"
+          ],
+          "properties": {
+            "approved": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            "dao": {
+              "$ref": "#/definitions/Addr"
+            },
+            "duration": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "revoke_dealer"
+      ],
+      "properties": {
+        "revoke_dealer": {
+          "type": "object",
+          "required": [
+            "dao"
+          ],
+          "properties": {
+            "dao": {
+              "$ref": "#/definitions/Addr"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "Addr": {
+      "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+      "type": "string"
+    },
+    "Metadata": {
+      "type": "object",
+      "properties": {
+        "animation_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attributes": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/Trait"
+          }
+        },
+        "background_color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "external_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "image": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "image_data": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "youtube_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Trait": {
+      "type": "object",
+      "required": [
+        "trait_type",
+        "value"
+      ],
+      "properties": {
+        "display_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "trait_type": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

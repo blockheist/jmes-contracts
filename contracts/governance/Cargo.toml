@@ -32,13 +32,7 @@ serde = { version = "1.0.140", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
 cw-utils = "0.16.0" 
 schemars = "0.8.10"
-artist-nft = { path = "../artist-nft", version = "0.14.0", features = [
-  "library",
-]  }
-art-nft = { path = "../art-nft", version = "0.14.0", features = [
-  "library",
-]  }
-artist-curator = { path = "../artist-curator", version = "0.14.0", features = [
+art-dealer = { path = "../art-dealer", version = "0.14.0", features = [
   "library",
 ]  }
 identityservice = { path = "../identityservice", version = "0.1.0", features = [

@@ -4,16 +4,8 @@ codegen
   .default({
     contracts: [
       {
-        name: "art-nft",
-        dir: "../contracts/art-nft/schema",
-      },
-      {
-        name: "artist-curator",
-        dir: "../contracts/artist-curator/schema",
-      },
-      {
-        name: "artist-nft",
-        dir: "../contracts/artist-nft/schema",
+        name: "art-dealer",
+        dir: "../contracts/art-dealer/schema",
       },
       {
         name: "dao-members",

@@ -1,0 +1,44 @@
+[package]
+name          = "cw721-base"
+description   = "Basic implementation cw721 NFTs"
+authors       = [
+  "Ethan Frey <ethanfrey@users.noreply.github.com>",
+  "Orkun Külçe <orkun@deuslabs.fi>",
+]
+version       = "0.17.0"
+edition       = "2021"
+license       = "Apache-2.0"
+repository    = "https://github.com/CosmWasm/cw-nfts"
+homepage      = "https://cosmwasm.com"
+documentation = "https://docs.cosmwasm.com"
+rust-version  = "1.65"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[dependencies]
+cosmwasm-schema = "1.2.1"
+cosmwasm-std    = "1.2.1"
+
+cw-ownable      = "0.5.0"
+cw-storage-plus = "1.0.1"
+cw-utils        = "1.0.1"
+cw2             = { git = "https://github.com/CosmWasm/cw-plus.git" }
+cw721           = { version = "0.17.0", path = "../../packages/cw721" }
+cw721-base-016  = { version = "0.16.0", package = "cw721-base",features = ["library"] }
+
+schemars        = "0.8.11"
+serde           = { version = "1.0.152", default-features = false, features = ["derive"] }
+thiserror       = "1.0.38"
+
+
+
+
+[dev-dependencies]
+cw-multi-test   = "0.16.2"

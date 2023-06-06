@@ -10,7 +10,7 @@ use crate::state::{Funding, ProposalStatus, ProposalType, VoteOption, WinningGra
 #[serde(rename_all = "snake_case")]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub artist_curator_addr: Option<String>,
+    pub art_dealer_addr: Option<String>,
     pub proposal_required_deposit: Uint128,
     // Required percentage for a proposal to pass, e.g. 51
     pub proposal_required_percentage: u64,
@@ -39,7 +39,7 @@ pub enum ExecuteMsg {
         id: u64,
     },
     SetContract {
-        artist_curator: String,
+        art_dealer: String,
         identityservice: String,
     },
     SetCoreSlot {
@@ -109,7 +109,7 @@ pub struct AddGrant {
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Feature {
-    ArtistCurator { approved: u64, duration: u64 },
+    ArtDealer { approved: u64 },
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
@@ -119,7 +119,6 @@ pub enum CoreSlot {
     Creative {},
     CoreTech {},
 }
-
 
 impl fmt::Display for CoreSlot {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -189,7 +188,7 @@ pub struct ProposalsResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub artist_curator_addr: Option<Addr>,
+    pub art_dealer_addr: Option<Addr>,
     pub proposal_required_deposit: Uint128,
     // Required percentage for a proposal to pass, e.g. 51
     pub proposal_required_percentage: u64,

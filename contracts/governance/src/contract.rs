@@ -1,8 +1,7 @@
 use crate::error::ContractError;
-// use crate::msg::Feature::ArtistCurator;
 use crate::msg::{ExecuteMsg, InstantiateMsg, ProposalMsg};
 use crate::state::{Config, CoreSlots, CONFIG, CORE_SLOTS, PROPOSAL_COUNT, WINNING_GRANTS};
-use artist_curator::msg::ExecuteMsg::ApproveCurator;
+use art_dealer::msg::ExecuteMsg::ApproveDealer;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 use dao_members::msg::QueryMsg::ListMembers as ListDaoMembers;
@@ -34,7 +33,7 @@ pub fn instantiate(
 
     let config = Config {
         owner: Some(owner_addr),
-        artist_curator_addr: None,
+        art_dealer_addr: None,
         identityservice_addr: None,
         proposal_required_deposit: msg.proposal_required_deposit,
         proposal_required_percentage: msg.proposal_required_percentage, // 10
@@ -89,9 +88,9 @@ pub fn execute(
         UnsetCoreSlot { proposal_id } => exec::unset_core_slot(deps, env, info, proposal_id),
         ResignCoreSlot { slot, note } => exec::resign_core_slot(deps, env, info, slot, note),
         SetContract {
-            artist_curator,
+            art_dealer,
             identityservice,
-        } => exec::set_contract(deps, env, info, artist_curator, identityservice),
+        } => exec::set_contract(deps, env, info, art_dealer, identityservice),
     }
 }
 
@@ -302,12 +301,12 @@ mod exec {
         feature: Feature,
     ) -> Result<Response, ContractError> {
         let msg = match feature {
-            Feature::ArtistCurator { approved, duration } => CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.artist_curator_addr.unwrap().to_string(),
-                msg: to_binary(&ApproveCurator {
+            Feature::ArtDealer { approved } => CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.art_dealer_addr.unwrap().to_string(),
+                msg: to_binary(&ApproveDealer {
                     dao: info.sender.clone(),
                     approved,
-                    duration,
+                    duration: funding.duration_in_blocks,
                 })?,
                 funds: vec![],
             }),
@@ -963,7 +962,7 @@ mod exec {
         deps: DepsMut,
         _env: Env,
         info: MessageInfo,
-        artist_curator: String,
+        art_dealer: String,
         identityservice: String,
     ) -> Result<Response, ContractError> {
         let mut config = CONFIG.load(deps.storage)?;
@@ -973,10 +972,10 @@ mod exec {
             return Err(ContractError::Unauthorized {});
         }
 
-        let artist_curator_addr = deps.api.addr_validate(&artist_curator)?;
+        let art_dealer_addr = deps.api.addr_validate(&art_dealer)?;
         let identityservice_addr = deps.api.addr_validate(&identityservice)?;
 
-        config.artist_curator_addr = Some(artist_curator_addr);
+        config.art_dealer_addr = Some(art_dealer_addr);
         config.identityservice_addr = Some(identityservice_addr);
 
         // Disables calling this fn a second time
@@ -1195,12 +1194,12 @@ mod query {
 //     use bjmes_token::msg::InstantiateMsg as BjmesInstantiateMsg;
 //     use bjmes_token::msg::QueryMsg as BjmesQueryMsg;
 
-//     // use artist_curator::contract::execute as artist_curator_execute;
-//     // use artist_curator::contract::instantiate as artist_curator_instantiate;
-//     // use artist_curator::contract::query as artist_curator_query;
-//     // use artist_curator::msg::ExecuteMsg as ArtistCuratorExecuteMsg;
-//     // use artist_curator::msg::InstantiateMsg as ArtistCuratorInstantiateMsg;
-//     // use artist_curator::msg::QueryMsg as ArtistCuratorQueryMsg;
+//     // use art_dealer::contract::execute as art_dealer_execute;
+//     // use art_dealer::contract::instantiate as art_dealer_instantiate;
+//     // use art_dealer::contract::query as art_dealer_query;
+//     // use art_dealer::msg::ExecuteMsg as ArtistCuratorExecuteMsg;
+//     // use art_dealer::msg::InstantiateMsg as ArtistCuratorInstantiateMsg;
+//     // use art_dealer::msg::QueryMsg as ArtistCuratorQueryMsg;
 
 //     use crate::state::ProposalStatus;
 //     use crate::state::ProposalType;
@@ -1232,16 +1231,16 @@ mod query {
 //         let user2 = Addr::unchecked("user2");
 
 //         // // Instantiate artist curator contract
-//         // let artist_curator_code = ContractWrapper::new(
-//         //     artist_curator_execute,
-//         //     artist_curator_instantiate,
-//         //     artist_curator_query,
+//         // let art_dealer_code = ContractWrapper::new(
+//         //     art_dealer_execute,
+//         //     art_dealer_instantiate,
+//         //     art_dealer_query,
 //         // );
-//         // let artist_curator_code_id = app.store_code(Box::new(artist_curator_code));
+//         // let art_dealer_code_id = app.store_code(Box::new(art_dealer_code));
 
-//         // let artist_curator_instance = app
+//         // let art_dealer_instance = app
 //         //     .instantiate_contract(
-//         //         artist_curator_code_id,
+//         //         art_dealer_code_id,
 //         //         owner,
 //         //         &ArtistCuratorInstantiateMsg {},
 //         //         &[],
@@ -1319,7 +1318,7 @@ mod query {
 //                 Addr::unchecked("owner"),
 //                 &InstantiateMsg {
 //                     bjmes_token_addr: bjmes_instance.clone().to_string(),
-//                     artist_curator_addr: None,
+//                     art_dealer_addr: None,
 //                     proposal_required_deposit: Uint128::from(PROPOSAL_REQUIRED_DEPOSIT),
 //                     proposal_required_percentage: 51,
 //                     period_start_epoch: 1660000000,
@@ -1729,16 +1728,16 @@ mod query {
 //         let user2 = Addr::unchecked("user2");
 
 //         // Instantiate artist curator contract
-//         // let artist_curator_code = ContractWrapper::new(
-//         //     artist_curator_execute,
-//         //     artist_curator_instantiate,
-//         //     artist_curator_query,
+//         // let art_dealer_code = ContractWrapper::new(
+//         //     art_dealer_execute,
+//         //     art_dealer_instantiate,
+//         //     art_dealer_query,
 //         // );
-//         // let artist_curator_code_id = app.store_code(Box::new(artist_curator_code));
+//         // let art_dealer_code_id = app.store_code(Box::new(art_dealer_code));
 
-//         // let artist_curator_instance = app
+//         // let art_dealer_instance = app
 //         //     .instantiate_contract(
-//         //         artist_curator_code_id,
+//         //         art_dealer_code_id,
 //         //         owner,
 //         //         &ArtistCuratorInstantiateMsg {},
 //         //         &[],
@@ -1816,7 +1815,7 @@ mod query {
 //                 Addr::unchecked("owner"),
 //                 &InstantiateMsg {
 //                     bjmes_token_addr: bjmes_instance.clone().to_string(),
-//                     artist_curator_addr: bjmes_instance.clone().to_string(), // TODO replace with artist_curator addr
+//                     art_dealer_addr: bjmes_instance.clone().to_string(), // TODO replace with art_dealer addr
 //                     proposal_required_deposit: Uint128::from(PROPOSAL_REQUIRED_DEPOSIT),
 //                     proposal_required_percentage: 51,
 //                     period_start_epoch: 1660000000,

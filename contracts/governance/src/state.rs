@@ -49,7 +49,7 @@ pub struct CoreSlots {
 #[serde(rename_all = "snake_case")]
 pub struct Config {
     pub owner: Option<Addr>,
-    pub artist_curator_addr: Option<Addr>,
+    pub art_dealer_addr: Option<Addr>,
     pub identityservice_addr: Option<Addr>,
     pub proposal_required_deposit: Uint128,
     // Required net yes vote percentage required for a proposal to pass, e.g. 10

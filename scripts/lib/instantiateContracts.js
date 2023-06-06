@@ -105,13 +105,13 @@ async function instantiateContracts(client, user, options = {}) {
     {
       governance: {
         owner: process.env.OWNER, // only used once for set_contract
-        artist_curator_addr: undefined,
+        art_dealer_addr: undefined,
         identity_service: undefined,
-        proposal_required_deposit: "10000000",
-        proposal_required_percentage: 51,
-        period_start_epoch: Math.floor(Date.now() / 1000), //1660000000,
-        posting_period_length: 70,
-        voting_period_length: 20,
+        proposal_required_deposit: "10000000", // 10_000_000 ujmes
+        proposal_required_percentage: 10, // 10% more net yes votes than no votes
+        period_start_epoch: Math.floor(Date.now() / 1000), // 1660000000,
+        posting_period_length: 70, // 70 seconds
+        voting_period_length: 20, // 20 seconds
       },
     },
     {
@@ -123,15 +123,12 @@ async function instantiateContracts(client, user, options = {}) {
       },
     },
     {
-      artist_curator: {
+      art_dealer: {
         owner: "__governance", // __ gets hydrated with governance contract addr
         identityservice_contract: "__identityservice", // __ gets hydrated with identityservice contract addr
         art_nft_name: "Art NFT",
         art_nft_symbol: "artnft",
         art_nft_code_id: codeIds["art_nft"],
-        artist_nft_name: "Artist NFT",
-        artist_nft_symbol: "artistnft",
-        artist_nft_code_id: codeIds["artist_nft"],
       },
     },
   ];
@@ -164,7 +161,7 @@ async function instantiateContracts(client, user, options = {}) {
     contractAddrs.governance,
     {
       set_contract: {
-        artist_curator: contractAddrs.artist_curator,
+        art_dealer: contractAddrs.art_dealer,
         identityservice: contractAddrs.identityservice,
       },
     }
@@ -174,7 +171,7 @@ async function instantiateContracts(client, user, options = {}) {
 
   const result = await executeMsg(client, setContractsMsg, user.wallet);
 
-  console.log("result :>> ", result);
+  // console.log("result :>> ", result);
 
   console.log("contractAddrs :>> ", readContractAddrs());
 

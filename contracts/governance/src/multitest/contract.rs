@@ -31,7 +31,7 @@ impl GovernanceContract {
         label: &str,
 
         owner: String,
-        artist_curator_addr: Option<String>,
+        art_dealer_addr: Option<String>,
         proposal_required_deposit: Uint128,
         proposal_required_percentage: u64,
         period_start_epoch: u64,
@@ -43,7 +43,7 @@ impl GovernanceContract {
             sender.clone(),
             &InstantiateMsg {
                 owner,
-                artist_curator_addr,
+                art_dealer_addr,
                 proposal_required_deposit,
                 proposal_required_percentage,
                 period_start_epoch,
@@ -99,14 +99,14 @@ impl GovernanceContract {
         app: &mut App,
         sender: &Addr,
 
-        artist_curator: String,
+        art_dealer: String,
         identityservice: String,
     ) -> Result<AppResponse, ContractError> {
         app.execute_contract(
             sender.clone(),
             self.0.clone(),
             &ExecuteMsg::SetContract {
-                artist_curator,
+                art_dealer,
                 identityservice,
             },
             &[],
