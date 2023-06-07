@@ -609,6 +609,29 @@ mod exec {
                 msgs.extend(proposal.msgs.unwrap());
             }
 
+            let mut max_cap = 125u64; // 25% max cap of total grants
+
+            let core_slots = CORE_SLOTS.load(deps.storage)?;
+
+            core_slots.core_tech.map(|slot| {
+                if slot.dao == proposal.dao {
+                    max_cap = 250u64;
+                }
+            });
+
+            // We save some gas since it's the same value as the non-core daos
+            // Uncomment if governance decides to change the values
+            // core_slots.brand.map(|slot| {
+            //     if slot.dao == proposal.dao {
+            //         max_cap = 125u64; // 12.5% max cap of total grants
+            //     }
+            // });
+            // core_slots.creative.map(|slot| {
+            //     if slot.dao == proposal.dao {
+            //         max_cap = 125u64; // 12.5% max cap of total grants
+            //     }
+            // });
+
             if proposal.funding.is_some() {
                 winning_grants.push(WinningGrant {
                     proposal_id: proposal.id,
@@ -620,6 +643,7 @@ mod exec {
                         proposal.coins_yes,
                         proposal.coins_yes + proposal.coins_no,
                     ),
+                    max_cap,
                 });
             }
         }

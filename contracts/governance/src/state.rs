@@ -36,6 +36,7 @@ pub struct WinningGrant {
     pub expire_at_height: u64,
     pub yes_ratio: Decimal,
     pub proposal_id: u64,
+    pub max_cap: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
