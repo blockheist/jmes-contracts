@@ -6,9 +6,6 @@
     "art_nft_code_id",
     "art_nft_name",
     "art_nft_symbol",
-    "artist_nft_code_id",
-    "artist_nft_name",
-    "artist_nft_symbol",
     "identityservice_contract",
     "owner"
   ],
@@ -22,17 +19,6 @@
       "type": "string"
     },
     "art_nft_symbol": {
-      "type": "string"
-    },
-    "artist_nft_code_id": {
-      "type": "integer",
-      "format": "uint64",
-      "minimum": 0.0
-    },
-    "artist_nft_name": {
-      "type": "string"
-    },
-    "artist_nft_symbol": {
       "type": "string"
     },
     "identityservice_contract": {

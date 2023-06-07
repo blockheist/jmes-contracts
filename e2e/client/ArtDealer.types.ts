@@ -54,9 +54,6 @@ export interface InstantiateMsg {
   art_nft_code_id: number;
   art_nft_name: string;
   art_nft_symbol: string;
-  artist_nft_code_id: number;
-  artist_nft_name: string;
-  artist_nft_symbol: string;
   identityservice_contract: Addr;
   owner: Addr;
   [k: string]: unknown;
