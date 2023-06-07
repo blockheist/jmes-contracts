@@ -128,7 +128,7 @@ async function instantiateContracts(client, user, options = {}) {
         identityservice_contract: "__identityservice", // __ gets hydrated with identityservice contract addr
         art_nft_name: "Art NFT",
         art_nft_symbol: "artnft",
-        art_nft_code_id: codeIds["art_nft"],
+        art_nft_code_id: codeIds["cw721_metadata_onchain"],
       },
     },
   ];
