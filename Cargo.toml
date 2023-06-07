@@ -2,6 +2,13 @@
 resolver = "2"
 members = ["packages/*", "contracts/*"]
 
+[profile.release.package.cw721-base]
+codegen-units = 1
+incremental = false
+
+[profile.release.package.cw721-metadata-onchain]
+codegen-units = 1
+incremental = false
 
 [profile.release]
 rpath = false
