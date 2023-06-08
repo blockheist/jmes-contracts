@@ -49,6 +49,7 @@ pub fn instantiate(
         &CoreSlots {
             brand: None,
             core_tech: None,
+            biz_tech: None,
             creative: None,
         },
     )?;
@@ -670,18 +671,24 @@ mod exec {
                 }
                 core_slots.brand = None;
             }
-            CoreSlot::CoreTech {} => {
-                if core_slots.core_tech.unwrap().dao != info.sender {
-                    return Err(ContractError::Unauthorized {});
-                }
-                core_slots.core_tech = None;
-            }
             CoreSlot::Creative {} => {
                 if core_slots.creative.unwrap().dao != info.sender {
                     return Err(ContractError::Unauthorized {});
                 }
                 core_slots.creative = None;
             }
+            CoreSlot::CoreTech {} => {
+                if core_slots.core_tech.unwrap().dao != info.sender {
+                    return Err(ContractError::Unauthorized {});
+                }
+                core_slots.core_tech = None;
+            }
+            CoreSlot::BizTech {} => {
+                if core_slots.biz_tech.unwrap().dao != info.sender {
+                    return Err(ContractError::Unauthorized {});
+                }
+                core_slots.biz_tech = None;
+            }                        
         }
 
         CORE_SLOTS.save(deps.storage, &core_slots)?;
@@ -789,6 +796,12 @@ mod exec {
                             }
                             core_slots.core_tech = None;
                         }
+                        CoreSlot::BizTech {} => {
+                            if core_slots.biz_tech.unwrap().dao != proposal_to_revoke.dao {
+                                return Err(ContractError::WrongDao {});
+                            }
+                            core_slots.biz_tech = None;
+                        }                       
                         CoreSlot::Creative {} => {
                             if core_slots.creative.unwrap().dao != proposal_to_revoke.dao {
                                 return Err(ContractError::WrongDao {});
@@ -889,6 +902,7 @@ mod exec {
         // A DAO can only hold one core slot at a time
         if Some(dao.clone()) == core_slots.brand.as_ref().map(|s| s.dao.clone())
             || Some(dao.clone()) == core_slots.core_tech.as_ref().map(|s| s.dao.clone())
+            || Some(dao.clone()) == core_slots.biz_tech.as_ref().map(|s| s.dao.clone())
             || Some(dao.clone()) == core_slots.creative.as_ref().map(|s| s.dao.clone())
         {
             // We don't return an error because we want the proposal to be marked as concluded
@@ -961,6 +975,17 @@ mod exec {
                     );
                 }
             }
+            ProposalType::CoreSlot(CoreSlot::BizTech {}) => {
+                if core_slots.biz_tech.is_none() {
+                    core_slots.biz_tech = some_slot_vote_result;
+                    result = "claimed empty core slot".to_string();
+                } else {
+                    (core_slots.biz_tech, result) = winning_core_slot(
+                        core_slots.biz_tech.unwrap(),
+                        some_slot_vote_result.unwrap(),
+                    );
+                }
+            }            
             _ => {
                 return Err(ContractError::InvalidProposalType {});
             }
@@ -1106,10 +1131,22 @@ mod query {
             None => None,
         };
 
+        let biz_tech: Option<SlotVoteResult> = match core_slots.biz_tech {
+            Some(biz_tech) => {
+                if biz_tech.proposal_funding_end >= env.block.height {
+                    Some(biz_tech)
+                } else {
+                    None
+                }
+            }
+            None => None,
+        };       
+
         Ok(CoreSlotsResponse {
             brand,
             creative,
             core_tech,
+            biz_tech,
         })
     }
 

@@ -222,6 +222,7 @@ export type Decimal = string;
 export interface GovernanceCoreSlotsResponse {
   brand?: SlotVoteResult | null;
   core_tech?: SlotVoteResult | null;
+  biz_tech?: SlotVoteResult | null;  
   creative?: SlotVoteResult | null;
   [k: string]: unknown;
 }

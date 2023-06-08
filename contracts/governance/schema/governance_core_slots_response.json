@@ -23,6 +23,16 @@
         }
       ]
     },
+    "biz_tech": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/SlotVoteResult"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },    
     "creative": {
       "anyOf": [
         {
