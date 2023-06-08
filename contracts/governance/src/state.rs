@@ -45,6 +45,7 @@ pub struct CoreSlots {
     pub brand: Option<jmes::msg::SlotVoteResult>,
     pub creative: Option<jmes::msg::SlotVoteResult>,
     pub core_tech: Option<jmes::msg::SlotVoteResult>,
+    pub biz_tech: Option<jmes::msg::SlotVoteResult>,   
 }
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

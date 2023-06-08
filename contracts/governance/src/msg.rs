@@ -118,6 +118,7 @@ pub enum CoreSlot {
     Brand {},
     Creative {},
     CoreTech {},
+    BizTech {},    
 }
 
 impl fmt::Display for CoreSlot {
@@ -126,6 +127,7 @@ impl fmt::Display for CoreSlot {
             CoreSlot::Brand {} => write!(f, "brand"),
             CoreSlot::Creative {} => write!(f, "creative"),
             CoreSlot::CoreTech {} => write!(f, "core_tech"),
+            CoreSlot::BizTech {} => write!(f, "biz_tech"),          
         }
     }
 }

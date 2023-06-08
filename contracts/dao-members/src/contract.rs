@@ -203,6 +203,7 @@ pub fn update_members(
 
     if Some(dao_multisig_addr.clone()) == core_slots.brand.as_ref().map(|s| s.dao.clone())
         || Some(dao_multisig_addr.clone()) == core_slots.core_tech.as_ref().map(|s| s.dao.clone())
+        || Some(dao_multisig_addr.clone()) == core_slots.biz_tech.as_ref().map(|s| s.dao.clone())        
         || Some(dao_multisig_addr.clone()) == core_slots.creative.as_ref().map(|s| s.dao.clone())
     {
         // Enforce Core Slot Membership rules

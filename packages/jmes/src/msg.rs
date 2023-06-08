@@ -41,6 +41,7 @@ pub struct GovernanceCoreSlotsResponse {
     pub brand: Option<SlotVoteResult>,
     pub creative: Option<SlotVoteResult>,
     pub core_tech: Option<SlotVoteResult>,
+    pub biz_tech: Option<SlotVoteResult>,    
 }
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
