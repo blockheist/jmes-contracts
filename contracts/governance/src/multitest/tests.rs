@@ -14,12 +14,12 @@ use jmes::test_utils::get_attribute;
 
 use crate::{
     error::ContractError,
-    msg::{
-        CoreSlot, ExecuteMsg, ProposalMsg, ProposalPeriod, ProposalResponse, QueryMsg,
-        RevokeCoreSlot,
-    },
-    state::{ProposalStatus, SlotVoteResult, VoteOption},
+    msg::{CoreSlot, ExecuteMsg, ProposalMsg, ProposalPeriod, ProposalResponse},
+    state::{Funding, ProposalStatus, VoteOption},
 };
+
+use jmes::msg::GovernanceQueryMsg as QueryMsg;
+use jmes::msg::SlotVoteResult;
 
 use super::contract::GovernanceContract;
 
@@ -86,9 +86,9 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
         identityservice_code_id,
         &user1,
         "identityservice",
-        governance_contract.addr().clone(),
         dao_members_code_id,
         dao_multisig_code_id,
+        governance_contract.addr().clone(),
     )
     .unwrap();
 
@@ -325,7 +325,10 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
-        funding: None,
+        funding: Funding {
+            amount: 10_000_000u128.into(),
+            duration_in_blocks: 3000,
+        },
         slot: CoreSlot::Brand {},
     });
 
@@ -364,14 +367,10 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
     );
 
     // Create a dao proposal to revoke from the DAO from the Brand slot
-    let proposal_msg = ExecuteMsg::Propose(ProposalMsg::RevokeCoreSlot {
+    let proposal_msg = ExecuteMsg::Propose(ProposalMsg::RevokeProposal {
         title: "Remove Brand Dao".into(),
         description: "Leave it vacant".into(),
-        funding: None,
-        revoke_slot: RevokeCoreSlot {
-            slot: CoreSlot::Brand {},
-            dao: my_dao_addr.clone().to_string(),
-        },
+        revoke_proposal_id: 1,
     });
 
     // Failing Revoke Proposal
@@ -417,10 +416,7 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
             dao: my_dao_addr.clone(),
             title: "Remove Brand Dao".into(),
             description: "Leave it vacant".into(),
-            prop_type: crate::state::ProposalType::RevokeCoreSlot(RevokeCoreSlot {
-                slot: CoreSlot::Brand {},
-                dao: my_dao_addr.clone().into(),
-            }),
+            prop_type: crate::state::ProposalType::RevokeProposal(1u64),
             coins_yes: Uint128::from(0u128),
             coins_no: Uint128::from(2000_000_000u128),
             yes_voters: vec![],
@@ -430,7 +426,7 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
             posting_start: 1660000080,
             voting_start: 1660000120,
             voting_end: 1660000160,
-            concluded: true,
+            concluded: Some(3000u64),
             status: ProposalStatus::ExpiredConcluded
         }
     );
@@ -444,7 +440,9 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
         Some(SlotVoteResult {
             dao: my_dao_addr.clone(),
             yes_ratio: Decimal::percent(100),
-            proposal_voting_end: 1660000080
+            proposal_voting_end: 1660000080,
+            proposal_id: 1u64,
+            proposal_funding_end: 30000u64
         })
     );
 
@@ -491,10 +489,7 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
             dao: my_dao_addr.clone(),
             title: "Remove Brand Dao".into(),
             description: "Leave it vacant".into(),
-            prop_type: crate::state::ProposalType::RevokeCoreSlot(RevokeCoreSlot {
-                slot: CoreSlot::Brand {},
-                dao: my_dao_addr.clone().into(),
-            }),
+            prop_type: crate::state::ProposalType::RevokeProposal(2u64),
             coins_yes: Uint128::from(2000_000_000u128),
             coins_no: Uint128::from(0u128),
             yes_voters: vec![user1.clone()],
@@ -504,7 +499,7 @@ fn set_core_slot_brand_then_revoke_fail_then_revoke() {
             posting_start: 1660000160,
             voting_start: 1660000200,
             voting_end: 1660000240,
-            concluded: true,
+            concluded: Some(3000u64),
             status: ProposalStatus::SuccessConcluded
         }
     );
@@ -541,7 +536,10 @@ fn set_core_slot_creative_and_fail_setting_a_second_slot_for_the_same_dao() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
-        funding: None,
+        funding: Funding {
+            amount: 10_000_000u128.into(),
+            duration_in_blocks: 3000,
+        },
         slot: CoreSlot::Creative {},
     });
 
@@ -581,7 +579,10 @@ fn set_core_slot_creative_and_fail_setting_a_second_slot_for_the_same_dao() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
-        funding: None,
+        funding: Funding {
+            amount: 10_000_000u128.into(),
+            duration_in_blocks: 3000,
+        },
         slot: CoreSlot::Brand {},
     });
 
@@ -649,7 +650,10 @@ fn set_core_slot_tech_and_resign() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
-        funding: None,
+        funding: Funding {
+            amount: 10_000_000u128.into(),
+            duration_in_blocks: 3000,
+        },
         slot: CoreSlot::CoreTech {},
     });
 
@@ -776,7 +780,10 @@ fn improvement_bankmsg() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
-        funding: None,
+        funding: Funding {
+            amount: 10_000_000u128.into(),
+            duration_in_blocks: 3000,
+        },
         slot: CoreSlot::CoreTech {},
     });
 
@@ -813,7 +820,6 @@ fn improvement_bankmsg() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::Improvement {
         title: "Send funds".into(),
         description: "BankMsg".into(),
-        funding: None,
         msgs: vec![CosmosMsg::Bank(BankMsg::Send {
             to_address: user1.clone().into(),
             amount: vec![Coin {
@@ -915,7 +921,10 @@ fn improvement_bankmsg_failing() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
         title: "Make me CoreTech".into(),
         description: "Serving the chain".into(),
-        funding: None,
+        funding: Funding {
+            amount: 10_000_000u128.into(),
+            duration_in_blocks: 3000,
+        },
         slot: CoreSlot::CoreTech {},
     });
 
@@ -952,7 +961,6 @@ fn improvement_bankmsg_failing() {
     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::Improvement {
         title: "Send funds".into(),
         description: "BankMsg".into(),
-        funding: None,
         msgs: vec![CosmosMsg::Bank(BankMsg::Send {
             to_address: user1.clone().into(),
             amount: vec![Coin {

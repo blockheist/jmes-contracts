@@ -31,9 +31,9 @@ fn register_dao() {
         identityservice_code_id,
         &user1,
         "identityservice",
-        Addr::unchecked("governance"),
         dao_members_code_id,
         dao_multisig_code_id,
+        Addr::unchecked("governance"),
     )
     .unwrap();
 

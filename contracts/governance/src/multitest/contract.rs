@@ -3,10 +3,10 @@ use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 
 use crate::error::ContractError;
 // use crate::error::ContractError;
-use crate::msg::{
-    CoreSlot, CoreSlotsResponse, ExecuteMsg, InstantiateMsg, PeriodInfoResponse, ProposalResponse,
-    QueryMsg,
-};
+use crate::msg::{CoreSlot, ExecuteMsg, InstantiateMsg, PeriodInfoResponse, ProposalResponse};
+use jmes::msg::GovernanceCoreSlotsResponse as CoreSlotsResponse;
+use jmes::msg::GovernanceQueryMsg as QueryMsg;
+
 use crate::state::VoteOption;
 use crate::{execute, instantiate, query};
 

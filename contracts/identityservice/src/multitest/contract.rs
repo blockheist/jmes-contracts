@@ -29,10 +29,9 @@ impl IdentityserviceContract {
         sender: &Addr,
         label: &str,
 
-        governance_addr: Addr,
         dao_members_code_id: u64,
         dao_multisig_code_id: u64,
-        goveranance_addr: Addr,
+        governance_addr: Addr,
     ) -> StdResult<Self> {
         app.instantiate_contract(
             code_id,
