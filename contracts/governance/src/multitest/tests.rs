@@ -27,14 +27,21 @@ use super::contract::GovernanceContract;
 const BURN_ADDRESS: &str = "jmes1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqf5laz2";
 
 const SECONDS_PER_BLOCK: u64 = 5;
-const PROPOSAL_REQUIRED_DEPOSIT: u128 = 10_000;
+const PROPOSAL_REQUIRED_DEPOSIT: u128 = 10_000_000; // 10 JMES
 const EPOCH_START: u64 = 1_660_000_010;
 
 const USER1_VOTING_COINS: u128 = 2000_000_000;
 const USER2_VOTING_COINS: u128 = 3000_000_000;
 
-const GOVERNANCE_INIT_BALANCE: u128 = 100_000; // To test improvement proposal: BankMsg
+const GOVERNANCE_INIT_BALANCE: u128 = 100_000_000; // To test improvement proposal: BankMsg
 
+#[derive(Debug, Clone)]
+struct Contracts {
+    governance: GovernanceContract,
+    identityservice: IdentityserviceContract,
+}
+
+// Helper functions to keep the tests more succinct
 fn mock_app() -> App {
     let mut env = mock_env();
     env.block.time = Timestamp::from_seconds(EPOCH_START);
@@ -48,12 +55,6 @@ fn mock_app() -> App {
         .with_storage(storage)
         .with_bank(bank)
         .build(|_, _, _| {})
-}
-
-#[derive(Debug, Clone)]
-struct Contracts {
-    governance: GovernanceContract,
-    identityservice: IdentityserviceContract,
 }
 
 fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -> Contracts {
@@ -300,8 +301,9 @@ fn gov_vote_helper(
     conclude_proposal_result
 }
 
+// The actual tests
 #[test]
-fn set_core_slot_brand_then_revoke_fail_then_revoke() {
+fn set_core_slot_brand_then_revoke_fail_then_revoke_success() {
     let mut app = mock_app();
 
     let owner = Addr::unchecked("owner");
