@@ -10,7 +10,7 @@
     "voting_period_length"
   ],
   "properties": {
-    "artist_curator_addr": {
+    "art_dealer_addr": {
       "anyOf": [
         {
           "$ref": "#/definitions/Addr"

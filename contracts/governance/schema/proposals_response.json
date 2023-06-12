@@ -69,22 +69,16 @@
         {
           "type": "object",
           "required": [
-            "artist_curator"
+            "art_dealer"
           ],
           "properties": {
-            "artist_curator": {
+            "art_dealer": {
               "type": "object",
               "required": [
-                "approved",
-                "duration"
+                "approved"
               ],
               "properties": {
                 "approved": {
-                  "type": "integer",
-                  "format": "uint64",
-                  "minimum": 0.0
-                },
-                "duration": {
                   "type": "integer",
                   "format": "uint64",
                   "minimum": 0.0
@@ -251,31 +245,18 @@
         {
           "type": "object",
           "required": [
-            "revoke_core_slot"
+            "revoke_proposal"
           ],
           "properties": {
-            "revoke_core_slot": {
-              "$ref": "#/definitions/RevokeCoreSlot"
+            "revoke_proposal": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
             }
           },
           "additionalProperties": false
         }
       ]
-    },
-    "RevokeCoreSlot": {
-      "type": "object",
-      "required": [
-        "dao",
-        "slot"
-      ],
-      "properties": {
-        "dao": {
-          "type": "string"
-        },
-        "slot": {
-          "$ref": "#/definitions/CoreSlot"
-        }
-      }
     },
     "Uint128": {
       "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
