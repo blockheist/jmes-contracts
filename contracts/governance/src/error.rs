@@ -23,6 +23,8 @@ pub enum ContractError {
     NotPostingPeriod {},
     #[error("NotVotingPeriod")]
     NotVotingPeriod {},
+    #[error("TooLateToChallengeCoreSlot proposal must be submitted during the first half of the posting period!")]
+    TooLateToChallengeCoreSlot {},
     #[error("VotingPeriodNotEnded")]
     VotingPeriodNotEnded,
     #[error("ProposalNotValid {error} ")]

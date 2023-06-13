@@ -464,6 +464,39 @@ mod exec {
             return Err(ContractError::Unauthorized {});
         }
 
+        // If the core slot is already taken, a challenging DAO has to submit the proposal in the first half of the
+        // posting window, or we throw an error.
+        // This gives the current core dao the chance to submit a proposal to defend their core slot in the
+        // second half of the posting window.
+        let core_slots = CORE_SLOTS.load(deps.storage)?;
+
+        let is_first_half_of_posting_window =
+            period_info.current_time_in_cycle < period_info.posting_period_length / 2;
+
+        match slot.clone() {
+            CoreSlot::CoreTech {} => {
+                if core_slots.core_tech.map(|s| s.dao) != Some(info.sender.clone())
+                    && !is_first_half_of_posting_window
+                {
+                    return Err(ContractError::TooLateToChallengeCoreSlot {});
+                }
+            }
+            CoreSlot::Brand {} => {
+                if core_slots.brand.map(|s| s.dao) != Some(info.sender.clone())
+                    && !is_first_half_of_posting_window
+                {
+                    return Err(ContractError::TooLateToChallengeCoreSlot {});
+                }
+            }
+            CoreSlot::Creative {} => {
+                if core_slots.creative.map(|s| s.dao) != Some(info.sender.clone())
+                    && !is_first_half_of_posting_window
+                {
+                    return Err(ContractError::TooLateToChallengeCoreSlot {});
+                }
+            }
+        }
+
         let id = Proposal::next_id(deps.storage)?;
         let proposal = Proposal {
             id,
@@ -870,6 +903,8 @@ mod exec {
             return Err(ContractError::Unauthorized {});
         }
 
+        // Define the slot vote result
+
         let yes_ratio =
             Decimal::from_ratio(proposal.coins_yes, proposal.coins_yes + proposal.coins_no);
 
@@ -886,54 +921,49 @@ mod exec {
 
         let mut core_slots = CORE_SLOTS.load(deps.storage)?;
 
-        // A DAO can only hold one core slot at a time
-        if Some(dao.clone()) == core_slots.brand.as_ref().map(|s| s.dao.clone())
-            || Some(dao.clone()) == core_slots.core_tech.as_ref().map(|s| s.dao.clone())
-            || Some(dao.clone()) == core_slots.creative.as_ref().map(|s| s.dao.clone())
-        {
-            // We don't return an error because we want the proposal to be marked as concluded
-            return Ok(Response::new().add_attributes(vec![
-                ("action", "set_core_slot"),
-                ("proposal_id", &proposal_id.to_string()),
-                ("dao", &proposal.dao.to_string()),
-                ("error", "dao already holds a core slot"),
-            ]));
-        }
-
-        let result: String;
-
         fn winning_core_slot(
             current_slot: SlotVoteResult,
             new_slot: SlotVoteResult,
-        ) -> (Option<SlotVoteResult>, String) {
+        ) -> (Option<SlotVoteResult>, String, Option<u64>) {
             let result: String;
+            let mut remove_proposal_id: Option<u64> = None;
 
             if new_slot.proposal_voting_end > current_slot.proposal_voting_end {
                 result = "claimed core slot from previous period slot vote result".to_string();
-                (Some(new_slot), result)
+                // Check if the dao is replacing itself in the core slot and remove the old funding from the winning grants
+                if current_slot.dao == new_slot.dao {
+                    // Remove the current proposal from the winning grants to end funding for the superseded proposal
+                    remove_proposal_id = Some(current_slot.proposal_id);
+                }
+
+                (Some(new_slot), result, remove_proposal_id)
             } else if new_slot.proposal_voting_end == current_slot.proposal_voting_end {
                 if new_slot.yes_ratio > current_slot.yes_ratio {
                     result =
                     "claimed core slot from current period slot vote result with smaller yes_ratio".to_string();
-                    (Some(new_slot), result)
+                    // Remove the current proposal from the winning grants to end funding for the replace dao
+                    remove_proposal_id = Some(current_slot.proposal_id);
+                    (Some(new_slot), result, remove_proposal_id)
                 } else {
                     result = "error: slot vote result with larger yes_ratio exists".to_string();
-                    (Some(current_slot), result)
+                    (Some(current_slot), result, remove_proposal_id)
                 }
             } else {
                 // the remaining arm of the condition: new_slot.proposal_voting_end < current_slot.proposal_voting_end
                 result = "error: proposal is older than current slot vote result".to_string();
-                (Some(current_slot), result)
+                (Some(current_slot), result, remove_proposal_id)
             }
         }
 
+        let result: String;
+        let mut remove_proposal_id: Option<u64> = None;
         match proposal.prop_type {
             ProposalType::CoreSlot(CoreSlot::Brand {}) => {
                 if core_slots.brand.is_none() {
                     core_slots.brand = some_slot_vote_result;
                     result = "claimed empty core slot".to_string();
                 } else {
-                    (core_slots.brand, result) = winning_core_slot(
+                    (core_slots.brand, result, remove_proposal_id) = winning_core_slot(
                         core_slots.brand.unwrap(),
                         some_slot_vote_result.unwrap(),
                     );
@@ -944,7 +974,7 @@ mod exec {
                     core_slots.creative = some_slot_vote_result;
                     result = "claimed empty core slot".to_string();
                 } else {
-                    (core_slots.creative, result) = winning_core_slot(
+                    (core_slots.creative, result, remove_proposal_id) = winning_core_slot(
                         core_slots.creative.unwrap(),
                         some_slot_vote_result.unwrap(),
                     );
@@ -955,7 +985,7 @@ mod exec {
                     core_slots.core_tech = some_slot_vote_result;
                     result = "claimed empty core slot".to_string();
                 } else {
-                    (core_slots.core_tech, result) = winning_core_slot(
+                    (core_slots.core_tech, result, remove_proposal_id) = winning_core_slot(
                         core_slots.core_tech.unwrap(),
                         some_slot_vote_result.unwrap(),
                     );
@@ -966,9 +996,40 @@ mod exec {
             }
         }
 
+        // A DAO can only hold one core slot at a time
+        // The DAO has to manually resign their old slot before they can occupy a different slot
+
+        // If the dao holds more than one core slot, we don't save the updated core_slots
+        let mut core_slot_count = 0;
+        if Some(dao.clone()) == core_slots.brand.as_ref().map(|s| s.dao.clone()) {
+            core_slot_count += 1;
+        }
+        if Some(dao.clone()) == core_slots.core_tech.as_ref().map(|s| s.dao.clone()) {
+            core_slot_count += 1;
+        }
+        if Some(dao.clone()) == core_slots.creative.as_ref().map(|s| s.dao.clone()) {
+            core_slot_count += 1;
+        }
+        if core_slot_count > 1 {
+            // We don't return an error because we want the proposal to be marked as concluded
+            return Ok(Response::new().add_attributes(vec![
+                ("action", "set_core_slot"),
+                ("proposal_id", &proposal_id.to_string()),
+                ("dao", &proposal.dao.to_string()),
+                ("error", "dao already holds a core slot"),
+            ]));
+        }
+
         CORE_SLOTS.save(deps.storage, &core_slots)?;
 
         println!("\n\n core_slots {:#?}", core_slots);
+
+        // If an old proposal was replaced, remove its funding from the winning grants
+        if let Some(remove_proposal_id) = remove_proposal_id {
+            let mut winning_grants = WINNING_GRANTS.load(deps.storage)?;
+            winning_grants.retain(|grant| grant.proposal_id != remove_proposal_id);
+            WINNING_GRANTS.save(deps.storage, &winning_grants)?;
+        };
 
         Ok(Response::new().add_attributes(vec![
             ("action", "set_core_slot"),
