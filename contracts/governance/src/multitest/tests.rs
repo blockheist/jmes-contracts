@@ -69,7 +69,7 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
         owner.clone().into(),
         None,
         Uint128::from(PROPOSAL_REQUIRED_DEPOSIT),
-        51,
+        10,
         0,
         40,
         40,
@@ -302,6 +302,16 @@ fn gov_vote_helper(
 }
 
 // The actual tests
+#[test]
+fn text_proposal() {
+    let mut app = mock_app();
+
+    let owner = Addr::unchecked("owner");
+    let user1 = Addr::unchecked("user1");
+    let user2 = Addr::unchecked("user2");
+
+    let contracts = instantiate_contracts(&mut app, user1.clone(), user2.clone(), owner.clone());
+}
 #[test]
 fn set_core_slot_brand_then_revoke_fail_then_revoke_success() {
     let mut app = mock_app();
