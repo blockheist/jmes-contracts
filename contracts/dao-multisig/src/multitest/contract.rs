@@ -77,7 +77,9 @@ impl DaoMultisigContract {
                 msgs,
                 latest,
             },
-            &coins(proposal_deposit, "ujmes"), // attach the proposal fee to be burned, this is sent from the user to the DAO address so it can be forwarded to the gov contract
+            // attach the proposal fee to be burned
+            // this is sent from the user to the DAO address so it can be forwarded to the gov contract
+            &coins(proposal_deposit, "ujmes"),
         )
         .map_err(|err| err.downcast().unwrap())
     }
@@ -133,7 +135,9 @@ impl DaoMultisigContract {
         let wasm_msg = WasmMsg::Execute {
             contract_addr: gov_contract.into(),
             msg: proposal_msg,
-            funds: coins(proposal_deposit, "ujmes"), // attach the proposal fee to be burned, this is sent from the dao addr to the gov contract
+            // attach the proposal fee to be burned,
+            // this is sent from the dao addr to the gov contract
+            funds: coins(proposal_deposit, "ujmes"),
         };
 
         let dao_propose_response = DaoMultisigContract::propose(

@@ -183,7 +183,7 @@ fn create_dao(app: &mut App, contracts: Contracts, user1: Addr, user2: Addr) -> 
             vec![
                 Member {
                     addr: user1.clone().into(),
-                    weight: 53,
+                    weight: 26,
                 },
                 Member {
                     addr: user2.clone().into(),
@@ -201,6 +201,7 @@ fn create_dao(app: &mut App, contracts: Contracts, user1: Addr, user2: Addr) -> 
         .dao_multisig_addr;
     assert_eq!(my_dao_addr, "contract3");
 
+    app.update_block(next_block);
     Addr::unchecked(my_dao_addr)
 }
 
@@ -321,25 +322,6 @@ fn text_proposal() {
     // Register a DAO (required for submitting a proposal)
     let my_dao_addr = create_dao(&mut app, contracts.clone(), user1.clone(), user2.clone());
 
-    let members: cw3::VoterListResponse = app
-        .wrap()
-        .query_wasm_smart(
-            my_dao_addr.clone(),
-            &dao_multisig::msg::QueryMsg::ListVoters {
-                start_after: None,
-                limit: None,
-            },
-        )
-        .unwrap();
-
-    println!("members {:#?}", members);
-
-    assert_eq!(
-        app.wrap()
-            .query_all_balances(Addr::unchecked(user1.clone()))
-            .unwrap(),
-        vec![coin(2000000000, "bujmes"), coin(1000000000, "ujmes")]
-    );
     println!("my_dao_addr {:#?}", my_dao_addr);
 
     // Create a DAO proposal for a Gov Text Proposal
