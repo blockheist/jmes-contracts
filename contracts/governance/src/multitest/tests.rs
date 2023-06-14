@@ -342,6 +342,20 @@ fn text_proposal() {
         PROPOSAL_REQUIRED_DEPOSIT,
     )
     .unwrap();
+
+    // Vote on and execute the governance proposal
+    gov_vote_helper(
+        &mut app,
+        contracts.clone(),
+        user1.clone(),
+        VoteOption::Yes,
+        user2.clone(),
+        VoteOption::No,
+        1,
+    );
+
+    let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
+    println!("\n\n final_proposal {:?}", final_proposal);
 }
 // #[test]
 // fn set_core_slot_brand_then_revoke_fail_then_revoke_success() {
