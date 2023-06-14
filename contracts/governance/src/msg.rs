@@ -174,7 +174,7 @@ pub struct ProposalResponse {
     pub posting_start: u64,
     pub voting_start: u64,
     pub voting_end: u64,
-    pub concluded: Option<u64>,
+    pub concluded_at_height: Option<u64>,
     pub status: ProposalStatus,
 }
 

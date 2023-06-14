@@ -266,7 +266,7 @@ mod exec {
             posting_start: period_info.current_posting_start,
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
-            concluded: None,
+            concluded_at_height: None,
             funding,
             msgs: None,
         };
@@ -328,7 +328,7 @@ mod exec {
             posting_start: period_info.current_posting_start,
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
-            concluded: None,
+            concluded_at_height: None,
             funding: Some(funding),
             msgs: Some(vec![msg]),
         };
@@ -386,7 +386,7 @@ mod exec {
             posting_start: period_info.current_posting_start,
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
-            concluded: None,
+            concluded_at_height: None,
             funding: None,
             msgs: Some(msgs),
         };
@@ -513,7 +513,7 @@ mod exec {
             posting_start: period_info.current_posting_start,
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
-            concluded: None,
+            concluded_at_height: None,
             funding: Some(funding),
             msgs: Some(vec![CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
@@ -556,7 +556,7 @@ mod exec {
             let mut proposal = PROPOSALS.load(deps.storage, id)?;
 
             println!("\n\n proposal {:?}", proposal);
-            if proposal.concluded.is_some() {
+            if proposal.concluded_at_height.is_some() {
                 return Err(ContractError::ProposalAlreadyConcluded {});
             }
 
@@ -615,12 +615,11 @@ mod exec {
             return Err(ContractError::VotingPeriodNotEnded {});
         }
 
-        if proposal.concluded.is_some() {
+        if proposal.concluded_at_height.is_some() {
             return Err(ContractError::ProposalAlreadyConcluded {});
         }
 
-        proposal.concluded =
-            Some(proposal.funding.clone().unwrap().duration_in_blocks + &env.block.height);
+        proposal.concluded_at_height = Some(env.block.height);
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
 
@@ -642,13 +641,13 @@ mod exec {
                 msgs.extend(proposal.msgs.unwrap());
             }
 
-            let mut max_cap = 125u64; // 25% max cap of total grants
+            let mut max_cap = 125u64; // 12.5%
 
             let core_slots = CORE_SLOTS.load(deps.storage)?;
 
             core_slots.core_tech.map(|slot| {
                 if slot.dao == proposal.dao {
-                    max_cap = 250u64;
+                    max_cap = 250u64; // 25%
                 }
             });
 
@@ -656,12 +655,12 @@ mod exec {
             // Uncomment if governance decides to change the values
             // core_slots.brand.map(|slot| {
             //     if slot.dao == proposal.dao {
-            //         max_cap = 125u64; // 12.5% max cap of total grants
+            //         max_cap = 125u64;  // 12.5%
             //     }
             // });
             // core_slots.creative.map(|slot| {
             //     if slot.dao == proposal.dao {
-            //         max_cap = 125u64; // 12.5% max cap of total grants
+            //         max_cap = 125u64; // 12.5%
             //     }
             // });
 
@@ -670,7 +669,7 @@ mod exec {
                     proposal_id: proposal.id,
                     dao: proposal.dao.clone(),
                     amount: proposal.funding.clone().unwrap().amount,
-                    expire_at_height: proposal.concluded.unwrap()
+                    expire_at_height: proposal.concluded_at_height.unwrap()
                         + proposal.funding.unwrap().duration_in_blocks,
                     yes_ratio: Decimal::from_ratio(
                         proposal.coins_yes,
@@ -755,7 +754,7 @@ mod exec {
             posting_start: period_info.current_posting_start,
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
-            concluded: None,
+            concluded_at_height: None,
             funding: None,
             msgs: Some(vec![CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
@@ -914,7 +913,7 @@ mod exec {
             dao: dao.clone(),
             yes_ratio,
             proposal_voting_end,
-            proposal_funding_end: proposal.concluded.unwrap()
+            proposal_funding_end: proposal.concluded_at_height.unwrap()  // We know the proposal is concluded at this point
                 + proposal.funding.unwrap().duration_in_blocks, // We know core slot proposals are required to have funding.
             proposal_id: proposal.id,
         });
@@ -1198,7 +1197,7 @@ mod query {
             posting_start: proposal.posting_start,
             voting_start: proposal.voting_start,
             voting_end: proposal.voting_end,
-            concluded: proposal.concluded,
+            concluded_at_height: proposal.concluded_at_height,
             status: proposal.status(
                 &deps.querier,
                 env.clone(),
@@ -1239,7 +1238,7 @@ mod query {
                     posting_start: proposal.posting_start,
                     voting_start: proposal.voting_start,
                     voting_end: proposal.voting_end,
-                    concluded: proposal.concluded,
+                    concluded_at_height: proposal.concluded_at_height,
                     status: proposal.status(
                         &deps.querier,
                         env.clone(),

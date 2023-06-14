@@ -79,7 +79,7 @@ pub struct Proposal {
     pub posting_start: u64,
     pub voting_start: u64,
     pub voting_end: u64,
-    pub concluded: Option<u64>,
+    pub concluded_at_height: Option<u64>,
     pub funding: Option<Funding>,
     pub msgs: Option<Vec<CosmosMsg>>,
 }
@@ -120,13 +120,13 @@ impl Proposal {
             let required_yes_ratio = Decimal::from_ratio(proposal_required_percentage, 100u64);
 
             status = if yes_ratio >= required_yes_ratio {
-                if self.concluded.is_some() {
+                if self.concluded_at_height.is_some() {
                     ProposalStatus::SuccessConcluded
                 } else {
                     ProposalStatus::Success
                 }
             } else {
-                if self.concluded.is_some() {
+                if self.concluded_at_height.is_some() {
                     ProposalStatus::ExpiredConcluded
                 } else {
                     ProposalStatus::Expired
