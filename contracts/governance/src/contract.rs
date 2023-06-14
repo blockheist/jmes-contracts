@@ -1051,7 +1051,6 @@ mod exec {
         identityservice: String,
     ) -> Result<Response, ContractError> {
         let mut config = CONFIG.load(deps.storage)?;
-        println!("\n\n config {:?}", config);
 
         if config.owner.is_none() || info.sender != config.owner.unwrap() {
             return Err(ContractError::Unauthorized {});
@@ -1068,6 +1067,7 @@ mod exec {
 
         CONFIG.save(deps.storage, &config)?;
 
+        println!("\n\n config {:?}", config);
         Ok(Response::new())
     }
 }

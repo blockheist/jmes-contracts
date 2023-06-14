@@ -105,8 +105,6 @@ async function instantiateContracts(client, user, options = {}) {
     {
       governance: {
         owner: process.env.OWNER, // only used once for set_contract
-        art_dealer_addr: undefined,
-        identity_service: undefined,
         proposal_required_deposit: "10000000", // 10_000_000 ujmes
         proposal_required_percentage: 10, // 10% more net yes votes than no votes
         period_start_epoch: Math.floor(Date.now() / 1000), // 1660000000,

@@ -10,7 +10,6 @@ use crate::state::{Funding, ProposalStatus, ProposalType, VoteOption, WinningGra
 #[serde(rename_all = "snake_case")]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub art_dealer_addr: Option<String>,
     pub proposal_required_deposit: Uint128,
     // Required percentage for a proposal to pass, e.g. 51
     pub proposal_required_percentage: u64,

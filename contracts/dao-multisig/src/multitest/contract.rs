@@ -1,4 +1,4 @@
-use cosmwasm_std::{coins, from_binary, Addr, Binary, CosmosMsg, StdResult, WasmMsg};
+use cosmwasm_std::{coins, from_binary, Addr, Binary, CosmosMsg, StdResult, Uint128, WasmMsg};
 use cw3::Vote;
 use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 use cw_utils::{Duration, Expiration, Threshold};
@@ -6,6 +6,9 @@ use cw_utils::{Duration, Expiration, Threshold};
 use crate::contract::{execute, instantiate, query};
 use crate::msg::{ExecuteMsg, InstantiateMsg, ProposeResponse};
 use crate::ContractError;
+
+// Address for burning the proposal fee
+const BURN_ADDRESS: &str = "jmes1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqf5laz2";
 
 #[derive(Debug)]
 pub struct DaoMultisigContract(Addr);
@@ -63,6 +66,7 @@ impl DaoMultisigContract {
         description: String,
         msgs: Vec<CosmosMsg>,
         latest: Option<Expiration>,
+        proposal_deposit: u128,
     ) -> Result<AppResponse, ContractError> {
         app.execute_contract(
             sender.clone(),
@@ -73,7 +77,7 @@ impl DaoMultisigContract {
                 msgs,
                 latest,
             },
-            &[],
+            &coins(proposal_deposit, "ujmes"), // attach the proposal fee to be burned, this is sent from the user to the DAO address so it can be forwarded to the gov contract
         )
         .map_err(|err| err.downcast().unwrap())
     }
@@ -120,15 +124,16 @@ impl DaoMultisigContract {
         gov_contract: &Addr,
         user1: Addr,
         user2: Addr,
-        proposal_msg: StdResult<Binary>,
+        proposal_msg: Binary,
         proposal_deposit: u128,
     ) -> Result<AppResponse, ContractError> {
         let my_dao_addr = my_dao.to_string();
+
         // Wrap gov proposal msg so we can attach it to the dao proposal
         let wasm_msg = WasmMsg::Execute {
-            contract_addr: gov_contract.to_string(),
-            msg: proposal_msg.unwrap(),
-            funds: coins(proposal_deposit, "ujmes"),
+            contract_addr: gov_contract.into(),
+            msg: proposal_msg,
+            funds: coins(proposal_deposit, "ujmes"), // attach the proposal fee to be burned, this is sent from the dao addr to the gov contract
         };
 
         let dao_propose_response = DaoMultisigContract::propose(
@@ -139,6 +144,7 @@ impl DaoMultisigContract {
             "Wraps Governance Proposal".into(),
             vec![CosmosMsg::Wasm(wasm_msg)],
             None,
+            proposal_deposit,
         );
 
         let proposal_id = from_binary::<ProposeResponse>(&dao_propose_response?.data.unwrap())
@@ -148,6 +154,7 @@ impl DaoMultisigContract {
         println!("\n\n proposal_id {:?}", proposal_id);
 
         // User1 already voted automatically
+        // println!("user2 {:#?}", &user2);
         // User2 votes yes to pass the proposal
         let dao_vote2_result =
             DaoMultisigContract::vote(app, &user2, &my_dao_addr, proposal_id, cw3::Vote::Yes);
@@ -157,12 +164,26 @@ impl DaoMultisigContract {
             DaoMultisigContract::execute(app, &user1, &my_dao_addr, proposal_id);
         println!("\n\n dao_execute_result {:?}", dao_execute_result);
 
-        // Test after proposal execution the deposit is sent to the governance contract
+        // Test after proposal execution the proposal fee has left the DAO wallet
         assert_eq!(
             app.wrap()
                 .query_all_balances(Addr::unchecked(my_dao_addr.clone()))
                 .unwrap(),
             vec![]
+        );
+        // Test that the governance contract burned the proposal fee
+        assert_eq!(
+            app.wrap()
+                .query_all_balances(Addr::unchecked(gov_contract.clone()))
+                .unwrap(),
+            vec![]
+        );
+        // Test that the burn address received the proposal fee
+        assert_eq!(
+            app.wrap()
+                .query_all_balances(Addr::unchecked(BURN_ADDRESS.to_string()))
+                .unwrap(),
+            coins(proposal_deposit, "ujmes")
         );
         dao_execute_result
     }

@@ -31,7 +31,6 @@ impl GovernanceContract {
         label: &str,
 
         owner: String,
-        art_dealer_addr: Option<String>,
         proposal_required_deposit: Uint128,
         proposal_required_percentage: u64,
         period_start_epoch: u64,
@@ -43,7 +42,6 @@ impl GovernanceContract {
             sender.clone(),
             &InstantiateMsg {
                 owner,
-                art_dealer_addr,
                 proposal_required_deposit,
                 proposal_required_percentage,
                 period_start_epoch,
