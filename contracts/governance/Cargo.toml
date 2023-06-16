@@ -27,7 +27,7 @@ cw2 = "0.16"
 cw4 = {  version = "0.16.0" }
 cw20 = "0.16"
 cw-storage-plus = "0.16.0"
-cw-multi-test = { version = "0.16.0", optional = true }
+cw-multi-test = { path ="../../../../cw-multi-test", version = "0.16.5", optional = true }
 serde = { version = "1.0.140", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
 cw-utils = "0.16.0" 
@@ -46,7 +46,8 @@ jmes = { path = "../../packages/jmes", version = "0.14.0", features = [
 ]  }
 
 [dev-dependencies]
-cw-multi-test = "0.16.0"
+
+cw-multi-test = { path ="../../../../cw-multi-test", version = "0.16.5"}
 cw3 ="0.16.0"
 cosmwasm-schema = { version = "1.0.0" }
 identityservice = { path = "../identityservice", version = "0.1.0", features = [
