@@ -161,7 +161,7 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
             .unwrap();
     });
 
-    // Produce a block to mine balances (used by BalanceAt)
+    // Produce a block to mine balances
     app.update_block(|mut block| {
         block.time = Timestamp::from_seconds(block.time.seconds() + SECONDS_PER_BLOCK);
         block.height += 1;
@@ -304,7 +304,7 @@ fn gov_vote_helper(
 
 // The actual tests
 #[test]
-fn text_proposal() {
+fn text_proposal_no_funding_attached() {
     let mut app = mock_app();
 
     let owner = Addr::unchecked("owner");
@@ -329,6 +329,121 @@ fn text_proposal() {
         title: "First Text Proposal".into(),
         description: "Text Proposal Description".into(),
         funding: None,
+    });
+
+    // Create, vote on and execute the dao proposal
+    DaoMultisigContract::gov_proposal_helper(
+        &mut app,
+        my_dao_addr.clone(),
+        &contracts.governance.addr().clone(),
+        user1.clone(),
+        user2.clone(),
+        to_binary(&proposal_msg).unwrap(),
+        PROPOSAL_REQUIRED_DEPOSIT,
+    )
+    .unwrap();
+
+    // Vote on and execute the governance proposal
+    gov_vote_helper(
+        &mut app,
+        contracts.clone(),
+        user1.clone(),
+        VoteOption::Yes,
+        user2.clone(),
+        VoteOption::No,
+        1,
+    );
+
+    let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
+    println!("\n\n final_proposal {:?}", final_proposal);
+}
+
+#[test]
+fn text_proposal_with_funding_attached_amount_larger_0() {
+    let mut app = mock_app();
+
+    let owner = Addr::unchecked("owner");
+    let user1 = Addr::unchecked("user1");
+    let user2 = Addr::unchecked("user2");
+
+    let contracts = instantiate_contracts(&mut app, user1.clone(), user2.clone(), owner.clone());
+
+    // Register an user identity with a valid name
+    contracts
+        .identityservice
+        .register_user(&mut app, &user1, "user1_id".to_string())
+        .unwrap();
+
+    // Register a DAO (required for submitting a proposal)
+    let my_dao_addr = create_dao(&mut app, contracts.clone(), user1.clone(), user2.clone());
+
+    println!("my_dao_addr {:#?}", my_dao_addr);
+
+    // Create a DAO proposal for a Gov Text Proposal
+    let proposal_msg = ExecuteMsg::Propose(ProposalMsg::TextProposal {
+        title: "First Text Proposal".into(),
+        description: "Text Proposal Description".into(),
+        funding: Some(Funding {
+            amount: Uint128::from(100_000_000u128),
+            duration_in_blocks: 100,
+        }),
+    });
+
+    // Create, vote on and execute the dao proposal
+    DaoMultisigContract::gov_proposal_helper(
+        &mut app,
+        my_dao_addr.clone(),
+        &contracts.governance.addr().clone(),
+        user1.clone(),
+        user2.clone(),
+        to_binary(&proposal_msg).unwrap(),
+        PROPOSAL_REQUIRED_DEPOSIT,
+    )
+    .unwrap();
+
+    // Vote on and execute the governance proposal
+    gov_vote_helper(
+        &mut app,
+        contracts.clone(),
+        user1.clone(),
+        VoteOption::Yes,
+        user2.clone(),
+        VoteOption::No,
+        1,
+    );
+
+    let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
+    println!("\n\n final_proposal {:?}", final_proposal);
+}
+#[test]
+fn text_proposal_with_funding_attached_amount_equal_0() {
+    let mut app = mock_app();
+
+    let owner = Addr::unchecked("owner");
+    let user1 = Addr::unchecked("user1");
+    let user2 = Addr::unchecked("user2");
+
+    let contracts = instantiate_contracts(&mut app, user1.clone(), user2.clone(), owner.clone());
+
+    // Register an user identity with a valid name
+    contracts
+        .identityservice
+        .register_user(&mut app, &user1, "user1_id".to_string())
+        .unwrap();
+
+    // Register a DAO (required for submitting a proposal)
+    let my_dao_addr = create_dao(&mut app, contracts.clone(), user1.clone(), user2.clone());
+
+    println!("my_dao_addr {:#?}", my_dao_addr);
+
+    // Create a DAO proposal for a Gov Text Proposal
+    let proposal_msg = ExecuteMsg::Propose(ProposalMsg::TextProposal {
+        title: "First Text Proposal".into(),
+        description: "Text Proposal Description".into(),
+        funding: Some(Funding {
+            amount: Uint128::zero(),
+            duration_in_blocks: 100,
+        }),
     });
 
     // Create, vote on and execute the dao proposal
