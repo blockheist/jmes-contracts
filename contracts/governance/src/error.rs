@@ -7,7 +7,7 @@ pub enum ContractError {
     StdError(#[from] StdError),
     #[error("Unauthorized")]
     Unauthorized {},
-    #[error("WrongMemberCount (Core Team must have between {min} and {max} members)!")]
+    #[error("WrongCoreTeamMemberCount (Core Team must have between {min} and {max} members)!")]
     WrongCoreTeamMemberCount { min: usize, max: usize },
     #[error("InsufficientProposalFee ({proposal_fee} JMES fee required to post a proposal)!")]
     InsufficientProposalFee { proposal_fee: u128 },

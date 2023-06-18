@@ -4,7 +4,7 @@ use crate::state::{Config, CoreSlots, CONFIG, CORE_SLOTS, PROPOSAL_COUNT, WINNIN
 use art_dealer::msg::ExecuteMsg::ApproveDealer;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
-use dao_members::msg::QueryMsg::ListMembers as ListDaoMembers;
+use dao_multisig::msg::QueryMsg::ListVoters as ListDaoVoters;
 use jmes::msg::GovernanceQueryMsg as QueryMsg;
 use jmes::msg::SlotVoteResult;
 
@@ -96,7 +96,7 @@ pub fn execute(
 
 mod exec {
     use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Decimal, Uint128, WasmMsg};
-    use cw4::MemberListResponse;
+    use cw3::VoterListResponse;
     use dao_members::msg::ConfigResponse;
     use identityservice::msg::GetIdentityByOwnerResponse;
     use jmes::constants::{MAX_DAO_MEMBERS, MIN_CORE_TEAM_MEMBERS, MIN_VOTE_COINS};
@@ -427,17 +427,16 @@ mod exec {
         // 2. A maximum of 9 members is allowed
         // 3. The member with the largest weight must not reach the threshold
 
-        let members: MemberListResponse = deps.querier.query_wasm_smart(
+        let voters: VoterListResponse = deps.querier.query_wasm_smart(
             dao.clone(),
-            &ListDaoMembers {
+            &ListDaoVoters {
                 start_after: None,
                 limit: Some(MAX_DAO_MEMBERS as u32 + 1),
             },
         )?;
 
         // The members must have between 3 and 9 members
-        if members.members.len() > MAX_DAO_MEMBERS || members.members.len() < MIN_CORE_TEAM_MEMBERS
-        {
+        if voters.voters.len() > MAX_DAO_MEMBERS || voters.voters.len() < MIN_CORE_TEAM_MEMBERS {
             return Err(ContractError::WrongCoreTeamMemberCount {
                 min: MIN_CORE_TEAM_MEMBERS,
                 max: MAX_DAO_MEMBERS,
@@ -445,8 +444,8 @@ mod exec {
         }
 
         // find the member with the largest weight
-        let max_weight = members
-            .members
+        let max_weight = voters
+            .voters
             .iter()
             .map(|m| m.weight)
             .max()
@@ -865,17 +864,16 @@ mod exec {
         // 2. A maximum of 9 members is allowed
         // 3. The member with the largest weight must not reach the threshold
 
-        let members: MemberListResponse = deps.querier.query_wasm_smart(
+        let voters: VoterListResponse = deps.querier.query_wasm_smart(
             dao.clone(),
-            &ListDaoMembers {
+            &ListDaoVoters {
                 start_after: None,
                 limit: Some(MAX_DAO_MEMBERS as u32 + 1),
             },
         )?;
 
         // The members must have between 3 and 9 members
-        if members.members.len() > MAX_DAO_MEMBERS || members.members.len() < MIN_CORE_TEAM_MEMBERS
-        {
+        if voters.voters.len() > MAX_DAO_MEMBERS || voters.voters.len() < MIN_CORE_TEAM_MEMBERS {
             return Err(ContractError::WrongCoreTeamMemberCount {
                 min: MIN_CORE_TEAM_MEMBERS,
                 max: MAX_DAO_MEMBERS,
@@ -883,8 +881,8 @@ mod exec {
         }
 
         // find the member with the largest weight
-        let max_weight = members
-            .members
+        let max_weight = voters
+            .voters
             .iter()
             .map(|m| m.weight)
             .max()

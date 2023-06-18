@@ -11,7 +11,7 @@ use cw_utils::Duration;
 use dao_members::multitest::contract::DaoMembersContract;
 use dao_multisig::multitest::contract::DaoMultisigContract;
 use identityservice::multitest::contract::IdentityserviceContract;
-use jmes::test_utils::get_attribute;
+use jmes::{msg::Voter, test_utils::get_attribute};
 
 use crate::{
     error::ContractError,
@@ -173,23 +173,31 @@ fn instantiate_contracts(app: &mut App, user1: Addr, user2: Addr, owner: Addr) -
     }
 }
 
-fn create_dao(app: &mut App, contracts: Contracts, user1: Addr, user2: Addr) -> Addr {
+fn create_dao(app: &mut App, contracts: Contracts, user1_addr: Addr, user2_addr: Addr) -> Addr {
+    create_dao_from(
+        app,
+        contracts,
+        vec![
+            Member {
+                addr: user1_addr.into(),
+                weight: 26,
+            },
+            Member {
+                addr: user2_addr.into(),
+                weight: 26,
+            },
+        ],
+    )
+}
+
+fn create_dao_from(app: &mut App, contracts: Contracts, members: Vec<Member>) -> Addr {
     // Register dao identity with valid name
     let my_dao = contracts
         .identityservice
         .register_dao(
             app,
-            &user1,
-            vec![
-                Member {
-                    addr: user1.clone().into(),
-                    weight: 26,
-                },
-                Member {
-                    addr: user2.clone().into(),
-                    weight: 26,
-                },
-            ],
+            &Addr::unchecked(members[0].addr.clone()),
+            members,
             "my_dao".to_string(),
             Decimal::percent(51),
             Duration::Time(2000000),
@@ -472,216 +480,262 @@ fn text_proposal_with_funding_attached_amount_equal_0() {
     let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
     println!("\n\n final_proposal {:?}", final_proposal);
 }
-// #[test]
-// fn set_core_slot_brand_then_revoke_fail_then_revoke_success() {
-//     let mut app = mock_app();
 
-//     let owner = Addr::unchecked("owner");
-//     let user1 = Addr::unchecked("user1");
-//     let user2 = Addr::unchecked("user2");
+#[test]
+fn set_core_slot_brand_with_2_members_fails() {
+    let mut app = mock_app();
 
-//     let contracts = instantiate_contracts(&mut app, user1.clone(), user2.clone(), owner.clone());
+    let owner = Addr::unchecked("owner");
+    let user1 = Addr::unchecked("user1");
+    let user2 = Addr::unchecked("user2");
+    //
+    let contracts = instantiate_contracts(&mut app, user1.clone(), user2.clone(), owner.clone());
 
-//     println!("\n\n contracts {:#?}", contracts);
+    println!("\n\n contracts {:#?}", contracts);
 
-//     // Register an user identity with a valid name
-//     contracts
-//         .identityservice
-//         .register_user(&mut app, &user1, "user1_id".to_string())
-//         .unwrap();
+    // Register an user identity with a valid name
+    contracts
+        .identityservice
+        .register_user(&mut app, &user1, "user1_id".to_string())
+        .unwrap();
 
-//     // Register a DAO (required for submitting a proposal)
-//     let my_dao_addr = create_dao(&mut app, contracts.clone(), user1.clone(), user2.clone());
+    // Register a DAO (required for submitting a proposal)
+    let my_dao_addr = create_dao(&mut app, contracts.clone(), user1.clone(), user2.clone());
 
-//     // Create a Dao Proposal for a Governance CoreSlot Proposal
-//     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
-//         title: "Make me CoreTech".into(),
-//         description: "Serving the chain".into(),
-//         funding: Funding {
-//             amount: 10_000_000u128.into(),
-//             duration_in_blocks: 3000,
-//         },
-//         slot: CoreSlot::Brand {},
-//     });
+    // Create a Dao Proposal for a Governance CoreSlot Proposal
+    let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
+        title: "Make me CoreTech".into(),
+        description: "Serving the chain".into(),
+        funding: Funding {
+            amount: 10_000_000u128.into(),
+            duration_in_blocks: 3000,
+        },
+        slot: CoreSlot::Brand {},
+    });
 
-//     // Create, vote on and execute the dao proposal
-//     DaoMultisigContract::gov_proposal_helper(
-//         &mut app,
-//         my_dao_addr.clone(),
-//         &contracts.governance.addr().clone(),
-//         user1.clone(),
-//         user2.clone(),
-//         to_binary(&proposal_msg).unwrap(),
-//         PROPOSAL_REQUIRED_DEPOSIT,
-//     )
-//     .unwrap();
+    // Create, vote on and execute the dao proposal
+    let err = DaoMultisigContract::gov_proposal_helper(
+        &mut app,
+        my_dao_addr.clone(),
+        &contracts.governance.addr().clone(),
+        user1.clone(),
+        user2.clone(),
+        to_binary(&proposal_msg).unwrap(),
+        PROPOSAL_REQUIRED_DEPOSIT,
+    )
+    .unwrap_err();
+    println!("\n\n err {:?}", err);
+}
+#[test]
+fn set_core_slot_brand_then_revoke_fail_then_revoke_success() {
+    let mut app = mock_app();
 
-//     // Vote on and execute the governance proposal
-//     gov_vote_helper(
-//         &mut app,
-//         contracts.clone(),
-//         user1.clone(),
-//         VoteOption::Yes,
-//         user2.clone(),
-//         VoteOption::No,
-//         1,
-//     );
+    let owner = Addr::unchecked("owner");
+    let user1 = Addr::unchecked("user1");
+    let user2 = Addr::unchecked("user2");
+    //
+    let contracts = instantiate_contracts(&mut app, user1.clone(), user2.clone(), owner.clone());
 
-//     let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
-//     println!("\n\n final_proposal {:?}", final_proposal);
+    println!("\n\n contracts {:#?}", contracts);
 
-//     // Check that my_dao_addr now has the CoreTech slot
-//     let core_slots = contracts.governance.query_core_slots(&mut app).unwrap();
-//     assert_eq!(core_slots.brand.unwrap().dao, my_dao_addr.clone());
-//     assert_eq!(
-//         app.wrap().query_all_balances(BURN_ADDRESS).unwrap(),
-//         coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
-//     );
+    // Register an user identity with a valid name
+    contracts
+        .identityservice
+        .register_user(&mut app, &user1, "user1_id".to_string())
+        .unwrap();
 
-//     // Create a dao proposal to revoke from the DAO from the Brand slot
-//     let proposal_msg = ExecuteMsg::Propose(ProposalMsg::RevokeProposal {
-//         title: "Remove Brand Dao".into(),
-//         description: "Leave it vacant".into(),
-//         revoke_proposal_id: 1,
-//     });
+    // Register a DAO (required for submitting a proposal)
+    let my_dao_addr = create_dao(&mut app, contracts.clone(), user1.clone(), user2.clone());
 
-//     // Failing Revoke Proposal
+    // Create a Dao Proposal for a Governance CoreSlot Proposal
+    let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
+        title: "Make me CoreTech".into(),
+        description: "Serving the chain".into(),
+        funding: Funding {
+            amount: 10_000_000u128.into(),
+            duration_in_blocks: 3000,
+        },
+        slot: CoreSlot::Brand {},
+    });
 
-//     // Fund dao so we can send the send proposal deposit
-//     app.send_tokens(
-//         contracts.governance.addr().clone(),
-//         Addr::unchecked(my_dao_addr.clone()),
-//         &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
-//     )
-//     .unwrap();
+    // Create, vote on and execute the dao proposal
+    DaoMultisigContract::gov_proposal_helper(
+        &mut app,
+        my_dao_addr.clone(),
+        &contracts.governance.addr().clone(),
+        user1.clone(),
+        user2.clone(),
+        to_binary(&proposal_msg).unwrap(),
+        PROPOSAL_REQUIRED_DEPOSIT,
+    )
+    .unwrap();
 
-//     // Create, vote on and execute the dao proposal
-//     DaoMultisigContract::gov_proposal_helper(
-//         &mut app,
-//         my_dao_addr.clone(),
-//         &contracts.governance.addr().clone(),
-//         user1.clone(),
-//         user2.clone(),
-//         to_binary(&proposal_msg).unwrap(),
-//         PROPOSAL_REQUIRED_DEPOSIT,
-//     )
-//     .unwrap();
+    // // Vote on and execute the governance proposal
+    // gov_vote_helper(
+    //     &mut app,
+    //     contracts.clone(),
+    //     user1.clone(),
+    //     VoteOption::Yes,
+    //     user2.clone(),
+    //     VoteOption::No,
+    //     1,
+    // );
 
-//     // Vote on and execute the governance proposal
-//     let revoke_result = gov_vote_helper(
-//         &mut app,
-//         contracts.clone(),
-//         user1.clone(),
-//         VoteOption::No,
-//         user2.clone(),
-//         VoteOption::No,
-//         2,
-//     );
+    // let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
+    // println!("\n\n final_proposal {:?}", final_proposal);
 
-//     println!("\n\n revoke_result {:?}", revoke_result);
+    // // Check that my_dao_addr now has the CoreTech slot
+    // let core_slots = contracts.governance.query_core_slots(&mut app).unwrap();
+    // assert_eq!(core_slots.brand.unwrap().dao, my_dao_addr.clone());
+    // assert_eq!(
+    //     app.wrap().query_all_balances(BURN_ADDRESS).unwrap(),
+    //     coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes")
+    // );
 
-//     let failing_proposal = contracts.governance.query_proposal(&mut app, 2).unwrap();
-//     assert_eq!(
-//         failing_proposal,
-//         ProposalResponse {
-//             id: 2,
-//             dao: my_dao_addr.clone(),
-//             title: "Remove Brand Dao".into(),
-//             description: "Leave it vacant".into(),
-//             prop_type: crate::state::ProposalType::RevokeProposal(1u64),
-//             coins_yes: Uint128::from(0u128),
-//             coins_no: Uint128::from(2000_000_000u128),
-//             yes_voters: vec![],
-//             no_voters: vec![user1.clone()],
-//             deposit_amount: Uint128::from(10_000u128),
-//             start_block: 12363,
-//             posting_start: 1660000080,
-//             voting_start: 1660000120,
-//             voting_end: 1660000160,
-//             concluded: Some(3000u64),
-//             status: ProposalStatus::ExpiredConcluded
-//         }
-//     );
+    // // Create a dao proposal to revoke from the DAO from the Brand slot
+    // let proposal_msg = ExecuteMsg::Propose(ProposalMsg::RevokeProposal {
+    //     title: "Remove Brand Dao".into(),
+    //     description: "Leave it vacant".into(),
+    //     revoke_proposal_id: 1,
+    // });
 
-//     println!("\n\n failing_proposal {:?}", failing_proposal);
+    // // Failing Revoke Proposal
 
-//     let core_slots = contracts.governance.query_core_slots(&mut app).unwrap();
-//     println!("\n\n core_slots {:?}", core_slots);
-//     assert_eq!(
-//         core_slots.brand,
-//         Some(SlotVoteResult {
-//             dao: my_dao_addr.clone(),
-//             yes_ratio: Decimal::percent(100),
-//             proposal_voting_end: 1660000080,
-//             proposal_id: 1u64,
-//             proposal_funding_end: 30000u64
-//         })
-//     );
+    // // Fund dao so we can send the send proposal deposit
+    // app.send_tokens(
+    //     contracts.governance.addr().clone(),
+    //     Addr::unchecked(my_dao_addr.clone()),
+    //     &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
+    // )
+    // .unwrap();
 
-//     // Successful Revoke Proposal
+    // // Create, vote on and execute the dao proposal
+    // DaoMultisigContract::gov_proposal_helper(
+    //     &mut app,
+    //     my_dao_addr.clone(),
+    //     &contracts.governance.addr().clone(),
+    //     user1.clone(),
+    //     user2.clone(),
+    //     to_binary(&proposal_msg).unwrap(),
+    //     PROPOSAL_REQUIRED_DEPOSIT,
+    // )
+    // .unwrap();
 
-//     // Fund my_dao_addr so it can send the deposit
-//     app.send_tokens(
-//         contracts.governance.addr().clone(),
-//         Addr::unchecked(my_dao_addr.clone()),
-//         &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
-//     )
-//     .unwrap();
+    // // Vote on and execute the governance proposal
+    // let revoke_result = gov_vote_helper(
+    //     &mut app,
+    //     contracts.clone(),
+    //     user1.clone(),
+    //     VoteOption::No,
+    //     user2.clone(),
+    //     VoteOption::No,
+    //     2,
+    // );
 
-//     // Create, vote on and execute the dao proposal
-//     DaoMultisigContract::gov_proposal_helper(
-//         &mut app,
-//         my_dao_addr.clone(),
-//         &contracts.governance.addr().clone(),
-//         user1.clone(),
-//         user2.clone(),
-//         to_binary(&proposal_msg).unwrap(),
-//         PROPOSAL_REQUIRED_DEPOSIT,
-//     )
-//     .unwrap();
+    // println!("\n\n revoke_result {:?}", revoke_result);
 
-//     // Vote on and execute the governance proposal
-//     let revoke_result = gov_vote_helper(
-//         &mut app,
-//         contracts.clone(),
-//         user1.clone(),
-//         VoteOption::Yes,
-//         user2.clone(),
-//         VoteOption::No,
-//         3,
-//     );
+    // let failing_proposal = contracts.governance.query_proposal(&mut app, 2).unwrap();
+    // assert_eq!(
+    //     failing_proposal,
+    //     ProposalResponse {
+    //         id: 2,
+    //         dao: my_dao_addr.clone(),
+    //         title: "Remove Brand Dao".into(),
+    //         description: "Leave it vacant".into(),
+    //         prop_type: crate::state::ProposalType::RevokeProposal(1u64),
+    //         coins_yes: Uint128::from(0u128),
+    //         coins_no: Uint128::from(2000_000_000u128),
+    //         yes_voters: vec![],
+    //         no_voters: vec![user1.clone()],
+    //         deposit_amount: Uint128::from(10_000u128),
+    //         start_block: 12363,
+    //         posting_start: 1660000080,
+    //         voting_start: 1660000120,
+    //         voting_end: 1660000160,
+    //         concluded_at_height: Some(3000u64),
+    //         status: ProposalStatus::ExpiredConcluded
+    //     }
+    // );
 
-//     println!("\n\n revoke_result {:?}", revoke_result);
+    // println!("\n\n failing_proposal {:?}", failing_proposal);
 
-//     let success_proposal = contracts.governance.query_proposal(&mut app, 3).unwrap();
-//     assert_eq!(
-//         success_proposal,
-//         ProposalResponse {
-//             id: 3,
-//             dao: my_dao_addr.clone(),
-//             title: "Remove Brand Dao".into(),
-//             description: "Leave it vacant".into(),
-//             prop_type: crate::state::ProposalType::RevokeProposal(2u64),
-//             coins_yes: Uint128::from(2000_000_000u128),
-//             coins_no: Uint128::from(0u128),
-//             yes_voters: vec![user1.clone()],
-//             no_voters: vec![],
-//             deposit_amount: Uint128::from(10_000u128),
-//             start_block: 12379,
-//             posting_start: 1660000160,
-//             voting_start: 1660000200,
-//             voting_end: 1660000240,
-//             concluded: Some(3000u64),
-//             status: ProposalStatus::SuccessConcluded
-//         }
-//     );
+    // let core_slots = contracts.governance.query_core_slots(&mut app).unwrap();
+    // println!("\n\n core_slots {:?}", core_slots);
+    // assert_eq!(
+    //     core_slots.brand,
+    //     Some(SlotVoteResult {
+    //         dao: my_dao_addr.clone(),
+    //         yes_ratio: Decimal::percent(100),
+    //         proposal_voting_end: 1660000080,
+    //         proposal_id: 1u64,
+    //         proposal_funding_end: 30000u64
+    //     })
+    // );
 
-//     println!("\n\n success_proposal {:?}", success_proposal);
+    // // Successful Revoke Proposal
 
-//     let core_slots = contracts.governance.query_core_slots(&mut app).unwrap();
-//     println!("\n\n core_slots {:?}", core_slots);
-//     assert_eq!(core_slots.brand, None);
-// }
+    // // Fund my_dao_addr so it can send the deposit
+    // app.send_tokens(
+    //     contracts.governance.addr().clone(),
+    //     Addr::unchecked(my_dao_addr.clone()),
+    //     &coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
+    // )
+    // .unwrap();
+
+    // // Create, vote on and execute the dao proposal
+    // DaoMultisigContract::gov_proposal_helper(
+    //     &mut app,
+    //     my_dao_addr.clone(),
+    //     &contracts.governance.addr().clone(),
+    //     user1.clone(),
+    //     user2.clone(),
+    //     to_binary(&proposal_msg).unwrap(),
+    //     PROPOSAL_REQUIRED_DEPOSIT,
+    // )
+    // .unwrap();
+
+    // // Vote on and execute the governance proposal
+    // let revoke_result = gov_vote_helper(
+    //     &mut app,
+    //     contracts.clone(),
+    //     user1.clone(),
+    //     VoteOption::Yes,
+    //     user2.clone(),
+    //     VoteOption::No,
+    //     3,
+    // );
+
+    // println!("\n\n revoke_result {:?}", revoke_result);
+
+    // let success_proposal = contracts.governance.query_proposal(&mut app, 3).unwrap();
+    // assert_eq!(
+    //     success_proposal,
+    //     ProposalResponse {
+    //         id: 3,
+    //         dao: my_dao_addr.clone(),
+    //         title: "Remove Brand Dao".into(),
+    //         description: "Leave it vacant".into(),
+    //         prop_type: crate::state::ProposalType::RevokeProposal(2u64),
+    //         coins_yes: Uint128::from(2000_000_000u128),
+    //         coins_no: Uint128::from(0u128),
+    //         yes_voters: vec![user1.clone()],
+    //         no_voters: vec![],
+    //         deposit_amount: Uint128::from(10_000u128),
+    //         start_block: 12379,
+    //         posting_start: 1660000160,
+    //         voting_start: 1660000200,
+    //         voting_end: 1660000240,
+    //         concluded_at_height: Some(3000u64),
+    //         status: ProposalStatus::SuccessConcluded
+    //     }
+    // );
+
+    // println!("\n\n success_proposal {:?}", success_proposal);
+
+    // let core_slots = contracts.governance.query_core_slots(&mut app).unwrap();
+    // println!("\n\n core_slots {:?}", core_slots);
+    // assert_eq!(core_slots.brand, None);
+}
 
 // #[test]
 // fn set_core_slot_creative_and_fail_setting_a_second_slot_for_the_same_dao() {
