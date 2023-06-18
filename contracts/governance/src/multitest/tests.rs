@@ -2,14 +2,14 @@
 use cosmwasm_std::{
     coin, coins, from_binary,
     testing::{mock_env, MockApi, MockStorage},
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Timestamp, Uint128,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Timestamp, Uint128, WasmMsg,
 };
 use cw3::VoterListResponse;
 use cw4::Member;
 use cw_multi_test::{next_block, App, AppBuilder, AppResponse, BankKeeper, Executor};
 use cw_utils::Duration;
 use dao_members::multitest::contract::DaoMembersContract;
-use dao_multisig::multitest::contract::DaoMultisigContract;
+use dao_multisig::{msg::ProposeResponse, multitest::contract::DaoMultisigContract};
 use identityservice::multitest::contract::IdentityserviceContract;
 use jmes::{msg::Voter, test_utils::get_attribute};
 
@@ -482,7 +482,7 @@ fn text_proposal_with_funding_attached_amount_equal_0() {
 }
 
 #[test]
-fn set_core_slot_brand_with_2_members_fails() {
+fn propose_core_slot_brand_with_2_members_fails() {
     let mut app = mock_app();
 
     let owner = Addr::unchecked("owner");
@@ -514,17 +514,152 @@ fn set_core_slot_brand_with_2_members_fails() {
     });
 
     // Create, vote on and execute the dao proposal
-    let err = DaoMultisigContract::gov_proposal_helper(
+    let my_dao_addr = my_dao_addr.to_string();
+
+    // Wrap gov proposal msg so we can attach it to the dao proposal
+    let wasm_msg = WasmMsg::Execute {
+        contract_addr: contracts.governance.addr().into(),
+        msg: to_binary(&proposal_msg).unwrap(),
+        // attach the proposal fee to be burned,
+        // this is sent from the dao addr to the gov contract
+        funds: coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
+    };
+
+    let dao_propose_response = DaoMultisigContract::propose(
         &mut app,
-        my_dao_addr.clone(),
-        &contracts.governance.addr().clone(),
-        user1.clone(),
-        user2.clone(),
-        to_binary(&proposal_msg).unwrap(),
+        &user1,
+        &my_dao_addr,
+        "Dao Proposal".into(),
+        "Wraps Governance Proposal".into(),
+        vec![CosmosMsg::Wasm(wasm_msg)],
+        None,
         PROPOSAL_REQUIRED_DEPOSIT,
-    )
-    .unwrap_err();
-    println!("\n\n err {:?}", err);
+    );
+
+    let proposal_id = from_binary::<ProposeResponse>(&dao_propose_response.unwrap().data.unwrap())
+        .unwrap()
+        .proposal_id;
+
+    println!("\n\n proposal_id {:?}", proposal_id);
+
+    // User1 already voted automatically
+    // User2 votes yes to pass the proposal
+    let dao_vote2_result =
+        DaoMultisigContract::vote(&mut app, &user2, &my_dao_addr, proposal_id, cw3::Vote::Yes);
+    println!("\n\n dao_vote2_result ....{:?}", dao_vote2_result);
+
+    let dao_execute_result =
+        DaoMultisigContract::execute(&mut app, &user1, &my_dao_addr, proposal_id);
+    println!("\n\n dao_execute_result {:?}", dao_execute_result);
+    assert_eq!(
+        dao_execute_result.unwrap_err(),
+        dao_multisig::ContractError::DowncastError {
+            text: "WrongCoreTeamMemberCount (Core Team must have between 3 and 9 members)!"
+                .to_string()
+        }
+    );
+}
+#[test]
+fn propose_core_slot_brand_with_3_members_2_required_for_threshold_succeeds() {
+    let mut app = mock_app();
+
+    let owner = Addr::unchecked("owner");
+
+    let member1 = Member {
+        addr: "member1".into(),
+        weight: 26,
+    };
+    let member2 = Member {
+        addr: "member2".into(),
+        weight: 26,
+    };
+    let member3 = Member {
+        addr: "member3".into(),
+        weight: 10,
+    };
+
+    let members = vec![member1.clone(), member2.clone(), member3.clone()];
+
+    let contracts = instantiate_contracts(
+        &mut app,
+        Addr::unchecked(member1.addr.clone()),
+        Addr::unchecked(member2.addr.clone()),
+        owner.clone(),
+    );
+
+    println!("\n\n contracts {:#?}", contracts);
+
+    // Register an user identity with a valid name
+    contracts
+        .identityservice
+        .register_user(
+            &mut app,
+            &Addr::unchecked(member1.addr.clone()),
+            "user1_id".to_string(),
+        )
+        .unwrap();
+
+    // Register a DAO (required for submitting a proposal)
+    let my_dao_addr = create_dao_from(&mut app, contracts.clone(), members);
+
+    // Create a Dao Proposal for a Governance CoreSlot Proposal
+    let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
+        title: "Make me CoreTech".into(),
+        description: "Serving the chain".into(),
+        funding: Funding {
+            amount: 10_000_000u128.into(),
+            duration_in_blocks: 3000,
+        },
+        slot: CoreSlot::Brand {},
+    });
+
+    // Create, vote on and execute the dao proposal
+    let my_dao_addr = my_dao_addr.to_string();
+
+    // Wrap gov proposal msg so we can attach it to the dao proposal
+    let wasm_msg = WasmMsg::Execute {
+        contract_addr: contracts.governance.addr().into(),
+        msg: to_binary(&proposal_msg).unwrap(),
+        // attach the proposal fee to be burned,
+        // this is sent from the dao addr to the gov contract
+        funds: coins(PROPOSAL_REQUIRED_DEPOSIT, "ujmes"),
+    };
+
+    let dao_propose_response = DaoMultisigContract::propose(
+        &mut app,
+        &Addr::unchecked(member1.addr.clone()),
+        &my_dao_addr,
+        "Dao Proposal".into(),
+        "Wraps Governance Proposal".into(),
+        vec![CosmosMsg::Wasm(wasm_msg)],
+        None,
+        PROPOSAL_REQUIRED_DEPOSIT,
+    );
+
+    let proposal_id = from_binary::<ProposeResponse>(&dao_propose_response.unwrap().data.unwrap())
+        .unwrap()
+        .proposal_id;
+
+    println!("\n\n proposal_id {:?}", proposal_id);
+
+    // User1 already voted automatically
+    // User2 votes yes to pass the proposal
+    let dao_vote2_result = DaoMultisigContract::vote(
+        &mut app,
+        &Addr::unchecked(member2.addr),
+        &my_dao_addr,
+        proposal_id,
+        cw3::Vote::Yes,
+    );
+    println!("\n\n dao_vote2_result ....{:?}", dao_vote2_result);
+
+    let dao_execute_result = DaoMultisigContract::execute(
+        &mut app,
+        &Addr::unchecked(member1.addr.clone()),
+        &my_dao_addr,
+        proposal_id,
+    );
+    println!("\n\n dao_execute_result {:?}", dao_execute_result);
 }
 #[test]
 fn set_core_slot_brand_then_revoke_fail_then_revoke_success() {

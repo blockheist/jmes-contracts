@@ -37,4 +37,7 @@ pub enum ContractError {
 
     #[error("Cannot close completed or passed proposals")]
     WrongCloseStatus {},
+
+    #[error("DowncastError {text}")]
+    DowncastError { text: String },
 }

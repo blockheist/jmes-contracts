@@ -116,7 +116,21 @@ impl DaoMultisigContract {
             &ExecuteMsg::Execute { proposal_id },
             &[],
         )
-        .map_err(|err| err.downcast().unwrap())
+        .map_err(|err| -> ContractError {
+            println!("\n\n err. {:#?}", err.root_cause().to_string());
+
+            if err
+                .root_cause()
+                .to_string()
+                .contains("WrongCoreTeamMemberCount")
+            {
+                return ContractError::DowncastError {
+                    text: err.root_cause().to_string(),
+                };
+            } else {
+                err.downcast().unwrap()
+            }
+        })
     }
 
     #[track_caller]

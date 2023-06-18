@@ -97,7 +97,7 @@ pub fn execute(
 mod exec {
     use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Decimal, Uint128, WasmMsg};
     use cw3::VoterListResponse;
-    use dao_members::msg::ConfigResponse;
+    use dao_multisig::msg::ConfigResponse;
     use identityservice::msg::GetIdentityByOwnerResponse;
     use jmes::constants::{MAX_DAO_MEMBERS, MIN_CORE_TEAM_MEMBERS, MIN_VOTE_COINS};
 
