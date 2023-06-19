@@ -7,7 +7,7 @@
 export type Addr = string;
 export type Uint128 = string;
 export interface ConfigResponse {
-  artist_curator_addr?: Addr | null;
+  art_dealer_addr?: Addr | null;
   period_start_epoch: number;
   posting_period_length: number;
   proposal_required_deposit: Uint128;
@@ -30,7 +30,7 @@ export type ExecuteMsg = {
   };
 } | {
   set_contract: {
-    artist_curator: string;
+    art_dealer: string;
     identityservice: string;
     [k: string]: unknown;
   };
@@ -82,17 +82,16 @@ export type ProposalMsg = {
     [k: string]: unknown;
   };
 } | {
-  revoke_core_slot: {
+  revoke_proposal: {
     description: string;
-    revoke_slot: RevokeCoreSlot;
+    revoke_proposal_id: number;
     title: string;
     [k: string]: unknown;
   };
 };
 export type Feature = {
-  artist_curator: {
+  art_dealer: {
     approved: number;
-    duration: number;
     [k: string]: unknown;
   };
 };
@@ -105,7 +104,17 @@ export type CosmosMsgForEmpty = {
 } | {
   distribution: DistributionMsg;
 } | {
+  stargate: {
+    type_url: string;
+    value: Binary;
+    [k: string]: unknown;
+  };
+} | {
+  ibc: IbcMsg;
+} | {
   wasm: WasmMsg;
+} | {
+  gov: GovMsg;
 };
 export type BankMsg = {
   send: {
@@ -150,6 +159,30 @@ export type DistributionMsg = {
     [k: string]: unknown;
   };
 };
+export type Binary = string;
+export type IbcMsg = {
+  transfer: {
+    amount: Coin;
+    channel_id: string;
+    timeout: IbcTimeout;
+    to_address: string;
+    [k: string]: unknown;
+  };
+} | {
+  send_packet: {
+    channel_id: string;
+    data: Binary;
+    timeout: IbcTimeout;
+    [k: string]: unknown;
+  };
+} | {
+  close_channel: {
+    channel_id: string;
+    [k: string]: unknown;
+  };
+};
+export type Timestamp = Uint64;
+export type Uint64 = string;
 export type WasmMsg = {
   execute: {
     contract_addr: string;
@@ -185,7 +218,14 @@ export type WasmMsg = {
     [k: string]: unknown;
   };
 };
-export type Binary = string;
+export type GovMsg = {
+  vote: {
+    proposal_id: number;
+    vote: VoteOption;
+    [k: string]: unknown;
+  };
+};
+export type VoteOption = "yes" | "no" | "abstain" | "no_with_veto";
 export type CoreSlot = {
   brand: {
     [k: string]: unknown;
@@ -199,7 +239,6 @@ export type CoreSlot = {
     [k: string]: unknown;
   };
 };
-export type VoteOption = "yes" | "no";
 export interface Funding {
   amount: Uint128;
   duration_in_blocks: number;
@@ -213,9 +252,14 @@ export interface Coin {
 export interface Empty {
   [k: string]: unknown;
 }
-export interface RevokeCoreSlot {
-  dao: string;
-  slot: CoreSlot;
+export interface IbcTimeout {
+  block?: IbcTimeoutBlock | null;
+  timestamp?: Timestamp | null;
+  [k: string]: unknown;
+}
+export interface IbcTimeoutBlock {
+  height: number;
+  revision: number;
   [k: string]: unknown;
 }
 export type Decimal = string;
@@ -234,7 +278,7 @@ export interface SlotVoteResult {
   [k: string]: unknown;
 }
 export interface InstantiateMsg {
-  artist_curator_addr?: string | null;
+  art_dealer_addr?: string | null;
   owner: string;
   period_start_epoch: number;
   posting_period_length: number;
@@ -271,7 +315,7 @@ export type ProposalType = {
 } | {
   core_slot: CoreSlot;
 } | {
-  revoke_core_slot: RevokeCoreSlot;
+  revoke_proposal: number;
 };
 export type ProposalStatus = "posted" | "voting" | "success" | "expired" | "success_concluded" | "expired_concluded";
 export interface ProposalResponse {
@@ -334,6 +378,7 @@ export interface WinningGrant {
   amount: Uint128;
   dao: Addr;
   expire_at_height: number;
+  max_cap: number;
   proposal_id: number;
   yes_ratio: Decimal;
   [k: string]: unknown;

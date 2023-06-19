@@ -7,7 +7,7 @@
 import { UseQueryOptions, useQuery, useMutation, UseMutationOptions } from "@tanstack/react-query";
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, Uint128, ConfigResponse, ExecuteMsg, ProposalMsg, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, WasmMsg, Binary, CoreSlot, VoteOption, Funding, Coin, Empty, RevokeCoreSlot, Decimal, GovernanceCoreSlotsResponse, SlotVoteResult, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg, WinningGrantsResponse, WinningGrant } from "./Governance.types";
+import { Addr, Uint128, ConfigResponse, ExecuteMsg, ProposalMsg, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, Binary, IbcMsg, Timestamp, Uint64, WasmMsg, GovMsg, VoteOption, CoreSlot, Funding, Coin, Empty, IbcTimeout, IbcTimeoutBlock, Decimal, GovernanceCoreSlotsResponse, SlotVoteResult, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg, WinningGrantsResponse, WinningGrant } from "./Governance.types";
 import { GovernanceQueryClient, GovernanceClient } from "./Governance.client";
 export const governanceQueryKeys = {
   contract: ([{
@@ -187,7 +187,7 @@ export function useGovernanceSetCoreSlotMutation(options?: Omit<UseMutationOptio
 export interface GovernanceSetContractMutation {
   client: GovernanceClient;
   msg: {
-    artistCurator: string;
+    artDealer: string;
     identityservice: string;
   };
   args?: {

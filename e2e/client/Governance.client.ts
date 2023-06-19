@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, Uint128, ConfigResponse, ExecuteMsg, ProposalMsg, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, WasmMsg, Binary, CoreSlot, VoteOption, Funding, Coin, Empty, RevokeCoreSlot, Decimal, GovernanceCoreSlotsResponse, SlotVoteResult, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg, WinningGrantsResponse, WinningGrant } from "./Governance.types";
+import { Addr, Uint128, ConfigResponse, ExecuteMsg, ProposalMsg, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, Binary, IbcMsg, Timestamp, Uint64, WasmMsg, GovMsg, VoteOption, CoreSlot, Funding, Coin, Empty, IbcTimeout, IbcTimeoutBlock, Decimal, GovernanceCoreSlotsResponse, SlotVoteResult, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg, WinningGrantsResponse, WinningGrant } from "./Governance.types";
 export interface GovernanceReadOnlyInterface {
   contractAddress: string;
   config: () => Promise<ConfigResponse>;
@@ -104,10 +104,10 @@ export interface GovernanceInterface extends GovernanceReadOnlyInterface {
     id: number;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   setContract: ({
-    artistCurator,
+    artDealer,
     identityservice
   }: {
-    artistCurator: string;
+    artDealer: string;
     identityservice: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   setCoreSlot: ({
@@ -178,15 +178,15 @@ export class GovernanceClient extends GovernanceQueryClient implements Governanc
     }, fee, memo, funds);
   };
   setContract = async ({
-    artistCurator,
+    artDealer,
     identityservice
   }: {
-    artistCurator: string;
+    artDealer: string;
     identityservice: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       set_contract: {
-        artist_curator: artistCurator,
+        art_dealer: artDealer,
         identityservice
       }
     }, fee, memo, funds);
