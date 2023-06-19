@@ -39,8 +39,8 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            threshold: Threshold::AbsolutePercentage {
-                percentage: msg.threshold_percentage,
+            threshold: Threshold::AbsoluteCount {
+                weight: msg.threshold_percentage,
             },
             max_voting_period: msg.max_voting_period,
             dao_name: msg.dao_name,

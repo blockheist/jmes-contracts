@@ -24,7 +24,7 @@ pub struct InstantiateMsg {
 pub struct RegisterDaoMsg {
     pub members: Vec<Member>,
     pub dao_name: String,
-    pub threshold_percentage: Decimal,
+    pub threshold_percentage: u64,
     pub max_voting_period: Duration,
 }
 
