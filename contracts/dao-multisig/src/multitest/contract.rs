@@ -123,6 +123,10 @@ impl DaoMultisigContract {
                 .root_cause()
                 .to_string()
                 .contains("WrongCoreTeamMemberCount")
+                || err
+                    .root_cause()
+                    .to_string()
+                    .contains("WrongCoreTeamMemberVotingPower")
             {
                 return ContractError::DowncastError {
                     text: err.root_cause().to_string(),
