@@ -125,6 +125,14 @@ pub fn execute_register_dao(
         });
     }
 
+    // We're using AbsoluteCount as threshold so we can assign different voting power to each member
+    // but we are limiting it to 100% max to have a more intuitive UX
+    if register_dao_msg.threshold_percentage > 100 {
+        return Err(ContractError::InvalidThresholdPercentage {
+            current: register_dao_msg.threshold_percentage,
+        });
+    }
+
     // Add the governance contract addr to the instantiate msg
     let instantiate_dao_members_msg = dao_members::msg::InstantiateMsg {
         members: register_dao_msg.members,

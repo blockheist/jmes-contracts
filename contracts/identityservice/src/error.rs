@@ -23,4 +23,7 @@ pub enum ContractError {
 
     #[error("Invalid character(char {c}")]
     InvalidCharacter { c: char },
+
+    #[error("InvalidThresholdPercentage max is 100 (current {current})")]
+    InvalidThresholdPercentage { current: u64 },
 }
