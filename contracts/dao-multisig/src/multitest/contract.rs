@@ -1,4 +1,4 @@
-use cosmwasm_std::{coins, from_binary, Addr, Binary, CosmosMsg, StdResult, Uint128, WasmMsg};
+use cosmwasm_std::{coins, from_binary, Addr, Binary, CosmosMsg, StdResult, WasmMsg};
 use cw3::Vote;
 use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 use cw_utils::{Duration, Expiration, Threshold};

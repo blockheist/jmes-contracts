@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Decimal};
+use cosmwasm_std::Addr;
 use cw4::Member;
 use cw_utils::{Duration, Threshold};
 

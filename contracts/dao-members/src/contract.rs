@@ -9,7 +9,6 @@ use cw4::{
     Member, MemberChangedHookMsg, MemberDiff, MemberListResponse, MemberResponse,
     TotalWeightResponse,
 };
-use cw_controllers::Admin;
 use cw_storage_plus::Bound;
 use cw_utils::{maybe_addr, Threshold};
 use jmes::msg::GovernanceCoreSlotsResponse;

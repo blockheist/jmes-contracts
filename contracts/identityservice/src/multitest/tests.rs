@@ -54,7 +54,7 @@ fn register_dao() {
                 },
             ],
             "my_dao".to_string(),
-            Decimal::percent(51),
+            51u64,
             Duration::Time(300),
         )
         .unwrap();

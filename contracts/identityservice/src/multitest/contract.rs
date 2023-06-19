@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Decimal, StdResult};
+use cosmwasm_std::{Addr, StdResult};
 use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 use cw_utils::Duration;
 

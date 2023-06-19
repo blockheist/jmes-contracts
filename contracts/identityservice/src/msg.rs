@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Decimal};
+use cosmwasm_std::Addr;
 use cw4::Member;
 use cw_utils::Duration;
 use schemars::JsonSchema;

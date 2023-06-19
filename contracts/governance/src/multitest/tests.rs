@@ -1,26 +1,21 @@
 #![cfg(test)]
 use cosmwasm_std::{
-    coin, coins, from_binary,
+    coins, from_binary,
     testing::{mock_env, MockApi, MockStorage},
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Timestamp, Uint128, WasmMsg,
+    to_binary, Addr, Coin, CosmosMsg, Timestamp, Uint128, WasmMsg,
 };
-use cw3::VoterListResponse;
 use cw4::Member;
-use cw_multi_test::{next_block, App, AppBuilder, AppResponse, BankKeeper, Executor};
+use cw_multi_test::{next_block, App, AppBuilder, AppResponse, BankKeeper};
 use cw_utils::Duration;
 use dao_members::multitest::contract::DaoMembersContract;
 use dao_multisig::{msg::ProposeResponse, multitest::contract::DaoMultisigContract};
 use identityservice::multitest::contract::IdentityserviceContract;
-use jmes::{msg::Voter, test_utils::get_attribute};
 
 use crate::{
     error::ContractError,
     msg::{CoreSlot, ExecuteMsg, ProposalMsg, ProposalPeriod, ProposalResponse},
     state::{Funding, ProposalStatus, VoteOption},
 };
-
-use jmes::msg::GovernanceQueryMsg as QueryMsg;
-use jmes::msg::SlotVoteResult;
 
 use super::contract::GovernanceContract;
 
@@ -38,8 +33,6 @@ const VOTING_PERIOD_LENGTH: u64 = 40;
 const USER1_FUNDING_COINS: u128 = 1000_000_000;
 const USER1_VOTING_COINS: u128 = 2000_000_000;
 const USER2_VOTING_COINS: u128 = 3000_000_000;
-
-const GOVERNANCE_INIT_BALANCE: u128 = 0; //100_000_000; // To test improvement proposal: BankMsg
 
 #[derive(Debug, Clone)]
 struct Contracts {
