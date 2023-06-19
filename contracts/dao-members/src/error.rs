@@ -28,4 +28,7 @@ pub enum ContractError {
 
     #[error("WrongMemberCount (Core Team must have between {min} and {max} members)!")]
     WrongCoreTeamMemberCount { min: usize, max: usize },
+
+    #[error("InvalidThresholdPercentage max is 100 (current {current})")]
+    InvalidThresholdPercentage { current: u64 },
 }

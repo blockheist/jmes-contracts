@@ -36,6 +36,14 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     println!("\n\n info {:?}", info);
 
+    // We're using AbsoluteCount as threshold so we can assign different voting power to each member
+    // but we are limiting it to 100% max to have a more intuitive UX
+    if msg.threshold_percentage > 100 {
+        return Err(ContractError::InvalidThresholdPercentage {
+            current: msg.threshold_percentage,
+        });
+    }
+
     CONFIG.save(
         deps.storage,
         &Config {
@@ -137,6 +145,7 @@ pub fn execute_update_members(
     let messages = HOOKS.prepare_hooks(deps.storage, |h| {
         diff.clone().into_cosmos_msg(h).map(SubMsg::new)
     })?;
+
     Ok(Response::new()
         .add_submessages(messages)
         .add_attributes(attributes))
