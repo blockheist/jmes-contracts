@@ -74,7 +74,7 @@ impl IdentityserviceContract {
         sender: &Addr,
         members: Vec<cw4::Member>,
         dao_name: String,
-        threshold_percentage: Decimal,
+        threshold_percentage: u64,
         max_voting_period: Duration,
     ) -> Result<AppResponse, ContractError> {
         app.execute_contract(

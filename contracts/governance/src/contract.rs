@@ -459,7 +459,7 @@ mod exec {
         println!("\n\n config {:?}", config);
         // A single member weight is not allowed to reach the threshold
         // so if the threshold validates for a single member without an error -> we throw an error
-        if config.threshold.validate(max_weight).is_err() {
+        if config.threshold.validate(max_weight).is_ok() {
             return Err(ContractError::WrongCoreTeamMemberVotingPower {
                 threshold: config.threshold,
                 current: max_weight,

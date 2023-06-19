@@ -29,7 +29,7 @@ impl DaoMembersContract {
         members: Vec<Member>,
         dao_name: String,
         max_voting_period: Duration,
-        threshold_percentage: Decimal,
+        threshold_percentage: u64,
         governance_addr: Addr,
     ) -> StdResult<Self> {
         app.instantiate_contract(

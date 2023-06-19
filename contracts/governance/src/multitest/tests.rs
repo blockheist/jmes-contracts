@@ -199,7 +199,7 @@ fn create_dao_from(app: &mut App, contracts: Contracts, members: Vec<Member>) ->
             &Addr::unchecked(members[0].addr.clone()),
             members,
             "my_dao".to_string(),
-            Decimal::percent(51),
+            51u64,
             Duration::Time(2000000),
         )
         .unwrap();
