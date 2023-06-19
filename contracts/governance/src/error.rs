@@ -1,4 +1,5 @@
-use cosmwasm_std::{OverflowError, StdError};
+use cosmwasm_std::{Decimal, OverflowError, StdError};
+use cw_utils::Threshold;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -9,6 +10,8 @@ pub enum ContractError {
     Unauthorized {},
     #[error("WrongCoreTeamMemberCount (Core Team must have between {min} and {max} members)!")]
     WrongCoreTeamMemberCount { min: usize, max: usize },
+    #[error("WrongCoreTeamMemberVotingPower (Each Core Team must have less than {threshold:?} but one members has {current} voting power)!")]
+    WrongCoreTeamMemberVotingPower { threshold: Threshold, current: u64 },
     #[error("InsufficientProposalFee ({proposal_fee} JMES fee required to post a proposal)!")]
     InsufficientProposalFee { proposal_fee: u128 },
     #[error("NoVoteCoins ({min_vote_coins}  bJMES required to vote)!")]

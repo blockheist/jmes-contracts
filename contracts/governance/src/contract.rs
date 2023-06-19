@@ -456,11 +456,14 @@ mod exec {
         let config: ConfigResponse = deps
             .querier
             .query_wasm_smart(dao.clone(), &QueryMsg::Config {})?;
-
+        println!("\n\n config {:?}", config);
         // A single member weight is not allowed to reach the threshold
         // so if the threshold validates for a single member without an error -> we throw an error
-        if config.threshold.validate(max_weight).is_ok() {
-            return Err(ContractError::Unauthorized {});
+        if config.threshold.validate(max_weight).is_err() {
+            return Err(ContractError::WrongCoreTeamMemberVotingPower {
+                threshold: config.threshold,
+                current: max_weight,
+            });
         }
 
         // If the core slot is already taken, a challenging DAO has to submit the proposal in the first half of the
