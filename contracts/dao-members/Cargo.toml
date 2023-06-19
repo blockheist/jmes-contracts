@@ -23,7 +23,7 @@ library = []
 tests = ["library", "cw-multi-test"]
 
 [dependencies]
-cw-multi-test = { path ="../../../../cw-multi-test", version = "0.16.5", optional = true}
+cw-multi-test = { git = "https://github.com/blockheist/cw-multi-test.git", branch = "supply_query_workaround", version = "0.16.5", optional = true}
 cosmwasm-schema = { version = "1.1.0" }
 cw-utils = {  version = "0.16.0" }
 cw2 = {  version = "0.16.0" }
@@ -38,4 +38,4 @@ thiserror = { version = "1.0.23" }
 
 
 [dev-dependencies]
-cw-multi-test = { path ="../../../../cw-multi-test", version = "0.16.5"}
+cw-multi-test = { git = "https://github.com/blockheist/cw-multi-test.git", branch = "supply_query_workaround", version = "0.16.5"}
