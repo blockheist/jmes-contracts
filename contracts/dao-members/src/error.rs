@@ -26,7 +26,7 @@ pub enum ContractError {
     #[error("A maximum of {max} members are allowed, actual: {actual}")]
     TooManyMembers { max: usize, actual: usize },
 
-    #[error("WrongMemberCount (Core Team must have between {min} and {max} members)!")]
+    #[error("WrongCoreTeamMemberCount (Core Team must have between {min} and {max} members)!")]
     WrongCoreTeamMemberCount { min: usize, max: usize },
 
     #[error("InvalidThresholdPercentage max is 100 (current {current})")]
