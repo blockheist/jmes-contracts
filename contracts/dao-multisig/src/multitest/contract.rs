@@ -142,6 +142,7 @@ impl DaoMultisigContract {
                     .root_cause()
                     .to_string()
                     .contains("WrongCoreTeamMemberVotingPower")
+                || err.root_cause().to_string().contains("Unauthorized")
             {
                 return ContractError::DowncastError {
                     text: err.root_cause().to_string(),
