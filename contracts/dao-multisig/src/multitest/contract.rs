@@ -1,10 +1,10 @@
 use cosmwasm_std::{coins, from_binary, Addr, Binary, CosmosMsg, StdResult, WasmMsg};
-use cw3::Vote;
+use cw3::{Vote, VoterListResponse};
 use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 use cw_utils::{Duration, Expiration, Threshold};
 
 use crate::contract::{execute, instantiate, query};
-use crate::msg::{ExecuteMsg, InstantiateMsg, ProposeResponse};
+use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, ProposeResponse, QueryMsg};
 use crate::ContractError;
 
 // Address for burning the proposal fee
@@ -14,6 +14,21 @@ const BURN_ADDRESS: &str = "jmes1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqf5laz2";
 pub struct DaoMultisigContract(Addr);
 
 impl DaoMultisigContract {
+    pub fn query_config(app: &App, dao_multisig_addr: Addr) -> StdResult<ConfigResponse> {
+        app.wrap()
+            .query_wasm_smart(dao_multisig_addr, &QueryMsg::Config {})
+    }
+
+    pub fn query_list_voters(app: &App, dao_multisig_addr: Addr) -> StdResult<VoterListResponse> {
+        app.wrap().query_wasm_smart(
+            dao_multisig_addr,
+            &QueryMsg::ListVoters {
+                start_after: None,
+                limit: None,
+            },
+        )
+    }
+
     pub fn addr(&self) -> &Addr {
         &self.0
     }
