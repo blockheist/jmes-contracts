@@ -473,6 +473,107 @@ fn text_proposal_with_funding_attached_amount_equal_0() {
     let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
     println!("\n\n final_proposal {:?}", final_proposal);
 }
+#[test]
+fn dao_membership_update_proposal() {
+    let mut app = mock_app();
+
+    let owner = Addr::unchecked("owner");
+    let user1 = Addr::unchecked("user1");
+    let user2 = Addr::unchecked("user2");
+    let user3 = Addr::unchecked("user3");
+
+    let contracts = instantiate_contracts(&mut app, user1.clone(), user2.clone(), owner.clone());
+
+    // Register the DAO
+    let my_dao_addr = create_dao(&mut app, contracts.clone(), user1.clone(), user2.clone());
+
+    println!("my_dao_addr {:#?}", my_dao_addr);
+
+    // Create the proposal to update the membership
+    let proposal_msg = dao_members::msg::ExecuteMsg::UpdateMembers {
+        remove: vec![user1.clone().into()],
+        add: vec![
+            Member {
+                addr: user2.clone().into(),
+                weight: 55,
+            },
+            Member {
+                addr: user3.clone().into(),
+                weight: 5,
+            },
+        ],
+    };
+
+    println!("\n\n proposal_msg {:?}", proposal_msg);
+
+    let dao_multisig_config =
+        DaoMultisigContract::query_config(&mut app, my_dao_addr.clone()).unwrap();
+
+    // Wrap  proposal msg so we can attach it to the dao proposal
+    let wasm_msg = WasmMsg::Execute {
+        contract_addr: dao_multisig_config.dao_members_addr.clone().into(),
+        msg: to_binary(&proposal_msg).unwrap(),
+        funds: vec![],
+    };
+
+    let dao_propose_response = DaoMultisigContract::propose(
+        &mut app,
+        &user1,
+        &my_dao_addr.clone().into(),
+        "Dao Proposal".into(),
+        "Wraps Governance Proposal".into(),
+        vec![CosmosMsg::Wasm(wasm_msg)],
+        None,
+        PROPOSAL_REQUIRED_DEPOSIT,
+    );
+
+    let proposal_id = from_binary::<ProposeResponse>(&dao_propose_response.unwrap().data.unwrap())
+        .unwrap()
+        .proposal_id;
+
+    println!("\n\n proposal_id {:?}", proposal_id);
+
+    // User1 already voted automatically
+    // User2 votes yes to pass the proposal
+    let dao_vote2_result = DaoMultisigContract::vote(
+        &mut app,
+        &user2,
+        &my_dao_addr.clone().into(),
+        proposal_id,
+        cw3::Vote::Yes,
+    );
+    println!("\n\n dao_vote2_result ....{:?}", dao_vote2_result);
+
+    let dao_execute_result =
+        DaoMultisigContract::execute(&mut app, &user1, &my_dao_addr.clone().into(), proposal_id);
+    println!("\n\n dao_execute_result {:?}", dao_execute_result);
+
+    let multisig_voter_list =
+        DaoMultisigContract::query_list_voters(&app, my_dao_addr.clone()).unwrap();
+    println!("\n\n voter_list {:?}", multisig_voter_list);
+
+    let member_list =
+        DaoMembersContract::query_list_members(&app, dao_multisig_config.dao_members_addr).unwrap();
+    println!("\n\n member_list {:?}", member_list);
+
+    // Check that the multisig voter list is the same as the dao member list
+    assert_eq!(
+        multisig_voter_list.voters[0].addr,
+        member_list.members[0].addr
+    );
+    assert_eq!(
+        multisig_voter_list.voters[0].weight,
+        member_list.members[0].weight
+    );
+    assert_eq!(
+        multisig_voter_list.voters[1].addr,
+        member_list.members[1].addr
+    );
+    assert_eq!(
+        multisig_voter_list.voters[1].weight,
+        member_list.members[1].weight
+    );
+}
 
 #[test]
 fn propose_core_slot_brand_with_2_members_fails() {
