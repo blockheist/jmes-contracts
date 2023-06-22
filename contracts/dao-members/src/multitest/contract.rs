@@ -1,15 +1,24 @@
 use cosmwasm_std::{Addr, StdResult};
-use cw4::Member;
+use cw4::{Member, MemberListResponse};
 use cw_multi_test::{App, ContractWrapper, Executor};
 use cw_utils::Duration;
 
 use crate::contract::{execute, instantiate, query};
-use crate::msg::InstantiateMsg;
+use crate::msg::{InstantiateMsg, QueryMsg};
 
 #[derive(Debug)]
 pub struct DaoMembersContract(Addr);
 
 impl DaoMembersContract {
+    pub fn query_list_members(app: &App, dao_members_addr: Addr) -> StdResult<MemberListResponse> {
+        app.wrap().query_wasm_smart(
+            dao_members_addr,
+            &QueryMsg::ListMembers {
+                start_after: None,
+                limit: None,
+            },
+        )
+    }
     pub fn addr(&self) -> &Addr {
         &self.0
     }
