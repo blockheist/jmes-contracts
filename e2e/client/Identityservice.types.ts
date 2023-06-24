@@ -22,12 +22,11 @@ export type Duration = {
 } | {
   time: number;
 };
-export type Decimal = string;
 export interface RegisterDaoMsg {
   dao_name: string;
   max_voting_period: Duration;
   members: Member[];
-  threshold_percentage: Decimal;
+  threshold_percentage: number;
   [k: string]: unknown;
 }
 export interface Member {

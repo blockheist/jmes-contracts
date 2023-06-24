@@ -156,14 +156,14 @@ describe("User Identity", function () {
       members: [
         {
           addr: user1.address,
-          weight: 1,
+          weight: 26,
         },
         {
           addr: user2.address,
-          weight: 1,
+          weight: 26,
         },
       ],
-      thresholdPercentage: "0.51"
+      thresholdPercentage: 51
       ,
       maxVotingPeriod: {
         height: 1180000,
@@ -194,14 +194,14 @@ describe("User Identity", function () {
       members: [
         {
           addr: user1.address,
-          weight: 1,
+          weight: 26,
         },
         {
           addr: user2.address,
-          weight: 1,
+          weight: 26,
         },
       ],
-      thresholdPercentage: "0.51",
+      thresholdPercentage: 51,
       maxVotingPeriod: {
         height: 1180000,
       },

@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Addr, DaosResponse, ExecuteMsg, Duration, Decimal, RegisterDaoMsg, Member, IdType, GetIdentityByNameResponse, Identity, GetIdentityByOwnerResponse, InstantiateMsg, QueryMsg, Ordering } from "./Identityservice.types";
+import { Addr, DaosResponse, ExecuteMsg, Duration, RegisterDaoMsg, Member, IdType, GetIdentityByNameResponse, Identity, GetIdentityByOwnerResponse, InstantiateMsg, QueryMsg, Ordering } from "./Identityservice.types";
 export interface IdentityserviceReadOnlyInterface {
   contractAddress: string;
   getIdentityByOwner: ({
@@ -98,7 +98,7 @@ export interface IdentityserviceInterface extends IdentityserviceReadOnlyInterfa
     daoName: string;
     maxVotingPeriod: Duration;
     members: Member[];
-    thresholdPercentage: Decimal;
+    thresholdPercentage: number;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export class IdentityserviceClient extends IdentityserviceQueryClient implements IdentityserviceInterface {
@@ -135,7 +135,7 @@ export class IdentityserviceClient extends IdentityserviceQueryClient implements
     daoName: string;
     maxVotingPeriod: Duration;
     members: Member[];
-    thresholdPercentage: Decimal;
+    thresholdPercentage: number;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       register_dao: {
