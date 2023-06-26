@@ -217,7 +217,7 @@ fn gov_vote_helper(
     _user2: Addr,
     _user2_vote: VoteOption,
     proposal_id: u64,
-) -> AppResponse {
+) -> Result<AppResponse, ContractError> {
     let period_info_posting = contracts.governance.query_period_info(app).unwrap();
     println!("\n\n period_info_posting {:?}", period_info_posting);
     assert_eq!(period_info_posting.current_period, ProposalPeriod::Posting);
@@ -281,28 +281,13 @@ fn gov_vote_helper(
     let period_info_posting2 = contracts.governance.query_period_info(app).unwrap();
     println!("\n\n period_info_posting2 {:?}", period_info_posting2);
 
-    let conclude_proposal_result = contracts
-        .governance
-        .conclude(app, &user1, proposal_id)
-        .unwrap();
+    let conclude_proposal_result = contracts.governance.conclude(app, &user1, proposal_id);
+
     println!(
         "\n\n conclude_proposal_result {:?}",
         conclude_proposal_result
     );
 
-    // Test that you can't conclude a proposal (and execute its msgs) a second time
-    let conclude2_proposal_result = contracts
-        .governance
-        .conclude(app, &user1, proposal_id)
-        .unwrap_err();
-    assert_eq!(
-        conclude2_proposal_result,
-        ContractError::ProposalAlreadyConcluded {}
-    );
-    println!(
-        "\n\n conclude2_proposal_result {:?}",
-        conclude2_proposal_result
-    );
     conclude_proposal_result
 }
 
@@ -347,6 +332,8 @@ fn text_proposal_no_funding_attached() {
     )
     .unwrap();
 
+    let proposal_id = 1;
+
     // Vote on and execute the governance proposal
     gov_vote_helper(
         &mut app,
@@ -355,10 +342,24 @@ fn text_proposal_no_funding_attached() {
         VoteOption::Yes,
         user2.clone(),
         VoteOption::No,
-        1,
+        proposal_id,
+    )
+    .unwrap();
+
+    // Test that you can't conclude a proposal (and execute its msgs) a second time
+    let conclude2_proposal_result = contracts
+        .governance
+        .conclude(&mut app, &user1, proposal_id)
+        .unwrap_err();
+    assert_eq!(
+        conclude2_proposal_result,
+        ContractError::ProposalAlreadyConcluded {}
     );
 
-    let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
+    let final_proposal = contracts
+        .governance
+        .query_proposal(&mut app, proposal_id)
+        .unwrap();
     println!("\n\n final_proposal {:?}", final_proposal);
 }
 
@@ -414,6 +415,17 @@ fn text_proposal_with_funding_attached_amount_larger_0() {
         user2.clone(),
         VoteOption::No,
         1,
+    )
+    .unwrap();
+
+    // Test that you can't conclude a proposal (and execute its msgs) a second time
+    let conclude2_proposal_result = contracts
+        .governance
+        .conclude(&mut app, &user1, 1)
+        .unwrap_err();
+    assert_eq!(
+        conclude2_proposal_result,
+        ContractError::ProposalAlreadyConcluded {}
     );
 
     let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
@@ -471,13 +483,24 @@ fn text_proposal_with_funding_attached_amount_equal_0() {
         user2.clone(),
         VoteOption::No,
         1,
+    )
+    .unwrap();
+
+    // Test that you can't conclude a proposal (and execute its msgs) a second time
+    let conclude2_proposal_result = contracts
+        .governance
+        .conclude(&mut app, &user1, 1)
+        .unwrap_err();
+    assert_eq!(
+        conclude2_proposal_result,
+        ContractError::ProposalAlreadyConcluded {}
     );
 
     let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
     println!("\n\n final_proposal {:?}", final_proposal);
 }
 #[test]
-fn dao_membership_update_proposal() {
+fn dao_membership_update_proposal_succeeds() {
     let mut app = mock_app();
 
     let owner = Addr::unchecked("owner");
@@ -524,7 +547,7 @@ fn dao_membership_update_proposal() {
         &user1,
         &my_dao_addr.clone().into(),
         "Dao Proposal".into(),
-        "Wraps Governance Proposal".into(),
+        "Attaches Membership update msg".into(),
         vec![CosmosMsg::Wasm(wasm_msg)],
         None,
         PROPOSAL_REQUIRED_DEPOSIT,
@@ -652,6 +675,17 @@ fn core_dao_membership_update_2_members_fails() {
         Addr::unchecked(member2.addr.clone()),
         VoteOption::No,
         1,
+    )
+    .unwrap();
+
+    // Test that you can't conclude a proposal (and execute its msgs) a second time
+    let conclude2_proposal_result = contracts
+        .governance
+        .conclude(&mut app, &Addr::unchecked(member1.clone().addr), 1)
+        .unwrap_err();
+    assert_eq!(
+        conclude2_proposal_result,
+        ContractError::ProposalAlreadyConcluded {}
     );
 
     let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
@@ -1059,6 +1093,17 @@ fn propose_core_slot_brand_with_3_members_2_required_for_threshold_succeeds() {
         Addr::unchecked(member2.addr.clone()),
         VoteOption::No,
         1,
+    )
+    .unwrap();
+
+    // Test that you can't conclude a proposal (and execute its msgs) a second time
+    let conclude2_proposal_result = contracts
+        .governance
+        .conclude(&mut app, &Addr::unchecked(member1.clone().addr), 1)
+        .unwrap_err();
+    assert_eq!(
+        conclude2_proposal_result,
+        ContractError::ProposalAlreadyConcluded {}
     );
 
     let final_proposal = contracts.governance.query_proposal(&mut app, 1).unwrap();
@@ -1189,8 +1234,158 @@ fn propose_core_slot_brand_with_3_members_1_exceeds_threshold_fails() {
     assert_eq!(
         dao_execute_result.unwrap_err(),
         dao_multisig::ContractError::DowncastError {
-            text: "WrongCoreTeamMemberVotingPower (Each Core Team must have less than AbsoluteCount { weight: 51 } but one member has 60 voting power)!"
-                .to_string()
+            text: "WrongCoreTeamMemberVotingPower (Each Core Team must have less than AbsoluteCount { weight: 51 } but one members has 60 voting power)!".to_string()
+        }
+    );
+}
+#[test]
+fn propose_core_slot_update_membership_before_conclude_1_exceeds_threshold_set_core_slot_fails() {
+    let mut app = mock_app();
+
+    let owner = Addr::unchecked("owner");
+
+    let member1 = Member {
+        addr: "member1".into(),
+        weight: 26,
+    };
+    let member2 = Member {
+        addr: "member2".into(),
+        weight: 26,
+    };
+    let member3 = Member {
+        addr: "member3".into(),
+        weight: 10,
+    };
+
+    let members = vec![member1.clone(), member2.clone(), member3.clone()];
+
+    let contracts = instantiate_contracts(
+        &mut app,
+        Addr::unchecked(member1.addr.clone()),
+        Addr::unchecked(member2.addr.clone()),
+        owner.clone(),
+    );
+
+    println!("\n\n contracts {:#?}", contracts);
+
+    // Register an user identity with a valid name
+    contracts
+        .identityservice
+        .register_user(
+            &mut app,
+            &Addr::unchecked(member1.addr.clone()),
+            "user1_id".to_string(),
+        )
+        .unwrap();
+
+    // Register a DAO (required for submitting a proposal)
+    let my_dao_addr = create_dao_from(&mut app, contracts.clone(), members);
+
+    // Create a Dao Proposal for a Governance CoreSlot Proposal
+    let proposal_msg = ExecuteMsg::Propose(ProposalMsg::CoreSlot {
+        title: "Make me CoreTech".into(),
+        description: "Serving the chain".into(),
+        funding: Funding {
+            amount: 10_000_000u128.into(),
+            duration_in_blocks: 3000,
+        },
+        slot: CoreSlot::Brand {},
+    });
+
+    // Create, vote on and execute the dao proposal
+    DaoMultisigContract::gov_proposal_helper(
+        &mut app,
+        my_dao_addr.clone(),
+        &contracts.governance.addr().clone(),
+        Addr::unchecked(member1.addr.clone()),
+        Addr::unchecked(member2.addr.clone()),
+        to_binary(&proposal_msg).unwrap(),
+        PROPOSAL_REQUIRED_DEPOSIT,
+    )
+    .unwrap();
+
+    // Create the proposal to update the membership
+    let proposal_msg = dao_members::msg::ExecuteMsg::UpdateMembers {
+        remove: vec![],
+        add: vec![Member {
+            addr: "member1".into(),
+            weight: 55,
+        }],
+    };
+
+    println!("\n\n proposal_msg {:?}", proposal_msg);
+
+    let dao_multisig_config =
+        DaoMultisigContract::query_config(&mut app, my_dao_addr.clone()).unwrap();
+
+    // Wrap  proposal msg so we can attach it to the dao proposal
+    let wasm_msg = WasmMsg::Execute {
+        contract_addr: dao_multisig_config.dao_members_addr.clone().into(),
+        msg: to_binary(&proposal_msg).unwrap(),
+        funds: vec![],
+    };
+
+    let dao_propose_response = DaoMultisigContract::propose(
+        &mut app,
+        &Addr::unchecked(member1.addr.clone()),
+        &my_dao_addr.clone().into(),
+        "Dao Proposal".into(),
+        "Wraps Governance Proposal".into(),
+        vec![CosmosMsg::Wasm(wasm_msg)],
+        None,
+        PROPOSAL_REQUIRED_DEPOSIT,
+    );
+
+    let proposal_id = from_binary::<ProposeResponse>(&dao_propose_response.unwrap().data.unwrap())
+        .unwrap()
+        .proposal_id;
+
+    println!("\n\n proposal_id {:?}", proposal_id);
+
+    // User1 already voted automatically
+    // User2 votes yes to pass the proposal
+    let dao_vote2_result = DaoMultisigContract::vote(
+        &mut app,
+        &Addr::unchecked(member2.addr.clone()),
+        &my_dao_addr.clone().into(),
+        proposal_id,
+        cw3::Vote::Yes,
+    );
+    println!("\n\n dao_vote2_result ....{:?}", dao_vote2_result);
+
+    let dao_execute_result = DaoMultisigContract::execute(
+        &mut app,
+        &Addr::unchecked(member1.clone().addr),
+        &my_dao_addr.clone().into(),
+        proposal_id,
+    );
+    println!("\n\n dao_execute_result {:?}", dao_execute_result);
+
+    let multisig_voter_list =
+        DaoMultisigContract::query_list_voters(&app, my_dao_addr.clone()).unwrap();
+    println!("\n\n voter_list {:?}", multisig_voter_list);
+
+    let member_list =
+        DaoMembersContract::query_list_members(&app, dao_multisig_config.dao_members_addr).unwrap();
+    println!("\n\n member_list {:?}", member_list);
+
+    // Vote on and execute the governance proposal
+    let result = gov_vote_helper(
+        &mut app,
+        contracts.clone(),
+        Addr::unchecked(member1.addr.clone()),
+        VoteOption::Yes,
+        Addr::unchecked(member2.addr.clone()),
+        VoteOption::No,
+        1,
+    )
+    .unwrap_err();
+
+    assert_eq!(
+        result,
+        ContractError::WrongCoreTeamMemberVotingPower {
+            threshold: cw_utils::Threshold::AbsoluteCount { weight: 51 },
+            current: 55
         }
     );
 }
