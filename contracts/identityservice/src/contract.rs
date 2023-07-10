@@ -314,7 +314,7 @@ fn query_identity_by_name(deps: Deps, name: String) -> StdResult<GetIdentityByNa
 
 // let's not import a regexp library and just do these checks by hand
 fn invalid_char(c: char) -> bool {
-    let is_valid = c.is_digit(10) || c.is_ascii_lowercase() || (c == '.' || c == '-' || c == '_');
+    let is_valid = c.is_digit(10) || c.is_ascii_lowercase(); // we may allow these in the future: || (c == '.' || c == '-' || c == '_');
     !is_valid
 }
 
