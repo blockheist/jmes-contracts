@@ -174,8 +174,10 @@ pub struct ProposalResponse {
     pub posting_start: u64,
     pub voting_start: u64,
     pub voting_end: u64,
+    pub funding: Option<Funding>,
     pub concluded_at_height: Option<u64>,
     pub status: ProposalStatus,
+    pub msgs: Option<Vec<CosmosMsg>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
