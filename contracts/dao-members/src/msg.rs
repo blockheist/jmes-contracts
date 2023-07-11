@@ -1,5 +1,4 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Addr;
 use cw4::Member;
 use cw_utils::{Duration, Threshold};
 
@@ -9,7 +8,7 @@ pub struct InstantiateMsg {
     pub dao_name: String,
     pub threshold_percentage: u64,
     pub max_voting_period: Duration,
-    pub governance_addr: Addr,
+    pub governance_addr: String,
 }
 
 #[cw_serde]

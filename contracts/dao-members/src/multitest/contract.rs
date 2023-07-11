@@ -49,7 +49,7 @@ impl DaoMembersContract {
                 dao_name,
                 max_voting_period,
                 threshold_percentage,
-                governance_addr,
+                governance_addr: governance_addr.to_string(),
             },
             &[],
             label,

@@ -51,7 +51,7 @@ pub fn instantiate(
             },
             max_voting_period: msg.max_voting_period,
             dao_name: msg.dao_name,
-            governance_addr: msg.governance_addr,
+            governance_addr: deps.api.addr_validate(msg.governance_addr.as_str())?,
         },
     )?;
 

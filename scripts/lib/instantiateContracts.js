@@ -107,9 +107,9 @@ async function instantiateContracts(client, user, options = {}) {
         owner: process.env.OWNER, // only used once for set_contract
         proposal_required_deposit: "10000000", // 10_000_000 ujmes
         proposal_required_percentage: 10, // 10% more net yes votes than no votes
-        period_start_epoch: Math.floor(Date.now() / 1000), // 1660000000,
-        posting_period_length: 70, // 70 seconds
-        voting_period_length: 20, // 20 seconds
+        period_start_epoch: parseInt(process.env.PERIOD_START_EPOCH), // 1689069600,
+        posting_period_length: parseInt(process.env.POSTING_PERIOD_LENGTH), // seconds
+        voting_period_length: parseInt(process.env.VOTING_PERIOD_LENGTH), // seconds
       },
     },
     {

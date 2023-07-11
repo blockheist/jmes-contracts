@@ -1202,13 +1202,13 @@ mod query {
             voting_start: proposal.voting_start,
             voting_end: proposal.voting_end,
             concluded_at_height: proposal.concluded_at_height,
-            funding: proposal.funding,
+            funding: proposal.clone().funding,
+            msgs: proposal.clone().msgs,
             status: proposal.status(
                 &deps.querier,
                 env.clone(),
                 config.proposal_required_percentage,
             ),
-            msgs: proposal.msgs,
         })
     }
 
@@ -1245,6 +1245,8 @@ mod query {
                     voting_start: proposal.voting_start,
                     voting_end: proposal.voting_end,
                     concluded_at_height: proposal.concluded_at_height,
+                    funding: proposal.clone().funding,
+                    msgs: proposal.clone().msgs,
                     status: proposal.status(
                         &deps.querier,
                         env.clone(),

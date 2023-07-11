@@ -139,7 +139,7 @@ pub fn execute_register_dao(
         dao_name: register_dao_msg.dao_name,
         threshold_percentage: register_dao_msg.threshold_percentage,
         max_voting_period: register_dao_msg.max_voting_period,
-        governance_addr: config.governance_addr,
+        governance_addr: config.governance_addr.to_string(),
     };
 
     // Instantiate the DAO contract
