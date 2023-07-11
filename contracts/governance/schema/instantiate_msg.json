@@ -11,12 +11,6 @@
     "voting_period_length"
   ],
   "properties": {
-    "art_dealer_addr": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
     "owner": {
       "type": "string"
     },

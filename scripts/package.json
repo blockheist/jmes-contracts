@@ -5,7 +5,7 @@
   "main": "generate.js",
   "type": "module",
   "scripts": {
-    "generate": "rm ../e2e/client/* ;  node generate.js",
+    "generate": "rm ../e2e/client/* ; ./schema.sh ; node generate.js",
     "optimize": "rm ../artifacts/* ; ./optimize.sh",
     "deploy:local": "NETWORK_ENV=local node deploy.js  && cp ./configs/*local.json ../e2e/configs",
     "deploy:jmes-888": "NETWORK_ENV=jmes-888 node deploy.js  && cp ./configs/*jmes-888.json ../e2e/configs"
@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@cosmwasm/ts-codegen": "^0.24.0",
+    "@cosmwasm/ts-codegen": "^0.30.1",
     "@terra-money/terra.js": "^3.1.5",
     "chai": "^4.3.4",
     "dotenv": "^12.0.4",
