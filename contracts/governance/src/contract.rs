@@ -99,7 +99,7 @@ mod exec {
     use cw3::VoterListResponse;
     use dao_multisig::msg::ConfigResponse;
     use identityservice::msg::GetIdentityByOwnerResponse;
-    use jmes::constants::{MAX_DAO_MEMBERS, MIN_CORE_TEAM_MEMBERS, MIN_VOTE_COINS};
+    use jmes::constants::{MAX_DAO_MEMBERS, MIN_CORE_TEAM_MEMBERS};
 
     use super::*;
 
@@ -580,15 +580,7 @@ mod exec {
             let vote_coins = bjmes_amount.amount;
 
             if vote_coins.is_zero() {
-                return Err(ContractError::NoVoteCoins {
-                    min_vote_coins: MIN_VOTE_COINS,
-                });
-            }
-
-            if vote_coins < Uint128::from(MIN_VOTE_COINS) {
-                return Err(ContractError::InsufficientVoteCoins {
-                    min_vote_coins: MIN_VOTE_COINS,
-                });
+                return Err(ContractError::NoVoteCoins {});
             }
 
             match vote {

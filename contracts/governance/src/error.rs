@@ -14,10 +14,8 @@ pub enum ContractError {
     WrongCoreTeamMemberVotingPower { threshold: Threshold, current: u64 },
     #[error("InsufficientProposalFee ({proposal_fee} JMES fee required to post a proposal)!")]
     InsufficientProposalFee { proposal_fee: u128 },
-    #[error("NoVoteCoins ({min_vote_coins}  bJMES required to vote)!")]
-    NoVoteCoins { min_vote_coins: u128 },
-    #[error("InsufficientVoteCoins ({min_vote_coins} bJMES required to vote)!")]
-    InsufficientVoteCoins { min_vote_coins: u128 },
+    #[error("NoVoteCoins bJMES required to vote)!")]
+    NoVoteCoins {},
     #[error("User already voted!")]
     UserAlreadyVoted {},
     #[error("ProposalNotActive")]
