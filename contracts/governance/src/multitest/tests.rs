@@ -7,7 +7,7 @@ use cosmwasm_std::{
     to_binary, Addr, Coin, CosmosMsg, Timestamp, Uint128, WasmMsg,
 };
 use cw4::Member;
-use cw_multi_test::{next_block, App, AppBuilder, AppResponse, BankKeeper};
+use cw_multi_test::{next_block, App, AppBuilder, AppResponse, BankKeeper, Wasm};
 use cw_utils::Duration;
 use dao_members::multitest::contract::DaoMembersContract;
 use dao_multisig::{msg::ProposeResponse, multitest::contract::DaoMultisigContract};
@@ -21,9 +21,6 @@ use crate::{
 };
 
 use super::contract::GovernanceContract;
-
-// Address for burning the proposal fee
-const BURN_ADDRESS: &str = "jmes1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqf5laz2";
 
 const SECONDS_PER_BLOCK: u64 = 5;
 const PROPOSAL_REQUIRED_DEPOSIT: u128 = 10_000_000; // 10 JMES
@@ -194,7 +191,7 @@ fn create_dao_from(app: &mut App, contracts: Contracts, members: Vec<Member>) ->
             app,
             &Addr::unchecked(members[0].addr.clone()),
             members,
-            "my_dao".to_string(),
+            "mydao".to_string(),
             51u64,
             Duration::Time(2000000),
         )
@@ -305,7 +302,7 @@ fn text_proposal_no_funding_attached() {
     // Register an user identity with a valid name
     contracts
         .identityservice
-        .register_user(&mut app, &user1, "user1_id".to_string())
+        .register_user(&mut app, &user1, "user1id".to_string())
         .unwrap();
 
     // Register a DAO (required for submitting a proposal)
@@ -376,7 +373,7 @@ fn text_proposal_with_funding_attached_amount_larger_0() {
     // Register an user identity with a valid name
     contracts
         .identityservice
-        .register_user(&mut app, &user1, "user1_id".to_string())
+        .register_user(&mut app, &user1, "user1id".to_string())
         .unwrap();
 
     // Register a DAO (required for submitting a proposal)
@@ -444,7 +441,7 @@ fn text_proposal_with_funding_attached_amount_equal_0() {
     // Register an user identity with a valid name
     contracts
         .identityservice
-        .register_user(&mut app, &user1, "user1_id".to_string())
+        .register_user(&mut app, &user1, "user1id".to_string())
         .unwrap();
 
     // Register a DAO (required for submitting a proposal)
@@ -636,7 +633,7 @@ fn core_dao_membership_update_2_members_fails() {
         .register_user(
             &mut app,
             &Addr::unchecked(member1.addr.clone()),
-            "user1_id".to_string(),
+            "user1id".to_string(),
         )
         .unwrap();
 
@@ -708,7 +705,18 @@ fn core_dao_membership_update_2_members_fails() {
             voting_start: 40,
             voting_end: 80,
             concluded_at_height: Some(12363),
-            status: ProposalStatus::SuccessConcluded
+            status: ProposalStatus::SuccessConcluded,
+            funding: Some(Funding {
+                amount: Uint128::from(10000000u128),
+                duration_in_blocks: 3000
+            }),
+            msgs: Some(vec![crate::multitest::tests::CosmosMsg::Wasm(
+                crate::multitest::tests::WasmMsg::Execute {
+                    contract_addr: "contract0".into(),
+                    msg: to_binary(&crate::ExecuteMsg::SetCoreSlot { proposal_id: 1 }).unwrap(),
+                    funds: vec![]
+                }
+            )]),
         }
     );
 
@@ -810,7 +818,7 @@ fn core_dao_membership_update_1_exceeds_threshold_fails() {
         .register_user(
             &mut app,
             &Addr::unchecked(member1.addr.clone()),
-            "user1_id".to_string(),
+            "user1id".to_string(),
         )
         .unwrap();
 
@@ -871,7 +879,18 @@ fn core_dao_membership_update_1_exceeds_threshold_fails() {
             voting_start: 40,
             voting_end: 80,
             concluded_at_height: Some(12363),
-            status: ProposalStatus::SuccessConcluded
+            status: ProposalStatus::SuccessConcluded,
+            funding: Some(Funding {
+                amount: Uint128::from(10000000u128),
+                duration_in_blocks: 3000
+            }),
+            msgs: Some(vec![crate::multitest::tests::CosmosMsg::Wasm(
+                crate::multitest::tests::WasmMsg::Execute {
+                    contract_addr: "contract0".into(),
+                    msg: to_binary(&crate::ExecuteMsg::SetCoreSlot { proposal_id: 1 }).unwrap(),
+                    funds: vec![]
+                }
+            )]),
         }
     );
 
@@ -955,7 +974,7 @@ fn propose_core_slot_brand_with_2_members_fails() {
     // Register an user identity with a valid name
     contracts
         .identityservice
-        .register_user(&mut app, &user1, "user1_id".to_string())
+        .register_user(&mut app, &user1, "user1id".to_string())
         .unwrap();
 
     // Register a DAO (required for submitting a proposal)
@@ -1054,7 +1073,7 @@ fn propose_core_slot_brand_with_3_members_2_required_for_threshold_succeeds() {
         .register_user(
             &mut app,
             &Addr::unchecked(member1.addr.clone()),
-            "user1_id".to_string(),
+            "user1id".to_string(),
         )
         .unwrap();
 
@@ -1126,7 +1145,18 @@ fn propose_core_slot_brand_with_3_members_2_required_for_threshold_succeeds() {
             voting_start: 40,
             voting_end: 80,
             concluded_at_height: Some(12363),
-            status: ProposalStatus::SuccessConcluded
+            status: ProposalStatus::SuccessConcluded,
+            funding: Some(Funding {
+                amount: Uint128::from(10000000u128),
+                duration_in_blocks: 3000
+            }),
+            msgs: Some(vec![crate::multitest::tests::CosmosMsg::Wasm(
+                crate::multitest::tests::WasmMsg::Execute {
+                    contract_addr: "contract0".into(),
+                    msg: to_binary(&crate::ExecuteMsg::SetCoreSlot { proposal_id: 1 }).unwrap(),
+                    funds: vec![]
+                }
+            )]),
         }
     )
 }
@@ -1166,7 +1196,7 @@ fn propose_core_slot_brand_with_3_members_1_exceeds_threshold_fails() {
         .register_user(
             &mut app,
             &Addr::unchecked(member1.addr.clone()),
-            "user1_id".to_string(),
+            "user1id".to_string(),
         )
         .unwrap();
 
@@ -1274,7 +1304,7 @@ fn propose_core_slot_update_membership_before_conclude_1_exceeds_threshold_set_c
         .register_user(
             &mut app,
             &Addr::unchecked(member1.addr.clone()),
-            "user1_id".to_string(),
+            "user1id".to_string(),
         )
         .unwrap();
 
@@ -1425,7 +1455,7 @@ fn propose_core_slot_update_membership_before_conclude_2_members_set_core_slot_f
         .register_user(
             &mut app,
             &Addr::unchecked(member1.addr.clone()),
-            "user1_id".to_string(),
+            "user1id".to_string(),
         )
         .unwrap();
 
@@ -1549,7 +1579,7 @@ fn propose_core_slot_update_membership_before_conclude_2_members_set_core_slot_f
 //     // Register an user identity with a valid name
 //     contracts
 //         .identityservice
-//         .register_user(&mut app, &user1, "user1_id".to_string())
+//         .register_user(&mut app, &user1, "user1id".to_string())
 //         .unwrap();
 
 //     // Register a DAO (required for submitting a proposal)
@@ -1760,7 +1790,7 @@ fn propose_core_slot_update_membership_before_conclude_2_members_set_core_slot_f
 //     // Register an user identity with a valid name
 //     contracts
 //         .identityservice
-//         .register_user(&mut app, &user1, "user1_id".to_string())
+//         .register_user(&mut app, &user1, "user1id".to_string())
 //         .unwrap();
 
 //     // Register a DAO (required for submitting a proposal)
@@ -1874,7 +1904,7 @@ fn propose_core_slot_update_membership_before_conclude_2_members_set_core_slot_f
 //     // Register an user identity with a valid name
 //     contracts
 //         .identityservice
-//         .register_user(&mut app, &user1, "user1_id".to_string())
+//         .register_user(&mut app, &user1, "user1id".to_string())
 //         .unwrap();
 
 //     // Register a DAO (required for submitting a proposal)
@@ -1971,7 +2001,7 @@ fn propose_core_slot_update_membership_before_conclude_2_members_set_core_slot_f
 
 //     contracts
 //         .identityservice
-//         .register_user(&mut app, &user1, "user1_id".to_string())
+//         .register_user(&mut app, &user1, "user1id".to_string())
 //         .unwrap();
 
 //     let set_core_slot_err = contracts
@@ -1999,7 +2029,7 @@ fn propose_core_slot_update_membership_before_conclude_2_members_set_core_slot_f
 
 //     contracts
 //         .identityservice
-//         .register_user(&mut app, &user1, "user1_id".to_string())
+//         .register_user(&mut app, &user1, "user1id".to_string())
 //         .unwrap();
 //     app.update_block(next_block);
 
@@ -2142,7 +2172,7 @@ fn propose_core_slot_update_membership_before_conclude_2_members_set_core_slot_f
 //     // Register user identity with valid name
 //     contracts
 //         .identityservice
-//         .register_user(&mut app, &user1, "user1_id".to_string())
+//         .register_user(&mut app, &user1, "user1id".to_string())
 //         .unwrap();
 
 //     // Create the flex-multisig dao
@@ -2301,7 +2331,7 @@ fn propose_core_slot_update_membership_before_conclude_2_members_set_core_slot_f
 //     // Register user identity with valid name
 //     contracts
 //         .identityservice
-//         .register_user(&mut app, &user1, "user1_id".to_string())
+//         .register_user(&mut app, &user1, "user1id".to_string())
 //         .unwrap();
 
 //     // Create the flex-multisig dao
@@ -2502,7 +2532,7 @@ fn propose_core_slot_update_membership_before_conclude_2_members_set_core_slot_f
 //     // Register user identity with valid name
 //     contracts
 //         .identityservice
-//         .register_user(&mut app, &user1, "user1_id".to_string())
+//         .register_user(&mut app, &user1, "user1id".to_string())
 //         .unwrap();
 
 //     // Create the flex-multisig dao
