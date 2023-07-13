@@ -109,7 +109,12 @@ impl Proposal {
 
             let coins_net_yes = coins_yes.checked_sub(coins_no).unwrap_or_default();
 
-            let coins_total = &querier.query_supply("bujmes").unwrap().amount;
+            let coins_total = &querier
+                .query_supply("bujmes")
+                .unwrap()
+                .amount
+                .checked_sub(Uint128::new(100_000_000_000_000)) // FIXME: remove this hack
+                .unwrap();
 
             let mut yes_ratio: Decimal = Decimal::zero();
 
