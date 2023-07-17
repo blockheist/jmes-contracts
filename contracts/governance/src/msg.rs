@@ -167,6 +167,7 @@ pub struct ProposalResponse {
     pub prop_type: ProposalType,
     pub coins_yes: Uint128,
     pub coins_no: Uint128,
+    pub coins_total: Uint128,
     pub yes_voters: Vec<Addr>,
     pub no_voters: Vec<Addr>,
     pub deposit_amount: Uint128,

@@ -80,6 +80,8 @@ pub struct Proposal {
     pub voting_start: u64,
     pub voting_end: u64,
     pub concluded_at_height: Option<u64>,
+    pub concluded_status: Option<ProposalStatus>,
+    pub concluded_coins_total: Option<Uint128>,
     pub funding: Option<Funding>,
     pub msgs: Option<Vec<CosmosMsg>>,
 }
@@ -91,7 +93,24 @@ impl Proposal {
         Ok(id)
     }
 
-    pub fn status(
+    pub fn update_coins_total(&mut self, &querier: &QuerierWrapper) {
+        self.concluded_coins_total = Some(self.query_coins_total(&querier));
+    }
+
+    pub fn query_coins_total(&self, &querier: &QuerierWrapper) -> Uint128 {
+        if self.concluded_at_height.is_some() {
+            return self.concluded_coins_total.unwrap();
+        } else {
+            querier
+                .query_supply("bujmes")
+                .unwrap()
+                .amount
+                .checked_sub(Uint128::new(100_000_000_000_000)) // FIXME: remove this hack
+                .unwrap()
+        }
+    }
+
+    pub fn current_status(
         &self,
         &querier: &QuerierWrapper,
         env: Env,
@@ -109,17 +128,11 @@ impl Proposal {
 
             let coins_net_yes = coins_yes.checked_sub(coins_no).unwrap_or_default();
 
-            let coins_total = &querier
-                .query_supply("bujmes")
-                .unwrap()
-                .amount
-                .checked_sub(Uint128::new(100_000_000_000_000)) // FIXME: remove this hack
-                .unwrap();
-
+            let coins_total = self.query_coins_total(&querier);
             let mut yes_ratio: Decimal = Decimal::zero();
 
             if !coins_total.is_zero() {
-                yes_ratio = Decimal::from_ratio(coins_net_yes, *coins_total);
+                yes_ratio = Decimal::from_ratio(coins_net_yes, coins_total);
             }
 
             let required_yes_ratio = Decimal::from_ratio(proposal_required_percentage, 100u64);
@@ -139,6 +152,31 @@ impl Proposal {
             };
         }
         status
+    }
+
+    pub fn update_status(
+        &mut self,
+        &querier: &QuerierWrapper,
+        env: Env,
+        proposal_required_percentage: u64,
+    ) {
+        self.concluded_status =
+            Some(self.current_status(&querier, env, proposal_required_percentage));
+    }
+
+    pub fn query_status(
+        &self,
+        &querier: &QuerierWrapper,
+        env: Env,
+        proposal_required_percentage: u64,
+    ) -> ProposalStatus {
+        // If the proposal is concluded, return the final static status
+        if self.concluded_at_height.is_some() {
+            return self.concluded_status.clone().unwrap();
+        } else {
+            // Otherwise, return the current status based on updating cycle and coin data
+            self.current_status(&querier, env, proposal_required_percentage)
+        }
     }
 
     pub fn validate(&self) -> Result<(), ContractError> {

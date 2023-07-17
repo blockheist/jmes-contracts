@@ -267,6 +267,8 @@ mod exec {
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
             concluded_at_height: None,
+            concluded_status: None,
+            concluded_coins_total: None,
             funding,
             msgs: None,
         };
@@ -329,6 +331,8 @@ mod exec {
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
             concluded_at_height: None,
+            concluded_status: None,
+            concluded_coins_total: None,
             funding: Some(funding),
             msgs: Some(vec![msg]),
         };
@@ -387,6 +391,8 @@ mod exec {
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
             concluded_at_height: None,
+            concluded_status: None,
+            concluded_coins_total: None,
             funding: None,
             msgs: Some(msgs),
         };
@@ -516,6 +522,8 @@ mod exec {
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
             concluded_at_height: None,
+            concluded_status: None,
+            concluded_coins_total: None,
             funding: Some(funding),
             msgs: Some(vec![CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
@@ -614,6 +622,12 @@ mod exec {
         }
 
         proposal.concluded_at_height = Some(env.block.height);
+        proposal.update_status(
+            &deps.querier,
+            env.clone(),
+            config.proposal_required_percentage,
+        );
+        proposal.update_coins_total(&deps.querier);
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
 
@@ -625,12 +639,7 @@ mod exec {
         winning_grants.retain(|grant| grant.expire_at_height >= env.clone().block.height);
 
         // On proposal success, add winning_grant, process funding proposal and execute attached msgs
-        if proposal.status(
-            &deps.querier,
-            env.clone(),
-            config.proposal_required_percentage,
-        ) == ProposalStatus::SuccessConcluded
-        {
+        if proposal.concluded_status.unwrap() == ProposalStatus::SuccessConcluded {
             if proposal.msgs.is_some() {
                 msgs.extend(proposal.msgs.unwrap());
             }
@@ -749,6 +758,8 @@ mod exec {
             voting_start: period_info.current_voting_start,
             voting_end: period_info.current_voting_end,
             concluded_at_height: None,
+            concluded_status: None,
+            concluded_coins_total: None,
             funding: None,
             msgs: Some(vec![CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
@@ -1196,11 +1207,12 @@ mod query {
             concluded_at_height: proposal.concluded_at_height,
             funding: proposal.clone().funding,
             msgs: proposal.clone().msgs,
-            status: proposal.status(
+            status: proposal.query_status(
                 &deps.querier,
                 env.clone(),
                 config.proposal_required_percentage,
             ),
+            coins_total: proposal.query_coins_total(&deps.querier),
         })
     }
 
@@ -1239,11 +1251,12 @@ mod query {
                     concluded_at_height: proposal.concluded_at_height,
                     funding: proposal.clone().funding,
                     msgs: proposal.clone().msgs,
-                    status: proposal.status(
+                    status: proposal.query_status(
                         &deps.querier,
                         env.clone(),
                         config.proposal_required_percentage,
                     ),
+                    coins_total: proposal.query_coins_total(&deps.querier),
                 })
             })
             .collect::<StdResult<Vec<_>>>()?;
