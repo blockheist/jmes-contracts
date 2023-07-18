@@ -621,13 +621,13 @@ mod exec {
             return Err(ContractError::ProposalAlreadyConcluded {});
         }
 
-        proposal.concluded_at_height = Some(env.block.height);
-        proposal.update_status(
+        proposal.update_coins_total(&deps.querier);
+        proposal.set_concluded_status(
             &deps.querier,
             env.clone(),
             config.proposal_required_percentage,
         );
-        proposal.update_coins_total(&deps.querier);
+        proposal.concluded_at_height = Some(env.block.height);
 
         PROPOSALS.save(deps.storage, id, &proposal)?;
 

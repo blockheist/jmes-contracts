@@ -4,6 +4,7 @@
   "type": "object",
   "required": [
     "coins_no",
+    "coins_total",
     "coins_yes",
     "dao",
     "deposit_amount",
@@ -21,6 +22,9 @@
   ],
   "properties": {
     "coins_no": {
+      "$ref": "#/definitions/Uint128"
+    },
+    "coins_total": {
       "$ref": "#/definitions/Uint128"
     },
     "coins_yes": {

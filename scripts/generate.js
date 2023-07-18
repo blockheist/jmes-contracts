@@ -7,14 +7,14 @@ codegen
         name: "art-dealer",
         dir: "../contracts/art-dealer/schema",
       },
-      {
-        name: "dao-members",
-        dir: "../contracts/dao-members/schema",
-      },
-      {
-        name: "dao-multisig",
-        dir: "../contracts/dao-multisig/schema",
-      },
+      // {
+      //   name: "dao-members",
+      //   dir: "../contracts/dao-members/schema",
+      // },
+      // {
+      //   name: "dao-multisig",
+      //   dir: "../contracts/dao-multisig/schema",
+      // },
       {
         name: "governance",
         dir: "../contracts/governance/schema",

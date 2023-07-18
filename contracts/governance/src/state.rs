@@ -98,7 +98,7 @@ impl Proposal {
     }
 
     pub fn query_coins_total(&self, &querier: &QuerierWrapper) -> Uint128 {
-        if self.concluded_at_height.is_some() {
+        if self.concluded_coins_total.is_some() {
             return self.concluded_coins_total.unwrap();
         } else {
             querier
@@ -115,6 +115,7 @@ impl Proposal {
         &querier: &QuerierWrapper,
         env: Env,
         proposal_required_percentage: u64,
+        is_concluded: bool,
     ) -> ProposalStatus {
         let mut status = ProposalStatus::Posted;
 
@@ -138,7 +139,7 @@ impl Proposal {
             let required_yes_ratio = Decimal::from_ratio(proposal_required_percentage, 100u64);
 
             status = if yes_ratio >= required_yes_ratio {
-                if self.concluded_at_height.is_some() {
+                if is_concluded {
                     ProposalStatus::SuccessConcluded
                 } else {
                     ProposalStatus::Success
@@ -154,14 +155,14 @@ impl Proposal {
         status
     }
 
-    pub fn update_status(
+    pub fn set_concluded_status(
         &mut self,
         &querier: &QuerierWrapper,
         env: Env,
         proposal_required_percentage: u64,
     ) {
         self.concluded_status =
-            Some(self.current_status(&querier, env, proposal_required_percentage));
+            Some(self.current_status(&querier, env, proposal_required_percentage, true));
     }
 
     pub fn query_status(
@@ -171,11 +172,11 @@ impl Proposal {
         proposal_required_percentage: u64,
     ) -> ProposalStatus {
         // If the proposal is concluded, return the final static status
-        if self.concluded_at_height.is_some() {
+        if self.concluded_status.is_some() {
             return self.concluded_status.clone().unwrap();
         } else {
             // Otherwise, return the current status based on updating cycle and coin data
-            self.current_status(&querier, env, proposal_required_percentage)
+            self.current_status(&querier, env, proposal_required_percentage, false)
         }
     }
 
