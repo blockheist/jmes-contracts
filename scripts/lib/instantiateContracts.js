@@ -171,7 +171,18 @@ async function instantiateContracts(client, user, options = {}) {
 
   // console.log("result :>> ", result);
 
-  console.log("contractAddrs :>> ", readContractAddrs());
+  const finalContractAddrs = readContractAddrs();
+  console.log("contractAddrs :>> ", finalContractAddrs);
+
+  console.log(
+    `NEXT_PUBLIC_GOVERNANCE_CONTRACT = \"${finalContractAddrs["governance"]}\"`
+  );
+  console.log(
+    `NEXT_PUBLIC_IDENTITY_SERVICE_CONTRACT = \"${finalContractAddrs["identityservice"]}\"`
+  );
+  console.log(
+    `NEXT_PUBLIC_ARTIST_CURATOR = \"${finalContractAddrs["art_dealer"]}\"`
+  );
 
   return readContractAddrs();
 }
