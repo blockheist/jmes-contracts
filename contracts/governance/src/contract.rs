@@ -1229,7 +1229,7 @@ mod query {
         let start = start.map(|start| Bound::inclusive(start));
 
         let proposals = PROPOSALS
-            .range(deps.storage, start, None, Order::Ascending)
+            .range(deps.storage, start, None, Order::Descending)
             .take(limit)
             .map(|item| {
                 let (_, proposal) = item?;
