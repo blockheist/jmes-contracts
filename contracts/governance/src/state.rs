@@ -145,7 +145,7 @@ impl Proposal {
                     ProposalStatus::Success
                 }
             } else {
-                if self.concluded_at_height.is_some() {
+                if is_concluded {
                     ProposalStatus::ExpiredConcluded
                 } else {
                     ProposalStatus::Expired
