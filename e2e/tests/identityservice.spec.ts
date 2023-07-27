@@ -190,7 +190,7 @@ describe("User Identity", function () {
     const identityClient = new IdentityserviceClient(client, user2, contract_addr);
 
     const result = await identityClient.registerDao({
-      daoName: user2_name + "another_dao",
+      daoName: user2_name + "anotherdao",
       members: [
         {
           addr: user1.address,
