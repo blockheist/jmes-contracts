@@ -82,7 +82,7 @@ describe("End-to-End Tests", function () {
               weight: 1,
             },
           ],
-          thresholdPercentage: "0.51",
+          thresholdPercentage: 51,
           maxVotingPeriod: {
             height: 1180000,
           },
@@ -445,6 +445,10 @@ describe("End-to-End Tests", function () {
             title: "Make me CoreTech",
             description: "Serving the Chain",
             slot,
+            funding: {
+              amount: "1000000",
+              duration_in_blocks: 485700
+            }
 
           }
         }
