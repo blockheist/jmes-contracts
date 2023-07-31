@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, Uint128, ConfigResponse, ExecuteMsg, ProposalMsg, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, Binary, IbcMsg, Timestamp, Uint64, WasmMsg, GovMsg, VoteOption, CoreSlot, Funding, Coin, Empty, IbcTimeout, IbcTimeoutBlock, Decimal, GovernanceCoreSlotsResponse, SlotVoteResult, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg, WinningGrantsResponse, WinningGrant } from "./Governance.types";
+import { Addr, Uint128, ConfigResponse, Decimal, CoreSlotsResponse, SlotVoteResult, ExecuteMsg, ProposalMsg, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, Binary, IbcMsg, Timestamp, Uint64, WasmMsg, GovMsg, VoteOption, CoreSlot, Funding, Coin, Empty, IbcTimeout, IbcTimeoutBlock, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg, WinningGrantsResponse, WinningGrant } from "./Governance.types";
 export interface GovernanceReadOnlyInterface {
   contractAddress: string;
   config: () => Promise<ConfigResponse>;

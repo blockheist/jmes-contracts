@@ -15,6 +15,21 @@ export interface ConfigResponse {
   voting_period_length: number;
   [k: string]: unknown;
 }
+export type Decimal = string;
+export interface CoreSlotsResponse {
+  brand?: SlotVoteResult | null;
+  core_tech?: SlotVoteResult | null;
+  creative?: SlotVoteResult | null;
+  [k: string]: unknown;
+}
+export interface SlotVoteResult {
+  dao: Addr;
+  proposal_funding_end: number;
+  proposal_id: number;
+  proposal_voting_end: number;
+  yes_ratio: Decimal;
+  [k: string]: unknown;
+}
 export type ExecuteMsg = {
   propose: ProposalMsg;
 } | {
@@ -260,21 +275,6 @@ export interface IbcTimeout {
 export interface IbcTimeoutBlock {
   height: number;
   revision: number;
-  [k: string]: unknown;
-}
-export type Decimal = string;
-export interface GovernanceCoreSlotsResponse {
-  brand?: SlotVoteResult | null;
-  core_tech?: SlotVoteResult | null;
-  creative?: SlotVoteResult | null;
-  [k: string]: unknown;
-}
-export interface SlotVoteResult {
-  dao: Addr;
-  proposal_funding_end: number;
-  proposal_id: number;
-  proposal_voting_end: number;
-  yes_ratio: Decimal;
   [k: string]: unknown;
 }
 export interface InstantiateMsg {

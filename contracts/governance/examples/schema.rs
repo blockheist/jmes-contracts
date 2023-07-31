@@ -22,6 +22,10 @@ fn main() {
     export_schema(&schema_for!(ProposalResponse), &out_dir);
     export_schema(&schema_for!(ProposalsResponse), &out_dir);
     export_schema(&schema_for!(ProposalMsg), &out_dir);
-    export_schema(&schema_for!(CoreSlotsResponse), &out_dir);
+    export_schema_with_title(
+        &schema_for!(CoreSlotsResponse),
+        &out_dir,
+        "CoreSlotsResponse",
+    );
     export_schema(&schema_for!(WinningGrantsResponse), &out_dir);
 }
