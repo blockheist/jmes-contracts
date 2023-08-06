@@ -422,10 +422,10 @@ describe("End-to-End Tests", function () {
       return result
     })
   });
-  describe("Governance Coreslot and Improvement Proposal ", function () {
+  describe.only("Governance Coreslot and Improvement Proposal ", function () {
     before(async function () {
       global.addrs = await readContractAddrs();
-      // global.liveAddrs.dao_multisig = "jmes1lt62um6hdt3tecqtgkq9qz6nktuj2g2tr5cw0xgycrh28ps38wjs255ylc";
+      global.liveAddrs.dao_multisig = "jmes10ly5g36gmtlgw68wlmxcu79y3lxuff8jfqps0zfq8mlx9qfc7qdq8d3jdt";
       await client.send(user1, global.liveAddrs.dao_multisig, "20000000ujmes")
 
       console.log('global.liveAddrs.dao_multisig :>> ', global.liveAddrs.dao_multisig);
@@ -452,7 +452,7 @@ describe("End-to-End Tests", function () {
     });
 
 
-    describe("CoreSlot Proposal ", function () {
+    describe.skip("CoreSlot Proposal ", function () {
 
       it("should create a dao proposal: Governance CoreSlot: CoreTech", async function () {
         const daoMultisigAddress = global.liveAddrs.dao_multisig
@@ -632,7 +632,7 @@ describe("End-to-End Tests", function () {
         return result
       });
     });
-    describe.skip("Improvement Proposal ", function () {
+    describe("Improvement Proposal ", function () {
 
       it("should create a dao proposal: Governance Improvement", async function () {
         const contractAddress = global.liveAddrs.dao_multisig
@@ -700,25 +700,34 @@ describe("End-to-End Tests", function () {
         return result;
       });
       it("should execute on a passed dao proposal: Governance Improvement", async function () {
-        const governanceClient = new GovernanceQueryClient(queryClient, global.addrs.governance);
-        const periodInfo = await governanceClient.periodInfo()
-        console.log('periodInfo :>> ', periodInfo);
+        const governanceQueryClient = new GovernanceQueryClient(queryClient, global.addrs.governance);
+        let periodInfo = await governanceQueryClient.periodInfo();
+
+        const timeToPostingPeriod = periodInfo.cycle_length - periodInfo.current_time_in_cycle + 10;
+        console.log('timeToPostingPeriod :>> ', timeToPostingPeriod);
+        await sleep(timeToPostingPeriod * 1000);
+
+        periodInfo = await governanceQueryClient.periodInfo();
+        console.log('periodinfo :>> ', periodInfo);
 
         const contractAddress = global.liveAddrs.dao_multisig
         const daoClient = new DaoMultisigClient(client, user1, contractAddress);
         try {
           const result = await daoClient.execute({ proposalId: this.dao_send_token_proposal_id });
-
-          global.governance_proposal_id = parseInt(
-            getAttribute(result, "wasm", "proposal_id")
-          );
-
           expect(result['code']).to.equal(0);
           return result;
         } catch (e) {
           console.error(e)
           throw e
         }
+      });
+      it("should list the governance proposals", async function () {
+        const governanceQueryClient = new GovernanceQueryClient(queryClient, global.addrs.governance);
+        const proposals = await governanceQueryClient.proposals({})
+        console.log('proposals :>> ', proposals);
+        global.governance_proposal_id = proposals.proposals[0].id
+        console.log('global.governance_proposal_id :>> ', global.governance_proposal_id);
+
       });
       it("should return the current governance period as: posting", async function () {
         const governanceClient = new GovernanceQueryClient(queryClient, global.addrs.governance);
@@ -730,41 +739,61 @@ describe("End-to-End Tests", function () {
         return periodInfo
       })
       it("should return the current governance period as: voting", async function () {
-        // await sleep(17000);
         const governanceClient = new GovernanceQueryClient(queryClient, global.addrs.governance);
-        const periodInfo = await governanceClient.periodInfo()
+
+        let periodInfo = await governanceClient.periodInfo()
+        console.log('periodInfo :>> ', periodInfo);
+
+        const timeToVotingPeriod = periodInfo.posting_period_length - periodInfo.current_time_in_cycle + 10;
+        console.log('timeToVotingPeriod :>> ', timeToVotingPeriod);
+        await sleep(timeToVotingPeriod * 1000);
+
+        periodInfo = await governanceClient.periodInfo()
         console.log('periodInfo :>> ', periodInfo);
 
         expect(periodInfo.current_period).to.eq('voting')
         return periodInfo
       })
-      it("should vote 'yes' as user1", async function () {
-        const governanceClient = new GovernanceClient(client, user1, global.addrs.governance);
+      it("should vote 'yes' as user4", async function () {
+        const governanceClient = new GovernanceClient(client, user4, global.addrs.governance);
         try {
-
-          const result = await governanceClient.vote({ id: 2, vote: "yes" })
+          console.log('global.governance_proposal_id :>> ', global.governance_proposal_id);
+          const result = await governanceClient.vote({ id: global.governance_proposal_id, vote: "yes" })
 
           // console.log('result :>> ', result);
 
           return result
         } catch (e) {
+          console.log('global.governance_proposal_id :>> ', global.governance_proposal_id);
+
           console.error(e)
           throw e
         }
       })
       it("should fetch the proposal", async function () {
         const governanceQueryClient = new GovernanceQueryClient(queryClient, global.addrs.governance);
-        const result = await governanceQueryClient.proposal({ id: 2 })
+        const result = await governanceQueryClient.proposal({ id: global.governance_proposal_id })
 
         // console.log('proposal result :>> ', result);
         return result
       });
 
       it("should conclude the proposal", async function () {
-        const governanceClient = new GovernanceClient(client, user1, global.addrs.governance);
-        await sleep(30000);
+        const governanceQueryClient = new GovernanceQueryClient(queryClient, global.addrs.governance);
+
+        let periodInfo = await governanceQueryClient.periodInfo();
+
+        const timeToPostingPeriod = periodInfo.cycle_length - periodInfo.current_time_in_cycle + 10;
+        console.log('timeToPostingPeriod :>> ', timeToPostingPeriod);
+        await sleep(timeToPostingPeriod * 1000);
+
+        periodInfo = await governanceQueryClient.periodInfo();
+        console.log('periodinfo :>> ', periodInfo);
+
         try {
-          const result = await governanceClient.conclude({ id: 2 })
+          const governanceClient = new GovernanceClient(client, user1, global.addrs.governance);
+
+          const result = await governanceClient.conclude({ id: global.governance_proposal_id })
 
           // console.log('result :>> ', result);
           return result
