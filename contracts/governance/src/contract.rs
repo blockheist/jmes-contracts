@@ -66,7 +66,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         Config {} => to_binary(&CONFIG.load(deps.storage)?),
         PeriodInfo {} => to_binary(&query::period_info(deps, env)?),
         Proposal { id } => to_binary(&query::proposal(deps, env, id)?),
-        Proposals { start, limit } => to_binary(&query::proposals(deps, env, start, limit)?),
+        Proposals {
+            status,
+            start,
+            limit,
+        } => to_binary(&query::query_proposals(deps, env, status, start, limit)?),
         CoreSlots {} => to_binary(&query::core_slots(deps, env)?),
         WinningGrants {} => to_binary(&query::winning_grants(deps, env)?),
     }
@@ -105,12 +109,11 @@ mod exec {
 
     use crate::contract::query::period_info;
     use crate::msg::{CoreSlot, Feature, PeriodInfoResponse, ProposalPeriod};
-    use crate::state::{Funding, ProposalStatus, WinningGrant, CORE_SLOTS, WINNING_GRANTS};
     use crate::state::{
-        Proposal, ProposalType,
+        proposals, Proposal, ProposalType,
         VoteOption::{self, *},
-        PROPOSALS,
     };
+    use crate::state::{Funding, ProposalStatus, WinningGrant, CORE_SLOTS, WINNING_GRANTS};
     use jmes::msg::SlotVoteResult;
 
     pub fn proposal(
@@ -275,7 +278,7 @@ mod exec {
 
         proposal.validate()?;
 
-        PROPOSALS.save(deps.storage, id, &proposal)?;
+        proposals().save(deps.storage, id.to_string(), &proposal)?;
 
         // Attach bank message to send the deposit amount to the burn address
         let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
@@ -341,7 +344,7 @@ mod exec {
 
         proposal.validate()?;
 
-        PROPOSALS.save(deps.storage, id, &proposal)?;
+        proposals().save(deps.storage, id.to_string(), &proposal)?;
 
         // Attach bank message to send the deposit amount to the burn address
         let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
@@ -403,7 +406,7 @@ mod exec {
 
         proposal.validate()?;
 
-        PROPOSALS.save(deps.storage, id, &proposal)?;
+        proposals().save(deps.storage, id.to_string(), &proposal)?;
 
         // Attach bank message to send the deposit amount to the burn address
         let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
@@ -540,7 +543,7 @@ mod exec {
 
         proposal.validate()?;
 
-        PROPOSALS.save(deps.storage, id, &proposal)?;
+        proposals().save(deps.storage, id.to_string(), &proposal)?;
 
         // Attach bank message to send the deposit amount to the burn address
         let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
@@ -571,7 +574,7 @@ mod exec {
                 return Err(ContractError::NotVotingPeriod {});
             }
 
-            let mut proposal = PROPOSALS.load(deps.storage, id)?;
+            let mut proposal = proposals().load(deps.storage, id.to_string())?;
 
             println!("\n\n proposal {:?}", proposal);
             if proposal.concluded_at_height.is_some() {
@@ -610,7 +613,7 @@ mod exec {
                 }
             };
 
-            PROPOSALS.save(deps.storage, id, &proposal)?;
+            proposals().save(deps.storage, id.to_string(), &proposal)?;
 
             Ok(Response::new())
         }
@@ -618,7 +621,7 @@ mod exec {
 
     // Process funding requests and Execute attached msgs
     pub fn conclude(deps: DepsMut, env: Env, id: u64) -> Result<Response, ContractError> {
-        let mut proposal = PROPOSALS.load(deps.storage, id)?;
+        let mut proposal = proposals().load(deps.storage, id.to_string())?;
         let config = CONFIG.load(deps.storage)?;
 
         if env.block.time.seconds() <= proposal.voting_end {
@@ -637,7 +640,7 @@ mod exec {
         );
         proposal.concluded_at_height = Some(env.block.height);
 
-        PROPOSALS.save(deps.storage, id, &proposal)?;
+        proposals().save(deps.storage, id.to_string(), &proposal)?;
 
         let mut msgs: Vec<CosmosMsg> = vec![];
 
@@ -780,7 +783,7 @@ mod exec {
 
         proposal.validate()?;
 
-        PROPOSALS.save(deps.storage, id, &proposal)?;
+        proposals().save(deps.storage, id.to_string(), &proposal)?;
 
         // Attach bank message to send the deposit amount to the burn address
         let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
@@ -808,11 +811,12 @@ mod exec {
             return Err(ContractError::Unauthorized {});
         }
 
-        let proposal = PROPOSALS.load(deps.storage, proposal_id)?;
+        let proposal = proposals().load(deps.storage, proposal_id.to_string())?;
 
         match proposal.prop_type {
             ProposalType::RevokeProposal(revoke_proposal_id) => {
-                let proposal_to_revoke = PROPOSALS.load(deps.storage, revoke_proposal_id)?;
+                let proposal_to_revoke =
+                    proposals().load(deps.storage, revoke_proposal_id.to_string())?;
 
                 // Remove the proposal from the winning grants to end funding the revoked DAO
                 let mut winning_grants = WINNING_GRANTS.load(deps.storage)?;
@@ -871,7 +875,7 @@ mod exec {
             return Err(ContractError::Unauthorized {});
         }
 
-        let proposal = PROPOSALS.load(deps.storage, proposal_id)?;
+        let proposal = proposals().load(deps.storage, proposal_id.to_string())?;
 
         let dao = deps.api.addr_validate(&proposal.dao.to_string())?;
 
@@ -1098,8 +1102,8 @@ mod query {
         PeriodInfoResponse, ProposalPeriod, ProposalResponse, ProposalsResponse,
         WinningGrantsResponse,
     };
-    use crate::state::{PROPOSALS, PROPOSAL_COUNT};
-    use jmes::msg::GovernanceCoreSlotsResponse as CoreSlotsResponse;
+    use crate::state::{proposals, PROPOSAL_COUNT};
+    use jmes::msg::{GovernanceCoreSlotsResponse as CoreSlotsResponse, ProposalQueryStatus};
 
     use super::*;
 
@@ -1196,7 +1200,7 @@ mod query {
     }
 
     pub fn proposal(deps: Deps, env: Env, id: u64) -> StdResult<ProposalResponse> {
-        let proposal = PROPOSALS.load(deps.storage, id)?;
+        let proposal = proposals().load(deps.storage, id.to_string())?;
         let config = CONFIG.load(deps.storage)?;
 
         Ok(ProposalResponse {
@@ -1226,9 +1230,10 @@ mod query {
         })
     }
 
-    pub fn proposals(
+    pub fn query_proposals(
         deps: Deps,
         env: Env,
+        status: ProposalQueryStatus,
         start: Option<u64>,
         limit: Option<u32>,
     ) -> StdResult<ProposalsResponse> {
@@ -1236,9 +1241,12 @@ mod query {
         let config = CONFIG.load(deps.storage)?;
 
         let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-        let start = start.map(|start| Bound::inclusive(start));
+        let start = start.map(|start| Bound::inclusive(start.to_string()));
 
-        let proposals = PROPOSALS
+        let proposals = proposals()
+            .idx
+            .status
+            .prefix(status.to_string())
             .range(deps.storage, start, None, Order::Descending)
             .take(limit)
             .map(|item| {

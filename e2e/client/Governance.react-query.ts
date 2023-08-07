@@ -7,7 +7,7 @@
 import { UseQueryOptions, useQuery, useMutation, UseMutationOptions } from "@tanstack/react-query";
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, Uint128, ConfigResponse, Decimal, CoreSlotsResponse, SlotVoteResult, ExecuteMsg, ProposalMsg, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, Binary, IbcMsg, Timestamp, Uint64, WasmMsg, GovMsg, VoteOption, CoreSlot, Funding, Coin, Empty, IbcTimeout, IbcTimeoutBlock, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg, WinningGrantsResponse, WinningGrant } from "./Governance.types";
+import { Addr, Uint128, ConfigResponse, Decimal, CoreSlotsResponse, SlotVoteResult, ExecuteMsg, ProposalMsg, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, Binary, IbcMsg, Timestamp, Uint64, WasmMsg, GovMsg, VoteOption, CoreSlot, Funding, Coin, Empty, IbcTimeout, IbcTimeoutBlock, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg, ProposalQueryStatus, WinningGrantsResponse, WinningGrant } from "./Governance.types";
 import { GovernanceQueryClient, GovernanceClient } from "./Governance.client";
 export const governanceQueryKeys = {
   contract: ([{
@@ -69,6 +69,7 @@ export interface GovernanceProposalsQuery<TData> extends GovernanceReactQuery<Pr
   args: {
     limit?: number;
     start?: number;
+    status: ProposalQueryStatus;
   };
 }
 export function useGovernanceProposalsQuery<TData = ProposalsResponse>({
@@ -78,7 +79,8 @@ export function useGovernanceProposalsQuery<TData = ProposalsResponse>({
 }: GovernanceProposalsQuery<TData>) {
   return useQuery<ProposalsResponse, Error, TData>(governanceQueryKeys.proposals(client?.contractAddress, args), () => client ? client.proposals({
     limit: args.limit,
-    start: args.start
+    start: args.start,
+    status: args.status
   }) : Promise.reject(new Error("Invalid client")), { ...options,
     enabled: !!client && (options?.enabled != undefined ? options.enabled : true)
   });

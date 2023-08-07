@@ -19,6 +19,23 @@ pub struct Voter {
     pub weight: u64,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ProposalQueryStatus {
+    Active,
+    SuccessConcluded,
+    ExpiredConcluded,
+}
+
+impl ProposalQueryStatus {
+    pub fn to_string(&self) -> String {
+        match &self {
+            ProposalQueryStatus::Active => "active".to_string(),
+            ProposalQueryStatus::SuccessConcluded => "success_concluded".to_string(),
+            ProposalQueryStatus::ExpiredConcluded => "expired_concluded".to_string(),
+        }
+    }
+}
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GovernanceQueryMsg {
@@ -28,6 +45,7 @@ pub enum GovernanceQueryMsg {
         id: u64,
     },
     Proposals {
+        status: ProposalQueryStatus,
         start: Option<u64>,
         limit: Option<u32>,
     },

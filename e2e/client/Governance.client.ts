@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Addr, Uint128, ConfigResponse, Decimal, CoreSlotsResponse, SlotVoteResult, ExecuteMsg, ProposalMsg, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, Binary, IbcMsg, Timestamp, Uint64, WasmMsg, GovMsg, VoteOption, CoreSlot, Funding, Coin, Empty, IbcTimeout, IbcTimeoutBlock, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg, WinningGrantsResponse, WinningGrant } from "./Governance.types";
+import { Addr, Uint128, ConfigResponse, Decimal, CoreSlotsResponse, SlotVoteResult, ExecuteMsg, ProposalMsg, Feature, CosmosMsgForEmpty, BankMsg, StakingMsg, DistributionMsg, Binary, IbcMsg, Timestamp, Uint64, WasmMsg, GovMsg, VoteOption, CoreSlot, Funding, Coin, Empty, IbcTimeout, IbcTimeoutBlock, InstantiateMsg, ProposalPeriod, PeriodInfoResponse, ProposalType, ProposalStatus, ProposalResponse, ProposalsResponse, QueryMsg, ProposalQueryStatus, WinningGrantsResponse, WinningGrant } from "./Governance.types";
 export interface GovernanceReadOnlyInterface {
   contractAddress: string;
   config: () => Promise<ConfigResponse>;
@@ -18,10 +18,12 @@ export interface GovernanceReadOnlyInterface {
   }) => Promise<ProposalResponse>;
   proposals: ({
     limit,
-    start
+    start,
+    status
   }: {
     limit?: number;
     start?: number;
+    status: ProposalQueryStatus;
   }) => Promise<ProposalsResponse>;
   coreSlots: () => Promise<CoreSlotsResponse>;
   winningGrants: () => Promise<WinningGrantsResponse>;
@@ -64,15 +66,18 @@ export class GovernanceQueryClient implements GovernanceReadOnlyInterface {
   };
   proposals = async ({
     limit,
-    start
+    start,
+    status
   }: {
     limit?: number;
     start?: number;
+    status: ProposalQueryStatus;
   }): Promise<ProposalsResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       proposals: {
         limit,
-        start
+        start,
+        status
       }
     });
   };

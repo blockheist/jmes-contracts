@@ -56,6 +56,9 @@
       "properties": {
         "proposals": {
           "type": "object",
+          "required": [
+            "status"
+          ],
           "properties": {
             "limit": {
               "type": [
@@ -72,6 +75,9 @@
               ],
               "format": "uint64",
               "minimum": 0.0
+            },
+            "status": {
+              "$ref": "#/definitions/ProposalQueryStatus"
             }
           }
         }
@@ -102,5 +108,15 @@
       },
       "additionalProperties": false
     }
-  ]
+  ],
+  "definitions": {
+    "ProposalQueryStatus": {
+      "type": "string",
+      "enum": [
+        "active",
+        "success_concluded",
+        "expired_concluded"
+      ]
+    }
+  }
 }

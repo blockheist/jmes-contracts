@@ -361,6 +361,7 @@ export type QueryMsg = {
   proposals: {
     limit?: number | null;
     start?: number | null;
+    status: ProposalQueryStatus;
     [k: string]: unknown;
   };
 } | {
@@ -372,6 +373,7 @@ export type QueryMsg = {
     [k: string]: unknown;
   };
 };
+export type ProposalQueryStatus = "active" | "success_concluded" | "expired_concluded";
 export interface WinningGrantsResponse {
   winning_grants: WinningGrant[];
   [k: string]: unknown;

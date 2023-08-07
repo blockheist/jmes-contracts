@@ -541,8 +541,12 @@ describe("End-to-End Tests", function () {
           const result = await daoClient.execute({ proposalId: this.dao_send_token_proposal_id });
 
           global.governance_proposal_id = parseInt(
-            getAttribute(result, "wasm", "proposal_id")
+            getAttribute(result, "wasm", "gov_proposal_id")
           );
+
+          console.log('global.governance_proposal_id :>> ', global.governance_proposal_id);
+          console.log('result :>> ', result);
+          console.dir(result, { depth: 100 });
 
           expect(result['code']).to.equal(0);
           return result;
@@ -728,12 +732,16 @@ describe("End-to-End Tests", function () {
           throw e
         }
       });
-      it("should list the governance proposals", async function () {
+      it("should list the `active` governance proposals", async function () {
         const governanceQueryClient = new GovernanceQueryClient(queryClient, global.addrs.governance);
-        const proposals = await governanceQueryClient.proposals({})
+        const proposals = await governanceQueryClient.proposals({ status: "active" })
         console.log('proposals :>> ', proposals);
         global.governance_proposal_id = proposals.proposals[0].id
         console.log('global.governance_proposal_id :>> ', global.governance_proposal_id);
+
+        expect(proposals.proposals[0].id).to.eq(2)
+        expect(proposals.proposals[0].status).to.eq("posted")
+
 
       });
       it("should return the current governance period as: posting", async function () {
@@ -810,6 +818,23 @@ describe("End-to-End Tests", function () {
         }
 
       })
+      it("should list the `success` governance proposals", async function () {
+        const governanceQueryClient = new GovernanceQueryClient(queryClient, global.addrs.governance);
+
+        const successProposals = await governanceQueryClient.proposals({ status: "success_concluded" })
+        expect(successProposals.proposals[0].id).to.eq(2)
+        expect(successProposals.proposals[0].status).to.eq("success_concluded")
+
+        const expiredProposals = await governanceQueryClient.proposals({ status: "expired_concluded" })
+        expect(expiredProposals.proposals.length).to.eq(0)
+
+        const activeProposals = await governanceQueryClient.proposals({ status: "active" })
+        expect(activeProposals.proposals.length).to.eq(0)
+
+
+
+
+      });
     });
   });
 });

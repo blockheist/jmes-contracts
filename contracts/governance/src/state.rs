@@ -3,7 +3,7 @@ use crate::{
     msg::{CoreSlot, Feature},
 };
 use cosmwasm_std::{Addr, CosmosMsg, Decimal, Env, QuerierWrapper, StdResult, Storage, Uint128};
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -23,7 +23,35 @@ pub const CORE_SLOTS: Item<CoreSlots> = Item::new("core_slots");
 
 pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
 
-pub const PROPOSALS: Map<u64, Proposal> = Map::new("proposals");
+pub struct ProposalIndexes<'a> {
+    // pk goes to second tuple element
+    pub status: MultiIndex<'a, String, Proposal, String>,
+}
+
+impl<'a> IndexList<Proposal> for ProposalIndexes<'a> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Proposal>> + '_> {
+        let v: Vec<&dyn Index<Proposal>> = vec![&self.status];
+        Box::new(v.into_iter())
+    }
+}
+
+pub fn proposals<'a>() -> IndexedMap<'a, String, Proposal, ProposalIndexes<'a>> {
+    let indexes = ProposalIndexes {
+        status: MultiIndex::new(
+            |_pk: &[u8], d: &Proposal| match d.clone().concluded_status {
+                Some(status) => match status {
+                    ProposalStatus::SuccessConcluded => "success_concluded".to_string(),
+                    ProposalStatus::ExpiredConcluded => "expired_concluded".to_string(),
+                    _ => "active".to_string(),
+                },
+                None => "active".to_string(),
+            },
+            "proposals",
+            "proposals__status",
+        ),
+    };
+    IndexedMap::new("proposals", indexes)
+}
 
 // This is an item of type vec that gets updated on every conclude and old grants are deleted
 pub const WINNING_GRANTS: Item<Vec<WinningGrant>> = Item::new("winning_grants");
