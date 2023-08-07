@@ -422,10 +422,10 @@ describe("End-to-End Tests", function () {
       return result
     })
   });
-  describe.only("Governance Coreslot and Improvement Proposal ", function () {
+  describe("Governance Coreslot and Improvement Proposal ", function () {
     before(async function () {
       global.addrs = await readContractAddrs();
-      global.liveAddrs.dao_multisig = "jmes10ly5g36gmtlgw68wlmxcu79y3lxuff8jfqps0zfq8mlx9qfc7qdq8d3jdt";
+      // global.liveAddrs.dao_multisig = "jmes10ly5g36gmtlgw68wlmxcu79y3lxuff8jfqps0zfq8mlx9qfc7qdq8d3jdt";
       await client.send(user1, global.liveAddrs.dao_multisig, "20000000ujmes")
 
       console.log('global.liveAddrs.dao_multisig :>> ', global.liveAddrs.dao_multisig);
@@ -452,7 +452,7 @@ describe("End-to-End Tests", function () {
     });
 
 
-    describe.skip("CoreSlot Proposal ", function () {
+    describe("CoreSlot Proposal ", function () {
 
       it("should create a dao proposal: Governance CoreSlot: CoreTech", async function () {
         const daoMultisigAddress = global.liveAddrs.dao_multisig
@@ -649,7 +649,7 @@ describe("End-to-End Tests", function () {
                   bank: { send: { amount: [{ denom: "ujmes", amount: "1000" }], to_address: user1.address } }
                 },
                 // {
-                //   wasm: { migrate: { contract_addr: global.addrs.governance, msg: toBase64({}), new_code_id: 27 } }
+                //   wakm: { migrate: { contract_addr: global.addrs.governance, msg: toBase64({}), new_code_id: 27 } }
                 // }
               ]
             }

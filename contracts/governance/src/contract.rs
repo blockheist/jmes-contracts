@@ -287,7 +287,9 @@ mod exec {
             }],
         };
 
-        Ok(Response::new().add_message(burn_msg))
+        Ok(Response::new()
+            .add_message(burn_msg)
+            .add_attribute("gov_proposal_id", proposal.id.to_string()))
     }
 
     pub fn request_feature(
@@ -351,7 +353,9 @@ mod exec {
             }],
         };
 
-        Ok(Response::new().add_message(burn_msg))
+        Ok(Response::new()
+            .add_message(burn_msg)
+            .add_attribute("gov_proposal_id", proposal.id.to_string()))
     }
 
     pub fn improvement(
@@ -411,7 +415,9 @@ mod exec {
             }],
         };
 
-        Ok(Response::new().add_message(burn_msg))
+        Ok(Response::new()
+            .add_message(burn_msg)
+            .add_attribute("gov_proposal_id", proposal.id.to_string()))
     }
 
     pub fn core_slot(
@@ -546,7 +552,9 @@ mod exec {
             }],
         };
 
-        Ok(Response::new().add_message(burn_msg))
+        Ok(Response::new()
+            .add_message(burn_msg)
+            .add_attribute("gov_proposal_id", proposal.id.to_string()))
     }
 
     pub fn vote(
@@ -784,7 +792,9 @@ mod exec {
             }],
         };
 
-        Ok(Response::new().add_message(burn_msg))
+        Ok(Response::new()
+            .add_message(burn_msg)
+            .add_attribute("gov_proposal_id", proposal.id.to_string()))
     }
 
     pub fn unset_core_slot(
