@@ -644,7 +644,14 @@ describe("End-to-End Tests", function () {
             improvement: {
               title: "Send Funds",
               description: "Improvement BankMsg",
-              msgs: [{ bank: { send: { amount: [{ denom: "ujmes", amount: "1000" }], to_address: user1.address } } }]
+              msgs: [
+                {
+                  bank: { send: { amount: [{ denom: "ujmes", amount: "1000" }], to_address: user1.address } }
+                },
+                // {
+                //   wasm: { migrate: { contract_addr: global.addrs.governance, msg: toBase64({}), new_code_id: 27 } }
+                // }
+              ]
             }
           }
         };
