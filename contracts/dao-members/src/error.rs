@@ -33,6 +33,9 @@ pub enum ContractError {
     #[error("InvalidThresholdPercentage max is 100 (current {current})")]
     InvalidThresholdPercentage { current: u64 },
 
+    #[error("InvalidTotalVotingPercentage max is 100 (current {current})")]
+    InvalidTotalVotingPercentage { current: u64 },
+
     #[error("WrongCoreTeamMemberVotingPower (Each Core Team must have less than {threshold:?} but one member has {current} voting power)!")]
     WrongCoreTeamMemberVotingPower { threshold: Threshold, current: u64 },
 }

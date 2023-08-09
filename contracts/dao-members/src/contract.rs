@@ -92,6 +92,15 @@ pub fn create(
         let member_addr = deps.api.addr_validate(&member.addr)?;
         MEMBERS.save(deps.storage, &member_addr, &member_weight.u64(), height)?;
     }
+
+    // We're using AbsoluteCount as threshold so we can assign different voting power to each member
+    // but we are limiting it to 100% max to have a more intuitive UX
+    if total.u64() > 100 {
+        return Err(ContractError::InvalidThresholdPercentage {
+            current: total.u64(),
+        });
+    }
+
     TOTAL.save(deps.storage, &total.u64(), height)?;
 
     Ok(())

@@ -30,7 +30,7 @@ fn set_up(deps: DepsMut) {
         dao_name: "test_name".into(),
         max_voting_period: cw_utils::Duration::Height(100),
         threshold_percentage: 51u64,
-        governance_addr: Addr::unchecked("governance"),
+        governance_addr: "governance".into(),
     };
     let info = mock_info("creator", &[]);
     instantiate(deps, mock_env(), info, msg).unwrap();
@@ -90,7 +90,7 @@ fn duplicate_members_instantiation() {
         dao_name: "test_name".into(),
         max_voting_period: cw_utils::Duration::Height(100),
         threshold_percentage: 51u64,
-        governance_addr: Addr::unchecked("governance"),
+        governance_addr: "governance".into(),
     };
     let info = mock_info("creator", &[]);
     let err = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
