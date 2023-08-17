@@ -68,7 +68,7 @@
               "format": "uint32",
               "minimum": 0.0
             },
-            "start": {
+            "start_before": {
               "type": [
                 "integer",
                 "null"

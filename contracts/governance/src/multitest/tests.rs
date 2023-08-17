@@ -1171,11 +1171,11 @@ fn propose_core_slot_brand_with_3_members_1_exceeds_threshold_fails() {
 
     let member1 = Member {
         addr: "member1".into(),
-        weight: 26,
+        weight: 20,
     };
     let member2 = Member {
         addr: "member2".into(),
-        weight: 26,
+        weight: 20,
     };
     let member3 = Member {
         addr: "member3".into(),
@@ -1250,7 +1250,7 @@ fn propose_core_slot_brand_with_3_members_1_exceeds_threshold_fails() {
     // User2 votes yes to pass the proposal
     let dao_vote2_result = DaoMultisigContract::vote(
         &mut app,
-        &Addr::unchecked(member2.addr.clone()),
+        &Addr::unchecked(member3.addr.clone()),
         &my_dao_addr,
         proposal_id,
         cw3::Vote::Yes,

@@ -46,7 +46,7 @@ pub enum GovernanceQueryMsg {
     },
     Proposals {
         status: ProposalQueryStatus,
-        start: Option<u64>,
+        start_before: Option<u64>,
         limit: Option<u32>,
     },
     CoreSlots {},

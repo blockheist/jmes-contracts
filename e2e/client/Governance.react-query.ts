@@ -68,7 +68,7 @@ export function useGovernanceCoreSlotsQuery<TData = CoreSlotsResponse>({
 export interface GovernanceProposalsQuery<TData> extends GovernanceReactQuery<ProposalsResponse, TData> {
   args: {
     limit?: number;
-    start?: number;
+    startBefore?: number;
     status: ProposalQueryStatus;
   };
 }
@@ -79,7 +79,7 @@ export function useGovernanceProposalsQuery<TData = ProposalsResponse>({
 }: GovernanceProposalsQuery<TData>) {
   return useQuery<ProposalsResponse, Error, TData>(governanceQueryKeys.proposals(client?.contractAddress, args), () => client ? client.proposals({
     limit: args.limit,
-    start: args.start,
+    startBefore: args.startBefore,
     status: args.status
   }) : Promise.reject(new Error("Invalid client")), { ...options,
     enabled: !!client && (options?.enabled != undefined ? options.enabled : true)

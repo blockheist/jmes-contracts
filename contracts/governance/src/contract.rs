@@ -68,9 +68,15 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         Proposal { id } => to_binary(&query::proposal(deps, env, id)?),
         Proposals {
             status,
-            start,
+            start_before,
             limit,
-        } => to_binary(&query::query_proposals(deps, env, status, start, limit)?),
+        } => to_binary(&query::query_proposals(
+            deps,
+            env,
+            status,
+            start_before,
+            limit,
+        )?),
         CoreSlots {} => to_binary(&query::core_slots(deps, env)?),
         WinningGrants {} => to_binary(&query::winning_grants(deps, env)?),
     }
@@ -1234,20 +1240,20 @@ mod query {
         deps: Deps,
         env: Env,
         status: ProposalQueryStatus,
-        start: Option<u64>,
+        start_before: Option<u64>,
         limit: Option<u32>,
     ) -> StdResult<ProposalsResponse> {
         let proposal_count = PROPOSAL_COUNT.load(deps.storage)?;
         let config = CONFIG.load(deps.storage)?;
 
         let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-        let start = start.map(|start| Bound::inclusive(start.to_string()));
+        let end = start_before.map(|id| Bound::exclusive(id.to_string()));
 
         let proposals = proposals()
             .idx
             .status
             .prefix(status.to_string())
-            .range(deps.storage, start, None, Order::Descending)
+            .range(deps.storage, None, end, Order::Descending)
             .take(limit)
             .map(|item| {
                 let (_, proposal) = item?;
