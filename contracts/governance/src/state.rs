@@ -12,10 +12,10 @@ use serde::{Deserialize, Serialize};
 const MIN_TITLE_LENGTH: usize = 4;
 const MAX_TITLE_LENGTH: usize = 64;
 const MIN_DESC_LENGTH: usize = 4;
-const MAX_DESC_LENGTH: usize = 1024;
+const MAX_DESC_LENGTH: usize = 2024;
 
 /// Special characters that are allowed in proposal text
-const SAFE_TEXT_CHARS: &str = "!&?#()*+'-./\"";
+const SAFE_TEXT_CHARS: &str = ":!&?#()*+'-./\""; // We allow ":" so we can have links to external proposal pages
 
 pub const CONFIG: Item<Config> = Item::new("config");
 
