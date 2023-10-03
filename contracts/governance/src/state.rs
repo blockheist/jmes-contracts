@@ -25,7 +25,7 @@ pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
 
 pub struct ProposalIndexes<'a> {
     // pk goes to second tuple element
-    pub status: MultiIndex<'a, String, Proposal, String>,
+    pub status: MultiIndex<'a, String, Proposal, u64>,
 }
 
 impl<'a> IndexList<Proposal> for ProposalIndexes<'a> {
@@ -35,7 +35,7 @@ impl<'a> IndexList<Proposal> for ProposalIndexes<'a> {
     }
 }
 
-pub fn proposals<'a>() -> IndexedMap<'a, String, Proposal, ProposalIndexes<'a>> {
+pub fn proposals<'a>() -> IndexedMap<'a, u64, Proposal, ProposalIndexes<'a>> {
     let indexes = ProposalIndexes {
         status: MultiIndex::new(
             |_pk: &[u8], d: &Proposal| match d.clone().concluded_status {
@@ -129,12 +129,9 @@ impl Proposal {
         if self.concluded_coins_total.is_some() {
             return self.concluded_coins_total.unwrap();
         } else {
-            querier
-                .query_supply("bujmes")
-                .unwrap()
-                .amount
-                .checked_sub(Uint128::new(100_000_000_000_000)) // FIXME: remove this hack
-                .unwrap()
+            querier.query_supply("bujmes").unwrap().amount
+            // .checked_sub(Uint128::new(100_000_000_000_000)) // FIXME: remove this hack
+            // .unwrap()
         }
     }
 

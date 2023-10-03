@@ -284,7 +284,7 @@ mod exec {
 
         proposal.validate()?;
 
-        proposals().save(deps.storage, id.to_string(), &proposal)?;
+        proposals().save(deps.storage, id, &proposal)?;
 
         // Attach bank message to send the deposit amount to the burn address
         let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
@@ -350,7 +350,7 @@ mod exec {
 
         proposal.validate()?;
 
-        proposals().save(deps.storage, id.to_string(), &proposal)?;
+        proposals().save(deps.storage, id, &proposal)?;
 
         // Attach bank message to send the deposit amount to the burn address
         let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
@@ -412,7 +412,7 @@ mod exec {
 
         proposal.validate()?;
 
-        proposals().save(deps.storage, id.to_string(), &proposal)?;
+        proposals().save(deps.storage, id, &proposal)?;
 
         // Attach bank message to send the deposit amount to the burn address
         let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
@@ -549,7 +549,7 @@ mod exec {
 
         proposal.validate()?;
 
-        proposals().save(deps.storage, id.to_string(), &proposal)?;
+        proposals().save(deps.storage, id, &proposal)?;
 
         // Attach bank message to send the deposit amount to the burn address
         let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
@@ -580,7 +580,7 @@ mod exec {
                 return Err(ContractError::NotVotingPeriod {});
             }
 
-            let mut proposal = proposals().load(deps.storage, id.to_string())?;
+            let mut proposal = proposals().load(deps.storage, id)?;
 
             println!("\n\n proposal {:?}", proposal);
             if proposal.concluded_at_height.is_some() {
@@ -619,7 +619,7 @@ mod exec {
                 }
             };
 
-            proposals().save(deps.storage, id.to_string(), &proposal)?;
+            proposals().save(deps.storage, id, &proposal)?;
 
             Ok(Response::new())
         }
@@ -627,7 +627,7 @@ mod exec {
 
     // Process funding requests and Execute attached msgs
     pub fn conclude(deps: DepsMut, env: Env, id: u64) -> Result<Response, ContractError> {
-        let mut proposal = proposals().load(deps.storage, id.to_string())?;
+        let mut proposal = proposals().load(deps.storage, id)?;
         let config = CONFIG.load(deps.storage)?;
 
         if env.block.time.seconds() <= proposal.voting_end {
@@ -646,7 +646,7 @@ mod exec {
         );
         proposal.concluded_at_height = Some(env.block.height);
 
-        proposals().save(deps.storage, id.to_string(), &proposal)?;
+        proposals().save(deps.storage, id, &proposal)?;
 
         let mut msgs: Vec<CosmosMsg> = vec![];
 
@@ -789,7 +789,7 @@ mod exec {
 
         proposal.validate()?;
 
-        proposals().save(deps.storage, id.to_string(), &proposal)?;
+        proposals().save(deps.storage, id, &proposal)?;
 
         // Attach bank message to send the deposit amount to the burn address
         let burn_address = deps.api.addr_validate(BURN_ADDRESS)?;
@@ -817,12 +817,11 @@ mod exec {
             return Err(ContractError::Unauthorized {});
         }
 
-        let proposal = proposals().load(deps.storage, proposal_id.to_string())?;
+        let proposal = proposals().load(deps.storage, proposal_id)?;
 
         match proposal.prop_type {
             ProposalType::RevokeProposal(revoke_proposal_id) => {
-                let proposal_to_revoke =
-                    proposals().load(deps.storage, revoke_proposal_id.to_string())?;
+                let proposal_to_revoke = proposals().load(deps.storage, revoke_proposal_id)?;
 
                 // Remove the proposal from the winning grants to end funding the revoked DAO
                 let mut winning_grants = WINNING_GRANTS.load(deps.storage)?;
@@ -881,7 +880,7 @@ mod exec {
             return Err(ContractError::Unauthorized {});
         }
 
-        let proposal = proposals().load(deps.storage, proposal_id.to_string())?;
+        let proposal = proposals().load(deps.storage, proposal_id)?;
 
         let dao = deps.api.addr_validate(&proposal.dao.to_string())?;
 
@@ -1206,7 +1205,7 @@ mod query {
     }
 
     pub fn proposal(deps: Deps, env: Env, id: u64) -> StdResult<ProposalResponse> {
-        let proposal = proposals().load(deps.storage, id.to_string())?;
+        let proposal = proposals().load(deps.storage, id)?;
         let config = CONFIG.load(deps.storage)?;
 
         Ok(ProposalResponse {
@@ -1247,7 +1246,7 @@ mod query {
         let config = CONFIG.load(deps.storage)?;
 
         let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-        let end = start_before.map(|id| Bound::exclusive(id.to_string()));
+        let end = start_before.map(|id| Bound::exclusive(id));
 
         let proposals = proposals()
             .idx
