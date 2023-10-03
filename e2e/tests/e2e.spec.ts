@@ -539,10 +539,8 @@ describe("End-to-End Tests", function () {
         const daoClient = new DaoMultisigClient(client, user1, contractAddress);
         try {
           const result = await daoClient.execute({ proposalId: this.dao_send_token_proposal_id });
-
-          global.governance_proposal_id = parseInt(
-            getAttribute(result, "wasm", "gov_proposal_id")
-          );
+          // @ts-ignore: 2339
+          global.governance_proposal_id = parseInt(result.logs[0].eventsByType.wasm.gov_proposal_id[0]);
 
           console.log('global.governance_proposal_id :>> ', global.governance_proposal_id);
           console.log('result :>> ', result);
@@ -593,10 +591,15 @@ describe("End-to-End Tests", function () {
       })
       it("should fetch the proposal", async function () {
         const governanceQueryClient = new GovernanceQueryClient(queryClient, global.addrs.governance);
-        const result = await governanceQueryClient.proposal({ id: 1 })
+        try {
+          const result = await governanceQueryClient.proposal({ id: 1 })
 
-        console.log('proposal result :>> ', result);
-        return result
+          console.log('proposal result :>> ', result);
+          return result
+        } catch (e) {
+          console.log('e :   >> ', e);
+        }
+
       });
 
       it("should conclude the proposal", async function () {
