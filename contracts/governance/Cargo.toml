@@ -27,7 +27,7 @@ cw2 = "0.16"
 cw4 = {  version = "0.16.0" }
 cw3 = {  version = "0.16.0" }
 cw20 = "0.16"
-cw-storage-plus = "0.16.0"
+cw-storage-plus = "1.1.0"
 cw-multi-test = { git = "https://github.com/blockheist/cw-multi-test.git", branch = "supply_query_workaround", version = "0.16.5", optional = true }
 serde = { version = "1.0.140", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }

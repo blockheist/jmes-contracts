@@ -1034,7 +1034,7 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-multi-test 0.16.5 (git+https://github.com/blockheist/cw-multi-test.git?branch=supply_query_workaround)",
- "cw-storage-plus 0.16.0",
+ "cw-storage-plus 1.1.0",
  "cw-utils 0.16.0",
  "cw2 0.16.0",
  "cw20 0.16.0",
