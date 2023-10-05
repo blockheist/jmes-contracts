@@ -9,6 +9,7 @@
     "optimize": "rm ../artifacts/* ; ./optimize.sh",
     "deploy:local": "NETWORK_ENV=local node deploy.js  && cp ./configs/*local.json ../e2e/configs",
     "deploy:jmes-888": "NETWORK_ENV=jmes-888 node deploy.js  && cp ./configs/*jmes-888.json ../e2e/configs",
+    "deploy:jmes-namito": "NETWORK_ENV=jmes-namito node deploy.js  && cp ./configs/*jmes-namito.json ../e2e/configs",
     "reset:local": "rm configs/*_local.json; rm cache/*_local.json; rm ../e2e/configs/*_local.json",
     "reset:jmes-888": "rm configs/*_jmes-888.json; rm cache/*_jmes-888.json; rm ../e2e/configs/*_jmes-888.json"
   },
