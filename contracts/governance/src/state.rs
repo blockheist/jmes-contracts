@@ -15,7 +15,7 @@ const MIN_DESC_LENGTH: usize = 4;
 const MAX_DESC_LENGTH: usize = 2024;
 
 /// Special characters that are allowed in proposal text
-const SAFE_TEXT_CHARS: &str = ":!&?#()*+'-./\""; // We allow ":" so we can have links to external proposal pages
+const SAFE_TEXT_CHARS: &str = ":!&?#()*+'-.,/\""; // We allow ":" so we can have links to external proposal pages
 
 pub const CONFIG: Item<Config> = Item::new("config");
 
