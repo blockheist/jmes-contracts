@@ -1037,6 +1037,12 @@ mod exec {
         }
         if core_slot_count > 1 {
             // We don't return an error because we want the proposal to be marked as concluded
+
+            // remove this proposal from the winning_grants, it will not be funded since the dao already holds a core slot
+            let mut winning_grants = WINNING_GRANTS.load(deps.storage)?;
+            winning_grants.retain(|grant| grant.proposal_id != proposal_id);
+            WINNING_GRANTS.save(deps.storage, &winning_grants)?;
+
             return Ok(Response::new().add_attributes(vec![
                 ("action", "set_core_slot"),
                 ("proposal_id", &proposal_id.to_string()),
