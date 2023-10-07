@@ -22,6 +22,10 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const DEFAULT_LIMIT: u32 = 10;
 const MAX_LIMIT: u32 = 30;
 
+// Initial Distribution Period in blocks
+// Winning grants are paid out after this period ends
+const IDP_BLOCKS: u64 = 483_840;
+
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
@@ -685,12 +689,15 @@ mod exec {
             // });
 
             if proposal.funding.is_some() {
+                // Funds are starting to be paid out after IDP ends
+                let funding_starts =
+                    std::cmp::max(IDP_BLOCKS, proposal.concluded_at_height.unwrap());
+
                 winning_grants.push(WinningGrant {
                     proposal_id: proposal.id,
                     dao: proposal.dao.clone(),
                     amount: proposal.funding.clone().unwrap().amount,
-                    expire_at_height: proposal.concluded_at_height.unwrap()
-                        + proposal.funding.unwrap().duration_in_blocks,
+                    expire_at_height: funding_starts + proposal.funding.unwrap().duration_in_blocks,
                     yes_ratio: Decimal::from_ratio(
                         proposal.coins_yes,
                         proposal.coins_yes + proposal.coins_no,
