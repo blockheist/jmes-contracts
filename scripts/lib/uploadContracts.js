@@ -77,4 +77,59 @@ async function uploadContracts(client, user) {
   );
 }
 
-export { uploadContracts };
+async function uploadContract(client, user, contractToUpload) {
+  const contractPath = "../artifacts/";
+
+  const codeIds = readCodeIds();
+
+  const cachedContractChecksums = readCachedContractChecksums();
+
+  const newContractList = findNewContractFiles(contractPath);
+
+  if (newContractList.length > 0)
+    console.log("-> Found new contract checksums:", newContractList);
+
+  console.log("-> Only contract to upload:", contractToUpload);
+
+  for (const idx in newContractList) {
+    const [contract, checksum] = newContractList[idx];
+
+    if (contract !== contractToUpload) {
+      continue;
+    }
+
+    const path = contractPath + contract;
+
+    const storeMsg = createStoreMsg(path, user);
+
+    console.log(`-> Storing ${path}*`);
+
+    let result;
+
+    try {
+      result = await executeMsg(client, storeMsg, user.wallet);
+
+      // update codeIds - this will throw an error if e.g. the fee is too low
+      codeIds[getContractNameFromPath(path)] = getCodeIdFromResult(result);
+      fs.writeFileSync(
+        `configs/codeIds_${process.env.NETWORK_ENV}.json`,
+        JSON.stringify(codeIds),
+        "utf8"
+      );
+    } catch (err) {
+      console.error(err.message);
+      throw err;
+    }
+
+    // update successfully uploaded contract's checksum cache so we don't need to upload it again if another contract upload times out
+    cachedContractChecksums[contract] = checksum;
+    writeCachedContractChecksums(cachedContractChecksums);
+  }
+
+  console.log(
+    "-> Storing contract wasm files finished!",
+    JSON.stringify(codeIds)
+  );
+}
+
+export { uploadContracts, uploadContract };
